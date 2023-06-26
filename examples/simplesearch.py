@@ -1,6 +1,6 @@
 """
 Very basic semantic search example. Mainly used for verifying dependencies.
-We can get rid of this when we have a more relevant text search example.
+We can get rid of this when we have a more relevant text to search.
 
 Expects the `hammurabi_openai.hf` dataset to be in the dataset directory.
 """

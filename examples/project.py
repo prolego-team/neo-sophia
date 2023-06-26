@@ -47,7 +47,6 @@ def get_config(key: str, default: Optional[Any]) -> Any:
     sys.exit()
 
 
-# OPENAI_API_MODEL = get_config('OPENAI_API_MODEL', 'gpt-3.5-turbo')
 MODELS_DIR_PATH = get_config('MODELS_DIR_PATH', None)
 DATASETS_DIR_PATH = get_config('DATASETS_DIR_PATH', None)
 GENERATOR_CACHE_DIR_PATH = get_config('GENERATOR_CACHE_DIR_PATH', None)
