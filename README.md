@@ -1,7 +1,12 @@
 # neo-sophia
+
 Applying the latest advancements in AI and machine learning to solve complex business problems.
 
-## Data
+#### Environment Setup
+
+    conda env create -f env.yml
+
+#### Data
 [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
 
 To extract text from the MSRB Rulebook:
