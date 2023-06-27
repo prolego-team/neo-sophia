@@ -7,9 +7,9 @@ Applying the latest advancements in AI and machine learning to solve complex bus
 Create Anaconda environment:
 
     conda env create -f env.yml
-    conda activate neo-sophia
+    conda activate neosophia
 
-Editable install of `neosophia` package:
+Editable install of `neosophia` package.
 
     cd ..
     pip install -e neo-sophia
@@ -29,3 +29,8 @@ mkdir data
 wget -P data https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf
 python -m scripts.extract_text
 ```
+Note that installation is required to run tests and examples due due "src layout"!
+
+Run tests:
+
+    ./test.sh
