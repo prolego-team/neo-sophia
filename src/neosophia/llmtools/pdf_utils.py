@@ -12,10 +12,9 @@ from PIL import Image
 def extract_text_by_paragraphs(file_in, delimiter, start_page, end_page):
     """ """
 
-    delimiter = r"^\([a-zA-z0-9]\)"
-
     doc = fitz.open(file_in)
     sections = []
+    num_pages = len(doc)
     for idx, page in enumerate(doc):
         if idx + 1 < start_page:
             continue
@@ -35,7 +34,7 @@ def extract_text_by_paragraphs(file_in, delimiter, start_page, end_page):
         sections.append(' '.join(current_section))
     doc.close()
 
-    return sections
+    return sections, num_pages
 
 
 def pdf_to_image(path: str, zoom_x: int, zoom_y: int):
