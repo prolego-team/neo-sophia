@@ -18,6 +18,7 @@ import torch
 import tqdm
 
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.llmtools import util
 
 from examples import project
 

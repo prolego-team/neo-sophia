@@ -4,5 +4,17 @@ Applying the latest advancements in AI and machine learning to solve complex bus
 
 #### Environment Setup
 
-    conda env create -f env.yml
+Create Anaconda environment:
 
+    conda env create -f env.yml
+    conda activate neo-sophia
+
+Editable install of `neosophia` package:
+
+    cd ..
+    pip install -e neo-sophia
+    cd neo-sophia
+
+Run tests:
+
+    ./test.sh
