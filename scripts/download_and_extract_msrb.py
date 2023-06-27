@@ -2,8 +2,10 @@
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Cameron Fabbri
 import os
+
 import fitz
 import click
+
 import neosophia.llmtools.pdf_utils as pu
 
 opj = os.path.join
