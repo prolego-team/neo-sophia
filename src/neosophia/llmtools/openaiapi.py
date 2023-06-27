@@ -45,7 +45,7 @@ def extract_embeddings(data: Any) -> torch.Tensor:
 
 def embeddings_tensor(texts: List[str]) -> torch.Tensor:
     """get a tensor of embeddings from a list of strings"""
-    embs = extract_embeddings(texts)
+    embs = embeddings(texts)
     res = extract_embeddings(embs)
     assert res.shape == (len(texts), EMBEDDING_DIM_DEFAULT)
     return res
