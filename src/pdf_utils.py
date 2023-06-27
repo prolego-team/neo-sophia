@@ -2,6 +2,7 @@
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Cameron Fabbri
 import io
+import re
 
 import fitz
 
@@ -10,18 +11,31 @@ from PIL import Image
 
 def extract_text_by_paragraphs(file_in, delimiter, start_page, end_page):
     """ """
+
+    delimiter = r"^\([a-zA-z0-9]\)"
+
     doc = fitz.open(file_in)
-    paragraphs = []
+    sections = []
     for idx, page in enumerate(doc):
         if idx + 1 < start_page:
             continue
         if idx + 1 == end_page:
             break
         text = page.get_text()
-        paragraphs.extend(text.split(delimiter))
+
+        text_nl = text.split('\n')
+
+        current_section = []
+        for line in text_nl:
+            matches = re.findall(delimiter, line)
+            if matches:
+                sections.append(' '.join(current_section))
+                current_section = []
+            current_section.append(line)
+        sections.append(' '.join(current_section))
     doc.close()
 
-    return paragraphs
+    return sections
 
 
 def pdf_to_image(path: str, zoom_x: int, zoom_y: int):
