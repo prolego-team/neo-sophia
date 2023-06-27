@@ -7,7 +7,7 @@ Applying the latest advancements in AI and machine learning to solve complex bus
 Create Anaconda environment:
 
     conda env create -f env.yml
-    conda activate neo-sophia
+    conda activate neosophia
 
 Editable install of `neosophia` package:
 
