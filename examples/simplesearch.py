@@ -18,11 +18,9 @@ import torch
 import tqdm
 
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.llmtools import util
 
 from examples import project
 
-OPENAI_LLM_MODEL_NAME = 'gpt-3.5-turbo'
 MAX_RULES = 3
 QUIT_KEYWORDS = ['q', 'quit', 'x', 'exit']
 
@@ -43,7 +41,7 @@ def main() -> int:
 
     while True:
 
-        search_str = input('Search string >')
+        search_str = input('Search string > ')
         if not search_str or search_str in QUIT_KEYWORDS:
             return 0
 

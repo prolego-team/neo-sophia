@@ -9,7 +9,7 @@ from neosophia.llmtools import openaiapi
 
 @patch('neosophia.llmtools.openaiapi.embeddings')
 def test_embeddings_tensor(embeddings_mock):
-    """test `embeddings_tensor` functions"""
+    """test `embeddings_tensor` and `extract_embeddings` functions"""
     n_texts = 3
 
     # OpenAI API returns a data struction which contains an embedding
