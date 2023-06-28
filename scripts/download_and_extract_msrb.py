@@ -45,20 +45,6 @@ def main(start_page, end_page, delimiter):
     if end_page == -1:
         end_page = num_pages
 
-    file_out = opj(
-        project.DATASETS_DIR_PATH, f'MSRB-Text-{start_page}-{end_page}.txt')
-
-    '''
-    with open(file_out, 'w') as f:
-        for section in sections:
-            section = ' '.join(section.strip().split('\n'))
-            split_section = section.split(')')
-            rule_id = split_section[0] + ')'
-            rule_text = ' '.join(split_section[1:]).strip()
-            f.write(f'{rule_id}~|~{rule_text}\n')
-    print(f'Wrote {len(sections)} sections to {file_out}')
-    '''
-
     lines = []
     for section in sections:
         section = ' '.join(section.strip().split('\n'))
@@ -86,8 +72,10 @@ def main(start_page, end_page, delimiter):
 
         idx += 1
 
+    file_out = opj(
+        project.DATASETS_DIR_PATH, f'MSRB-{start_page}-{end_page}.hfd')
     dataset= Dataset.from_dict({'records': records})
-    dataset.save_to_disk(opj(project.DATASETS_DIR_PATH, 'MSRB.hfd'))
+    dataset.save_to_disk(opj(project.DATASETS_DIR_PATH, file_out))
 
 
 if __name__ == '__main__':
