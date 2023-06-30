@@ -3,6 +3,7 @@
 # Cameron Fabbri
 import os
 import re
+import pickle
 
 from typing import Any, Dict, List
 from dataclasses import dataclass
@@ -162,7 +163,6 @@ def extract_msrb_rules(pdf, start_page, end_page):
 
             if state == STATE_UID:
                 if current_rule_uid is not None:
-                    print(current_rule_uid)
                     rule_description = [x.strip() for x in rule_description]
                     rule = Rule(
                         uid=current_rule_uid,
@@ -222,8 +222,8 @@ def main(start_page, end_page, delimiter):
 
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
 
+    print('Generating embeddings for rules...')
     records = []
-    idx = 0
     for rule_name, rule_section in tqdm.tqdm(rule_dict.items()):
 
         for section_label, section_text in rule_section.sections.items():
@@ -236,19 +236,10 @@ def main(start_page, end_page, delimiter):
                     'emb': emb
                 }
             )
-        idx += 1
-        break
 
-    import pickle
-
+    print('Saved embeddings to embeddings.pkl')
     with open('embeddings.pkl', 'wb') as f:
         pickle.dump(records, f)
-    exit()
-
-    file_out = opj(
-        project.DATASETS_DIR_PATH, f'MSRB-{start_page}-{end_page}.hfd')
-    dataset= Dataset.from_generator(generator=(x for x in records))
-    dataset.save_to_disk(opj(project.DATASETS_DIR_PATH, file_out))
 
 
 if __name__ == '__main__':
