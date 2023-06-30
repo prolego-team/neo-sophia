@@ -4,9 +4,53 @@
 import io
 import re
 
+from typing import Any, List
+from dataclasses import dataclass
+
 import fitz
 
 from PIL import Image
+
+
+class Colors:
+    # Define ANSI escape sequences for different colors
+    RED = "\033[31m"
+    BLUE = "\033[34m"
+    CYAN = "\033[36m"
+    BLACK = "\033[30m"
+    GREEN = "\033[32m"
+    RESET = "\033[0m"
+    WHITE = "\033[37m"
+    YELLOW = "\033[33m"
+    MAGENTA = "\033[35m"
+
+
+def colorize(text, color):
+    return f"{color}{text}{Colors.RESET}"
+
+
+@dataclass
+class Rule:
+    uid: str
+    description: str
+    sections: List[Any]
+    interpretations: List[Any]
+    amendments: List[Any]
+
+    def __str__(self):
+        a = colorize('uid: ', Colors.GREEN) + self.uid + '\n'
+        b = colorize('description: ', Colors.GREEN) + self.description + '\n'
+        c = colorize('sections: ', Colors.GREEN)
+        for s in self.sections:
+            c += str(s) + '\n'
+        d = colorize('interpretations: ', Colors.GREEN)
+        for s in self.interpretations:
+            d += s + '\n'
+        e = colorize('amendments: ', Colors.GREEN)
+        for s in self.amendments:
+            e += s + '\n'
+
+        return a + b + c + d + e
 
 
 def extract_text_by_paragraphs(file_in, delimiter, start_page, end_page):
