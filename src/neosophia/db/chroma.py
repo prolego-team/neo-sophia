@@ -27,9 +27,8 @@ def configure_db(
     _db_impl = db_impl
     _is_configured = True
 
-def get_inmemory_client(
-        ) -> chromadb.Client:
-    """Return a chroma db client.
+def get_inmemory_client() -> chromadb.Client:
+    """Return a Chroma DB client.
     
     There should never be more than one client."""
     global _client, _is_configured, _db_impl, _db_persist_path

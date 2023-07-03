@@ -4,11 +4,10 @@ import logging
 import pickle
 from pathlib import Path
 
-import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
-from neosophia.db.chroma import configure_db, get_inmemory_client
+import neosophia.db.chroma as chroma
 
 # === Config settings ===============================================
 TEXT_DATA_FILE = Path('data/embeddings.pkl')
@@ -42,9 +41,8 @@ metadata = [{
 
 # === Database stuff ================================================
 log.info('Creating ChromaDB client with OpenAI embeddings.')
-configure_db(str(CHROMADB_PERSIST_DIR))
-chroma_client = get_inmemory_client()
-print(type(chroma_client))
+chroma.configure_db(str(CHROMADB_PERSIST_DIR))
+chroma_client = chroma.get_inmemory_client()
 
 log.info(f'This database has the following collections:')
 for collection in chroma_client.list_collections():
