@@ -8,10 +8,12 @@ import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
+from neosophia.db.chroma import configure_db, get_inmemory_client
 
 # === Config settings ===============================================
 TEXT_DATA_FILE = Path('data/embeddings.pkl')
 CHROMADB_PERSIST_DIR = Path('.chroma_cache')
+EMBEDDING_MODEL = 'text-embedding-ada-002'
 
 
 # === Basic setup ===================================================
@@ -40,18 +42,23 @@ metadata = [{
 
 # === Database stuff ================================================
 log.info('Creating ChromaDB client with OpenAI embeddings.')
-chroma_client = chromadb.Client(Settings(
-    chroma_db_impl='duckdb+parquet',
-    persist_directory=str(CHROMADB_PERSIST_DIR)
-))
-openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-                api_key=os.getenv('OPENAI_API_KEY'),
-                model_name='text-embedding-ada-002'
-)
-log.info(f'This database has the following collections: {chroma_client.list_collections()}')
+configure_db(str(CHROMADB_PERSIST_DIR))
+chroma_client = get_inmemory_client()
+print(type(chroma_client))
+
+log.info(f'This database has the following collections:')
+for collection in chroma_client.list_collections():
+    log.info(f'  Name = {collection.name}, count = {collection.count()}')
 
 log.info(f'Getting msrb_rules and updating/inserting records.')
-collection = chroma_client.get_or_create_collection(name='msrb_rules', embedding_function=openai_ef)
+openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+                api_key=os.getenv('OPENAI_API_KEY'),
+                model_name=EMBEDDING_MODEL
+)
+collection = chroma_client.get_or_create_collection(
+    name='msrb_rules',
+    embedding_function=openai_ef
+)
 collection.upsert(
     embeddings=embeddings,
     documents=texts,
