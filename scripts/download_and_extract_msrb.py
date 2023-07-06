@@ -220,7 +220,8 @@ def main(start_page, end_page, delimiter):
     pdf = fitz.open(file_in)
     rule_dict = extract_msrb_rules(pdf, start_page, end_page)
 
-    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
+    oaiapi.set_api_key(api_key)
 
     print('Generating embeddings for rules...')
     records = []
