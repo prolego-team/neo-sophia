@@ -219,7 +219,7 @@ def extract_msrb_rules(pdf, start_page, end_page):
                     rule = Rule(
                         uid=current_rule_uid,
                         description=' '.join(rule_description).strip(),
-                        sections=util.parse_rule_sections(rule_sections),
+                        sections=parse_rule_sections(rule_sections),
                         interpretations=rule_interpretations,
                         amendments=rule_amendments)
                     rules.append(rule)
@@ -240,7 +240,7 @@ def extract_msrb_rules(pdf, start_page, end_page):
         rule = Rule(
             uid=current_rule_uid,
             description=' '.join(rule_description).strip(),
-            sections=util.parse_rule_sections(rule_sections),
+            sections=parse_rule_sections(rule_sections),
             interpretations=rule_interpretations,
             amendments=rule_amendments)
         rules.append(rule)
@@ -280,6 +280,7 @@ def main(
     rule_dict = extract_msrb_rules(pdf, start_page, end_page)
 
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    oaiapi.set_api_key(api_key)
 
     print('Generating embeddings for rules...')
     records = []
