@@ -20,3 +20,7 @@ Note that installation is required to run tests and examples due due "src layout
 Run tests:
 
     ./test.sh
+
+## Demos and Examples
+
+- `examples/chromadb_example.py`:  This script creates a Chroma vector database and runs a natural language query against the database.
