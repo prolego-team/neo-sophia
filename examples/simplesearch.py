@@ -4,7 +4,6 @@ Very basic semantic search / question answering example.
 """
 
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
-
 import os
 import pickle
 import readline  # replaces `input` with an improved version
@@ -13,9 +12,8 @@ from typing import Dict, List
 
 import tqdm
 import torch
-import numpy as np
 import openai
-
+import numpy as np
 
 import neosophia.llmtools.util as util
 
@@ -29,7 +27,7 @@ OPENAI_LLM_MODEL_NAME = 'gpt-4'
 
 def qa_func(context: str, question: str) -> str:
     prompt = (
-        'Use the following pieces of context to answer the question at the end. ' +
+            'Use the following pieces of context to answer the question at the end. Directly reference the rules used to determine your answer. ' +
         # "If you don't know the answer, just say that you don't know,
         # don't try to make up an answer. ' +
         f'\n\n{context}\n\n' +
@@ -47,7 +45,7 @@ def main() -> int:
     """main program"""
 
     # configure stuff
-    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
     oaiapi.set_api_key(api_key)
 
     with open('embeddings.pkl', 'rb') as f:
