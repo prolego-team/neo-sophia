@@ -37,54 +37,6 @@ RULEBOOK_URL = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-
 RULEBOOK_FILENAME = 'MSRB-Rule-Book-Current-Version.pdf'
 
 
-def parse_rule_sections(section: List) -> Dict[Tuple, str]:
-    """Parse MRSB rule sections from a PDF section."""
-
-    rule_dict = {}
-
-    current_indent = 0
-    current_x_loc = section[0][1][0]
-    delta = 5
-    section_pattern = r"^\([a-zA-z0-9]+\)"
-
-    labels = [None] * 10
-    for paragraph in section:
-
-        p_text = paragraph[0].strip()
-
-        # BZ: I had to remove a bracket [0] here
-        x_loc = paragraph[1][0]
-
-        if x_loc > 300:
-            x_loc -= 267
-
-        if x_loc < current_x_loc - delta:
-            current_indent -= int((current_x_loc - x_loc) / 17.)
-            current_x_loc = x_loc
-
-        match = re.match(section_pattern, p_text)
-        if match is not None:
-
-            if x_loc > current_x_loc + delta:
-                current_indent += int((x_loc - current_x_loc) / 17.)
-                current_x_loc = x_loc
-
-            span = match.span()
-            label = p_text[span[0] + 1:span[1] - 1]
-            text = p_text[span[1]:].strip()
-            labels[current_indent] = label
-
-        else:
-            text = p_text
-
-        for idx in range(current_indent + 1):
-            key = tuple(labels[0:idx + 1])
-            paragraphs = rule_dict.setdefault(key, [])
-            paragraphs.append(text)
-
-    return {k: ' '.join(v) for k, v in rule_dict.items()}
-
-
 def is_within_bounds(bbox: Tuple, data_bounds: Tuple) -> bool:
     """test whether a bounding box is inside another"""
     bbox_min_x, bbox_min_y, bbox_max_x, bbox_max_y = bbox
@@ -229,6 +181,54 @@ def extract_msrb_rules(
         rules.append(rule)
 
     return {rule.uid: rule for rule in rules}
+
+
+def parse_rule_sections(section: List) -> Dict[Tuple, str]:
+    """Parse MRSB rule sections from a PDF section."""
+
+    rule_dict = {}
+
+    current_indent = 0
+    current_x_loc = section[0][1][0]
+    delta = 5
+    section_pattern = r"^\([a-zA-z0-9]+\)"
+
+    labels = [None] * 10
+    for paragraph in section:
+
+        p_text = paragraph[0].strip()
+
+        # BZ: I had to remove a bracket [0] here
+        x_loc = paragraph[1][0]
+
+        if x_loc > 300:
+            x_loc -= 267
+
+        if x_loc < current_x_loc - delta:
+            current_indent -= int((current_x_loc - x_loc) / 17.)
+            current_x_loc = x_loc
+
+        match = re.match(section_pattern, p_text)
+        if match is not None:
+
+            if x_loc > current_x_loc + delta:
+                current_indent += int((x_loc - current_x_loc) / 17.)
+                current_x_loc = x_loc
+
+            span = match.span()
+            label = p_text[span[0] + 1:span[1] - 1]
+            text = p_text[span[1]:].strip()
+            labels[current_indent] = label
+
+        else:
+            text = p_text
+
+        for idx in range(current_indent + 1):
+            key = tuple(labels[0:idx + 1])
+            paragraphs = rule_dict.setdefault(key, [])
+            paragraphs.append(text)
+
+    return {k: ' '.join(v) for k, v in rule_dict.items()}
 
 
 @click.command()
