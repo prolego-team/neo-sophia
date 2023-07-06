@@ -4,18 +4,15 @@ Very basic semantic search / question answering example.
 """
 
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
-import os
+
 import pickle
 import readline  # replaces `input` with an improved version
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import tqdm
 import torch
-import openai
 import numpy as np
-
-import neosophia.llmtools.util as util
 
 from examples import project
 from neosophia.llmtools import openaiapi as oaiapi
@@ -84,7 +81,7 @@ def main() -> int:
             oaiapi.embeddings([search_str]))[0]
 
         # perform a very simple vector search
-        rule_idxs = find_most_similar_idxs(rules, search_emb, MAX_RULES)
+        _, rule_idxs = find_most_similar_idxs(rules, search_emb, MAX_RULES)
 
         print('potentially relevant rules:\n')
         for idx in rule_idxs:
@@ -104,13 +101,17 @@ def main() -> int:
         print()
 
 
-def find_most_similar_idxs(records: List[Dict], emb: torch.Tensor, n: float) -> List[int]:
+def find_most_similar_idxs(
+        records: List[Dict],
+        emb: torch.Tensor,
+        n: float
+        ) -> Tuple[List[int], List[int]]:
     """Simplest vector search implementation that performs a linear search."""
     scores = []
     for idx, record in tqdm.tqdm(enumerate(records)):
         score = torch.sum((emb - record['emb']) ** 2)
         scores.append(score.item())
-    return np.sort(scores)[:n], np.argsort(scores)[:n]
+    return list(np.sort(scores)[:n]), list(np.argsort(scores)[:n])
 
 
 if __name__ == '__main__':
