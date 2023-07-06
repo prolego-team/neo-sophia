@@ -29,6 +29,7 @@ response = model(messages)
 messages.append(response)
 print(response)
 
+
 print('Few shot prompting.')
 messages = [
     openai.Message('system', 'You are a helpful assistant.'),
@@ -40,6 +41,7 @@ response = model(messages)
 messages.append(response)
 print(response)
 
+
 print('Chain of though prompting.')
 messages = [
     openai.Message('system', 'You are a helpful assistant.'),
@@ -50,3 +52,16 @@ messages = [
 response = model(messages)
 messages.append(response)
 print(response)
+
+
+print('Your turn... have a conversation with an alien.')
+messages = [
+    openai.Message('system', 'You are an alien and are visiting earth for the first time.  You meet a human.  You want to be helpful but do not fully understand how the world works yet.'),
+    openai.Message('assistant', 'Greetings, earthling!  How can I help you today?')
+]
+print(messages[-1].content)
+while (user_input:=input()) != '':
+    messages.append(openai.Message('user', user_input))
+    response = model(messages)
+    print(response.content)
+    messages.append(response)
