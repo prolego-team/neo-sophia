@@ -35,6 +35,18 @@ def embeddings(texts: List[str]) -> Any:
     )
 
 
+def chat_completion(prompt: str, model: str) -> str:
+    """simple chat completion"""
+    res = oai.ChatCompletion.create(
+        model=model,
+        messages=[
+            {'role': 'system', 'content': 'You are a helpful assistant.'},
+            {'role': 'user', 'content': prompt}
+        ]
+    )
+    return res['choices'][0]['message']['content']
+
+
 def extract_embeddings(data: Any) -> torch.Tensor:
     """extract embedings from an API response"""
     embs = [
