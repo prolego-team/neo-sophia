@@ -1,30 +1,25 @@
 """
+Web interface for semantic search and question answering!
 """
-import os
+
+# Copyright (c) 2023 Prolego Inc. All rights reserved.
+# Cameron Fabbri and Ben Zimmer
+
 import pickle
-import textwrap
+from typing import Tuple
 
-from typing import Dict, List
-
-import tqdm
-import torch
-import numpy as np
 import gradio as gr
-import datasets as hfd
-import langchain
-import langchain.llms
 
-import examples.simplesearch as ss
-import neosophia.llmtools.util as util
+from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import project
-from neosophia.llmtools import openaiapi as oaiapi
+import examples.simplesearch as ss
 
 MAX_RULES = 5
 
 
 def setup():
-    """ Configuration and data loading """
+    """Configuration and data loading."""
 
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
     oaiapi.set_api_key(api_key)
@@ -49,6 +44,7 @@ def _level(name: str) -> int:
 
 
 def main():
+    """Main program."""
 
     records, _rules = setup()
     _rules = [
@@ -71,7 +67,8 @@ def main():
             }
         )
 
-    def semantic_search(search_str):
+    def semantic_search(search_str: str) -> Tuple:
+        """semantic search via embeddings"""
 
         # get embedding of search string from OpenAI
         search_emb = oaiapi.extract_embeddings(
@@ -97,16 +94,16 @@ def main():
 
         return rule_names, context
 
-    def format_search(search_str):
+    def format_search(search_str: str) -> str:
+        """format search string"""
         rule_names, context = semantic_search(search_str)
         return ''.join(rule_names) + '\n\n' + context
 
-    def ask_question(question: str):
-        # ask the question and get an answer
+    def ask_question(question: str) -> str:
+        """ask the question and get an answer"""
         _, context = semantic_search(question)
         answer = ss.qa_func(context=context, question=question)
-        output = ['Answer: ' + answer + '\n\n']
-        output.append(context)
+        output = ['Answer: ' + answer + '\n\n', context]
         return ''.join(output)
 
     with gr.Blocks() as demo:
@@ -134,4 +131,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
