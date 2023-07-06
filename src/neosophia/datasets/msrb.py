@@ -4,7 +4,7 @@ Dataclasses for MSRB rules.
 
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 
-from typing import Any, List
+from typing import Any, Dict, List, Tuple
 from dataclasses import dataclass
 
 from neosophia.llmtools.util import Colors, colorize
@@ -16,7 +16,7 @@ class Rule:
 
     uid: str
     description: str
-    sections: List[Any]
+    sections: Dict[Tuple, str]
     interpretations: List[Any]
     amendments: List[Any]
 
