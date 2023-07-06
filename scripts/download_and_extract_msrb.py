@@ -6,11 +6,11 @@ import re
 import pickle
 
 from typing import Any, Dict, List
-from dataclasses import dataclass
 
 import fitz
 import tqdm
 import click
+import requests
 
 from datasets import Dataset
 
@@ -252,7 +252,10 @@ def extract_msrb_rules(pdf, start_page, end_page):
 @click.option('--start_page', '-s', default=16)
 @click.option('--end_page', '-e', default=-1)
 @click.option('--delimiter', default=r"^\([a-zA-z0-9]\)")
-def main(start_page, end_page, delimiter):
+def main(
+        start_page: str,
+        end_page: str,
+        delimiter: str):
     """ """
 
     url = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf'
@@ -262,7 +265,11 @@ def main(start_page, end_page, delimiter):
 
     if not os.path.exists(file_in):
         print(f'Downloading MSRB to {project.DATASETS_DIR_PATH} ...')
-        os.system(f'wget -P {project.DATASETS_DIR_PATH} {url}')
+        # os.system(f'wget -P {project.DATASETS_DIR_PATH} {url}')
+        req = requests.get(url)
+        with open(os.path.join(project.DATASETS_DIR_PATH, filename), 'wb') as f:
+            f.write(req.content)
+        exit()
         print('Done')
 
     # If only extracting one page, still have to give a range
