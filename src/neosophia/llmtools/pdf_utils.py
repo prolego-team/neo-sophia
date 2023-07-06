@@ -1,4 +1,7 @@
-""" Tools for wrangling with PDF documents """
+"""
+Tools for wrangling with PDF documents.
+"""
+
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Cameron Fabbri
 
@@ -10,7 +13,7 @@ from PIL import Image
 
 
 def pdf_to_image(path: str, zoom_x: int, zoom_y: int) -> List[Image]:
-    """ Renders the page to a PDF then loads and converts to an image """
+    """Render PDF pages to images, then load as Image objects."""
     doc = fitz.open(path)
     mat = fitz.Matrix(zoom_x, zoom_y)
     images = []

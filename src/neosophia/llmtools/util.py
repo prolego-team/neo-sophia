@@ -5,15 +5,15 @@ Basic utilities and convenience functions.
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Ben Zimmer
 # Cameron Fabbri
-import re
+
 import json
 import pickle
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List
 
 
 class Colors:
-    # Define ANSI escape sequences for different colors
+    """ANSI escape sequences for different colors."""
     RED = "\033[31m"
     BLUE = "\033[34m"
     CYAN = "\033[36m"
@@ -25,7 +25,8 @@ class Colors:
     MAGENTA = "\033[35m"
 
 
-def colorize(text, color):
+def colorize(text: str, color: str) -> str:
+    """apply a color to text"""
     return f"{color}{text}{Colors.RESET}"
 
 
