@@ -37,15 +37,10 @@ def qa_func(context: str, question: str) -> str:
         'Helpful Answer:'
     )
 
-    res = openai.ChatCompletion.create(
-        model=OPENAI_LLM_MODEL_NAME,
-        messages=[
-            {'role': 'system', 'content': 'You are a helpful assistant.'},
-            {'role': 'user', 'content': prompt}
-        ]
+    return oaiapi.chat_completion(
+        prompt=prompt,
+        model=OPENAI_LLM_MODEL_NAME
     )
-
-    return res['choices'][0]['message']['content']
 
 
 def main() -> int:
