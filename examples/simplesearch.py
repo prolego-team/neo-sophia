@@ -17,6 +17,8 @@ import tqdm
 import torch
 import numpy as np
 import datasets as hfd
+import langchain
+import langchain.llms
 
 import neosophia.llmtools.util as util
 
@@ -25,6 +27,34 @@ from neosophia.llmtools import openaiapi as oaiapi
 
 MAX_RULES = 3
 QUIT_KEYWORDS = ['q', 'quit', 'x', 'exit']
+OPENAI_LLM_MODEL_NAME = 'gpt-4'
+
+
+def build_qa_chain(
+        llm: langchain.llms.BaseLLM,
+        verbose: bool
+        ) -> langchain.LLMChain:
+    """build the LLMChain for answering questions given countext"""
+
+    # prompt based on langchain.stuff_prompt
+
+    prompt = langchain.PromptTemplate(
+        template=(
+            'Use the following pieces of context to answer the question at the end. ' +
+            # "If you don't know the answer, just say that you don't know,
+            # don't try to make up an answer. ' +
+            '\n\n{context}\n\n' +
+            'Question: {question}\n' +
+            'Helpful Answer:'
+        ),
+        input_variables=['context', 'question']
+    )
+
+    return langchain.LLMChain(
+        prompt=prompt,
+        llm=llm,
+        verbose=verbose
+    )
 
 
 def main() -> int:
@@ -32,14 +62,6 @@ def main() -> int:
 
     # configure stuff
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
-    #oaiapi.set_api_key(api_key)
-
-    # load rules and embeddings from HFD into a simple list of dictionaries
-    # with fields including "name", "text" and the torch tensor embedding "emb"
-    #rules_hfd = hfd.load_from_disk(
-    #    os.path.join(
-    #        project.DATASETS_DIR_PATH, 'MSRB.hfd')).with_format('torch')
-    #rules = rules_hfd['records']
 
     with open('embeddings.pkl', 'rb') as f:
         records = pickle.load(f)
@@ -51,6 +73,13 @@ def main() -> int:
             'emb': x['emb']
         } for x in records
     ]
+
+    openai_llm = langchain.OpenAI(
+        openai_api_key=api_key,
+        model_name=OPENAI_LLM_MODEL_NAME
+    )
+
+    qa_chain = build_qa_chain(llm=openai_llm, verbose=True)
 
     while True:
 
@@ -65,11 +94,19 @@ def main() -> int:
         # perform a very simple vector search
         rule_idxs = find_most_similar_idxs(rules, search_emb, MAX_RULES)
 
-        for idx in rule_idxs:
-            print(rules[idx]['name'])
-            print(rules[idx]['text'])
-            print('~~~~ ~~~~ ~~~~ ~~~~')
-        print()
+        # find the rule_text and create context
+        rule_text = [rules[idx]['text'] for idx in rule_idxs]
+        context = '\n\n'.join(rule_text)
+
+        # ask the question and get an answer
+        answer = qa_chain.run(context=context, question=question)
+
+        #for idx in rule_idxs:
+        #    print(rules[idx]['name'])
+        #    print(rules[idx]['text'])
+        #    print('~~~~ ~~~~ ~~~~ ~~~~')
+        print('answer:', answer)
+        #print()
 
 
 def find_most_similar_idxs(records: List[Dict], emb: torch.Tensor, n: float) -> List[int]:
@@ -79,6 +116,7 @@ def find_most_similar_idxs(records: List[Dict], emb: torch.Tensor, n: float) -> 
         score = torch.sum((emb - record['emb']) ** 2)
         scores.append(score.item())
     return np.argsort(scores)[:n]
+
 
 
 if __name__ == '__main__':
