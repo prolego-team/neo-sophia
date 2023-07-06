@@ -106,12 +106,11 @@ def main():
     with gr.Blocks() as demo:
         gr.Markdown('# Semantic Search')
         with gr.Row():
-            with gr.Column():
-                question_input = gr.Textbox()
-                question_button = gr.Button('Ask a question', scale=None)
+            text_input = gr.Textbox()
         with gr.Row():
             with gr.Column():
-                search_input = gr.Textbox()
+                question_button = gr.Button('Ask a question', scale=None)
+            with gr.Column():
                 search_button = gr.Button('Search Rules', scale=None)
 
         gr.Markdown("# Results")
@@ -119,10 +118,10 @@ def main():
             text_output = gr.Textbox()
 
         question_button.click(
-            ask_question, inputs=question_input, outputs=text_output)
+            ask_question, inputs=text_input, outputs=text_output)
 
         search_button.click(
-            format_search, inputs=search_input, outputs=text_output)
+            format_search, inputs=text_input, outputs=text_output)
 
     demo.launch()
 
