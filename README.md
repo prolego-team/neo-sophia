@@ -4,12 +4,14 @@ Applying the latest advancements in AI and machine learning to solve complex bus
 
 ## Development Environment Setup
 
-### Anaconda
+### Anaconda Environment Setup
 
 Create Anaconda environment:
 
     conda env create -f env.yml
     conda activate neosophia
+
+### Installation From Source
 
 Editable install of `neosophia` package. 
 
@@ -25,7 +27,7 @@ Run tests:
 
     ./test.sh
 
-### Packaging and Distributing
+## Packaging and Distributing
 
 This project uses a [`pyproject.toml` file for packaging](https://packaging.python.org/en/latest/tutorials/packaging-projects/).  This file contains project metadata and a list of requirements for the core library.
 
