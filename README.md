@@ -1,8 +1,10 @@
-# neo-sophia
+# NeoSophia
 
 Applying the latest advancements in AI and machine learning to solve complex business problems.
 
-#### Environment Setup
+## Development Environment Setup
+
+### Anaconda
 
 Create Anaconda environment:
 
@@ -17,6 +19,17 @@ Editable install of `neosophia` package.
 
 Note that installation is required to run tests and examples due due "src layout"!
 
+### Running Tests
+
 Run tests:
 
     ./test.sh
+
+### Packaging and Distributing
+
+This project uses a [`pyproject.toml` file for packaging](https://packaging.python.org/en/latest/tutorials/packaging-projects/).  This file contains project metadata and a list of requirements for the core library.
+
+From the project root run:
+
+    python -m build
+    python3 -m twine upload --repository testpypi dist/*
