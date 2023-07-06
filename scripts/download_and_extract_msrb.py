@@ -1,27 +1,28 @@
-""" Simple script for downloading and extracting rules from MSRB """
+"""
+Downloading and extracting rules from MSRB.
+"""
+
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Cameron Fabbri
+# Cameron Fabbri + Ben Zimmer
+
 import os
 import re
 import pickle
+from typing import Dict, List, Tuple
 
-from typing import Any, Dict, List, Tuple
-
-import fitz
-import tqdm
 import click
+import fitz
 import requests
-
-from datasets import Dataset
-
-import examples.project as project
-import neosophia.llmtools.util as util
+import tqdm
 
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.datasets.msrb import Rule
 
+import examples.project as project
+
 opj = os.path.join
 
+# states for parsing finite-state machine
 STATE_OTHER = -1
 STATE_UID = 0
 STATE_DESCRIPTION = 1
@@ -31,6 +32,9 @@ STATE_AMENDMENT = 4
 STATE_IF = 5
 
 EXCLUDE_RULES = ['Rule G-29', 'Rule G-35', 'Rule G-36', 'Rule A-6', 'Rule A-11']
+
+RULEBOOK_URL = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf'
+RULEBOOK_FILENAME = 'MSRB-Rule-Book-Current-Version.pdf'
 
 
 def parse_rule_sections(section: List) -> Dict[Tuple, str]:
@@ -77,15 +81,7 @@ def parse_rule_sections(section: List) -> Dict[Tuple, str]:
             paragraphs = rule_dict.setdefault(key, [])
             paragraphs.append(text)
 
-        #print('\n--------------------------------------------------\n')
-
     return {k: ' '.join(v) for k, v in rule_dict.items()}
-
-
-def get_input():
-    a = input()
-    if a == 'q':
-        exit()
 
 
 def is_within_bounds(bbox: Tuple, data_bounds: Tuple) -> bool:
@@ -242,16 +238,13 @@ def main(
         end_page: int):
     """Main"""
 
-    url = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf'
-    filename = 'MSRB-Rule-Book-Current-Version.pdf'
-
-    file_in = opj(project.DATASETS_DIR_PATH, filename)
+    file_in = opj(project.DATASETS_DIR_PATH, RULEBOOK_FILENAME)
 
     if not os.path.exists(file_in):
         print(f'Downloading MSRB to {project.DATASETS_DIR_PATH} ...')
         # os.system(f'wget -P {project.DATASETS_DIR_PATH} {url}')
-        req = requests.get(url)
-        with open(os.path.join(project.DATASETS_DIR_PATH, filename), 'wb') as f:
+        req = requests.get(RULEBOOK_URL)
+        with open(os.path.join(project.DATASETS_DIR_PATH, RULEBOOK_FILENAME), 'wb') as f:
             f.write(req.content)
         print('Done')
 
