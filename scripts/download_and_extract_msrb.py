@@ -198,7 +198,6 @@ def parse_rule_sections(section: List) -> Dict[Tuple, str]:
 
         p_text = paragraph[0].strip()
 
-        # BZ: I had to remove a bracket [0] here
         x_loc = paragraph[1][0]
 
         if x_loc > 300:
