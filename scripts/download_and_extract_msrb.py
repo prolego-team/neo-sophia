@@ -52,7 +52,8 @@ def parse_rule_sections(section: List) -> Dict[Tuple, str]:
 
         p_text = paragraph[0].strip()
 
-        x_loc = paragraph[1][0][0]
+        # BZ: I had to remove a bracket [0] here
+        x_loc = paragraph[1][0]
 
         if x_loc > 300:
             x_loc -= 267
@@ -260,7 +261,7 @@ def main(
 
     print('Generating embeddings for rules...')
     records = []
-    for rule_name, rule_section in tqdm.tqdm(list(rule_dict.items())[:5]):
+    for rule_name, rule_section in tqdm.tqdm(list(rule_dict.items())):
 
         for section_label, section_text in rule_section.sections.items():
             emb = oaiapi.extract_embeddings(oaiapi.embeddings(section_text))[0]
