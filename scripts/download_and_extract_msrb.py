@@ -16,10 +16,9 @@ from datasets import Dataset
 
 import examples.project as project
 import neosophia.llmtools.util as util
-import neosophia.llmtools.pdf_utils as pu
 
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.llmtools.pdf_utils import Colors, Rule, colorize
+from neosophia.datasets.msrb import Rule
 
 opj = os.path.join
 
@@ -32,6 +31,59 @@ STATE_AMENDMENT = 4
 STATE_IF = 5
 
 EXCLUDE_RULES = ['Rule G-29', 'Rule G-35', 'Rule G-36', 'Rule A-6', 'Rule A-11']
+
+
+def parse_rule_sections(section):
+
+    rule_dict = {}
+
+    current_indent = 0
+    current_x_loc = section[0][1][0]
+    delta = 5
+    section_pattern = r"^\([a-zA-z0-9]+\)"
+
+    labels = [None] * 10
+    for paragraph in section:
+
+        p_text = paragraph[0].strip()
+
+        x_loc = paragraph[1][0]
+
+        if x_loc > 300:
+            x_loc -= 267
+
+        if x_loc < current_x_loc - delta:
+            current_indent -= int((current_x_loc - x_loc) / 17.)
+            current_x_loc = x_loc
+
+        #print(paragraph)
+        #print('x_loc:', x_loc)
+        #print('current_x_loc:', current_x_loc)
+        #print('current_indent:', current_indent)
+        match = re.match(section_pattern, p_text)
+        if match is not None:
+
+            if x_loc > current_x_loc + delta:
+                current_indent += int((x_loc - current_x_loc) / 17.)
+                #print('updated current_indent:', current_indent)
+                current_x_loc = x_loc
+
+            span = match.span()
+            label = p_text[span[0] + 1:span[1] - 1]
+            text = p_text[span[1]:].strip()
+            labels[current_indent] = label
+
+        else:
+            text = p_text
+
+        for idx in range(current_indent + 1):
+            key = tuple(labels[0:idx + 1])
+            paragraphs = rule_dict.setdefault(key, [])
+            paragraphs.append(text)
+
+        #print('\n--------------------------------------------------\n')
+
+    return {k: ' '.join(v) for k, v in rule_dict.items()}
 
 
 def get_input():
