@@ -81,26 +81,25 @@ def main():
         scores, rule_idxs = ss.find_most_similar_idxs(
             rules, search_emb, MAX_RULES)
 
-        print(scores)
-
         # find the rule_text and create context
         rule_text = []
+        rule_names = []
         for score, idx in zip(scores, rule_idxs):
-            score = f'Distance: {round(score, 2)} | '
             text = rules[idx]['name'] + ': \n' + rules[idx]['text']
-            rule_text.append(score + text)
+            rule_text.append(text)
+
+            name = rules[idx]['name']
+            score = f'Distance: {round(score, 2)}'
+            rule_names.append(f'{name}\n{score}')
 
         context = '\n\n'.join(rule_text)
-
-        rule_names = ', '.join([rules[idx]['name'] for idx in rule_idxs])
-
-        rule_names = 'Relevant Rules: ' + rule_names
+        rule_names = 'Relevant Rules\n' + '\n\n'.join(rule_names)
 
         return rule_names, context
 
     def format_search(search_str):
         rule_names, context = semantic_search(search_str)
-        return 'Relevant Rules: ' + ''.join(rule_names) + '\n\n' + context
+        return ''.join(rule_names) + '\n\n' + context
 
     def ask_question(question: str):
         # ask the question and get an answer
