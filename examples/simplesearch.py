@@ -4,7 +4,6 @@ Very basic semantic search / question answering example.
 """
 
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
-
 import pickle
 import readline  # replaces `input` with an improved version
 
@@ -109,9 +108,11 @@ def find_most_similar_idxs(
     """Simplest vector search implementation that performs a linear search."""
     scores = []
     for idx, record in tqdm.tqdm(enumerate(records)):
-        score = torch.sum((emb - record['emb']) ** 2)
+        score = torch.sum(emb * record['emb'])
         scores.append(score.item())
-    return list(np.sort(scores)[:n]), list(np.argsort(scores)[:n])
+
+    return reversed(
+        list(np.sort(scores)[-n:])), reversed(list(np.argsort(scores)[-n:]))
 
 
 if __name__ == '__main__':
