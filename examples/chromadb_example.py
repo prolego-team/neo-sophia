@@ -4,7 +4,6 @@ import logging
 import pickle
 from pathlib import Path
 
-from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
 import neosophia.db.chroma as chroma
