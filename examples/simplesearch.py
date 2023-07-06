@@ -25,7 +25,7 @@ import neosophia.llmtools.util as util
 from examples import project
 from neosophia.llmtools import openaiapi as oaiapi
 
-MAX_RULES = 3
+MAX_RULES = 5
 QUIT_KEYWORDS = ['q', 'quit', 'x', 'exit']
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
 
@@ -74,6 +74,20 @@ def main() -> int:
         } for x in records
     ]
 
+    def _level(name: str) -> int:
+        """find the level of the rule"""
+        return len([x for x in name if x == '\'']) / 2
+
+    # keep top level rules
+    # rules = [
+    #     rule for rule in rules
+    #     if _level(rule['name']) == 1
+    # ]
+
+    # for x in rules:
+    #     print(x['name'])
+    #     print('--------')
+
     openai_llm = langchain.OpenAI(
         openai_api_key=api_key,
         model_name=OPENAI_LLM_MODEL_NAME
@@ -99,7 +113,7 @@ def main() -> int:
         context = '\n\n'.join(rule_text)
 
         # ask the question and get an answer
-        answer = qa_chain.run(context=context, question=question)
+        answer = qa_chain.run(context=context, question=search_str)
 
         #for idx in rule_idxs:
         #    print(rules[idx]['name'])
