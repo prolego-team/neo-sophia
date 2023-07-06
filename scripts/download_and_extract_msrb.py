@@ -1,28 +1,28 @@
-""" Simple script for downloading and extracting rules from MSRB """
+"""
+Downloading and extracting rules from MSRB.
+"""
+
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Cameron Fabbri
+# Cameron Fabbri + Ben Zimmer
+
 import os
 import re
 import pickle
+from typing import Dict, List, Tuple
 
-from typing import Any, Dict, List
-from dataclasses import dataclass
-
-import fitz
-import tqdm
 import click
-
-from datasets import Dataset
-
-import examples.project as project
-import neosophia.llmtools.util as util
-import neosophia.llmtools.pdf_utils as pu
+import fitz
+import requests
+import tqdm
 
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.llmtools.pdf_utils import Colors, Rule, colorize
+from neosophia.datasets.msrb import Rule
+
+import examples.project as project
 
 opj = os.path.join
 
+# states for parsing finite-state machine
 STATE_OTHER = -1
 STATE_UID = 0
 STATE_DESCRIPTION = 1
@@ -33,27 +33,12 @@ STATE_IF = 5
 
 EXCLUDE_RULES = ['Rule G-29', 'Rule G-35', 'Rule G-36', 'Rule A-6', 'Rule A-11']
 
-
-def get_input():
-    a = input()
-    if a == 'q':
-        exit()
+RULEBOOK_URL = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf'
+RULEBOOK_FILENAME = 'MSRB-Rule-Book-Current-Version.pdf'
 
 
-def get_all_rule_ids(data: List[Dict], xy=(491, 771), d=5):
-
-    rule_ids = []
-    for line in data:
-        x, y = line['origin']
-
-        if x - d <= xy[0] <= x + d and y - d <= xy[1] <= y + d:
-            rule_id = line['text'].replace('|', '').strip()
-            if rule_id not in rule_ids:
-                rule_ids.append(rule_id)
-
-    return rule_ids
-
-def is_within_bounds(bbox, data_bounds):
+def is_within_bounds(bbox: Tuple, data_bounds: Tuple) -> bool:
+    """test whether a bounding box is inside another"""
     bbox_min_x, bbox_min_y, bbox_max_x, bbox_max_y = bbox
     data_min_x, data_min_y, data_max_x, data_max_y = data_bounds
 
@@ -64,7 +49,8 @@ def is_within_bounds(bbox, data_bounds):
         return False
 
 
-def is_rule_uid(data, rule_pattern):
+def is_rule_uid(data: Dict, rule_pattern) -> bool:
+    """check whether a chunk is a rule UID that we want to parse"""
     text = data['text']
     font = data['font']
     if re.match(rule_pattern, text) and 'Bold' in font:
@@ -81,11 +67,15 @@ def is_rule_uid(data, rule_pattern):
     return False
 
 
-def extract_msrb_rules(pdf, start_page, end_page):
+def extract_msrb_rules(
+        pdf: fitz.Document,
+        start_page: int,
+        end_page: int
+        ) -> Dict[str, Rule]:
+    """extract MSRB rules from a PDF"""
 
     all_data = []
     pages = []
-    blocks = []
     for page_num, page in enumerate(pdf):
         if page_num < start_page - 1:
             continue
@@ -108,7 +98,6 @@ def extract_msrb_rules(pdf, start_page, end_page):
     data_bounds = (70, 67, 590, 735)
 
     rule_pattern = r"Rule [A-Z]-\d+$"
-    if_pattern = r"IF-\d+$"
     section_pattern = r"^\([a-zA-z0-9]\)"
 
     current_rule_uid = None
@@ -118,7 +107,6 @@ def extract_msrb_rules(pdf, start_page, end_page):
     state = STATE_OTHER
     for page_num, page_dict in enumerate(pages):
 
-        title = []
         for idx, block in enumerate(page_dict['blocks']):
 
             if 'lines' not in block:
@@ -142,8 +130,7 @@ def extract_msrb_rules(pdf, start_page, end_page):
                 if is_rule_uid(data, rule_pattern):
                     state = STATE_UID
             elif state == STATE_UID:
-                if re.match(
-                    section_pattern, text) or data['font'] == 'Times-Roman':
+                if re.match(section_pattern, text) or data['font'] == 'Times-Roman':
                     state = STATE_SECTIONS
             elif state == STATE_SECTIONS:
                 if text.startswith(current_rule_uid + ' Interpretation'):
@@ -167,7 +154,7 @@ def extract_msrb_rules(pdf, start_page, end_page):
                     rule = Rule(
                         uid=current_rule_uid,
                         description=' '.join(rule_description).strip(),
-                        sections=util.parse_rule_sections(rule_sections),
+                        sections=parse_rule_sections(rule_sections),
                         interpretations=rule_interpretations,
                         amendments=rule_amendments)
                     rules.append(rule)
@@ -188,7 +175,7 @@ def extract_msrb_rules(pdf, start_page, end_page):
         rule = Rule(
             uid=current_rule_uid,
             description=' '.join(rule_description).strip(),
-            sections=util.parse_rule_sections(rule_sections),
+            sections=parse_rule_sections(rule_sections),
             interpretations=rule_interpretations,
             amendments=rule_amendments)
         rules.append(rule)
@@ -196,28 +183,76 @@ def extract_msrb_rules(pdf, start_page, end_page):
     return {rule.uid: rule for rule in rules}
 
 
+def parse_rule_sections(section: List) -> Dict[Tuple, str]:
+    """Parse MRSB rule sections from a PDF section."""
+
+    rule_dict = {}
+
+    current_indent = 0
+    current_x_loc = section[0][1][0]
+    delta = 5
+    section_pattern = r"^\([a-zA-z0-9]+\)"
+
+    labels = [None] * 10
+    for paragraph in section:
+
+        p_text = paragraph[0].strip()
+
+        x_loc = paragraph[1][0]
+
+        if x_loc > 300:
+            x_loc -= 267
+
+        if x_loc < current_x_loc - delta:
+            current_indent -= int((current_x_loc - x_loc) / 17.)
+            current_x_loc = x_loc
+
+        match = re.match(section_pattern, p_text)
+        if match is not None:
+
+            if x_loc > current_x_loc + delta:
+                current_indent += int((x_loc - current_x_loc) / 17.)
+                current_x_loc = x_loc
+
+            span = match.span()
+            label = p_text[span[0] + 1:span[1] - 1]
+            text = p_text[span[1]:].strip()
+            labels[current_indent] = label
+
+        else:
+            text = p_text
+
+        for idx in range(current_indent + 1):
+            key = tuple(labels[0:idx + 1])
+            paragraphs = rule_dict.setdefault(key, [])
+            paragraphs.append(text)
+
+    return {k: ' '.join(v) for k, v in rule_dict.items()}
+
+
 @click.command()
 @click.option('--start_page', '-s', default=16)
 @click.option('--end_page', '-e', default=-1)
-@click.option('--delimiter', default=r"^\([a-zA-z0-9]\)")
-def main(start_page, end_page, delimiter):
-    """ """
+def main(
+        start_page: int,
+        end_page: int):
+    """Main"""
 
-    url = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf'
-    filename = 'MSRB-Rule-Book-Current-Version.pdf'
-
-    file_in = opj(project.DATASETS_DIR_PATH, filename)
+    file_in = opj(project.DATASETS_DIR_PATH, RULEBOOK_FILENAME)
 
     if not os.path.exists(file_in):
         print(f'Downloading MSRB to {project.DATASETS_DIR_PATH} ...')
-        os.system(f'wget -P {project.DATASETS_DIR_PATH} {url}')
+        # os.system(f'wget -P {project.DATASETS_DIR_PATH} {url}')
+        req = requests.get(RULEBOOK_URL)
+        with open(os.path.join(project.DATASETS_DIR_PATH, RULEBOOK_FILENAME), 'wb') as f:
+            f.write(req.content)
         print('Done')
 
     # If only extracting one page, still have to give a range
     if start_page == end_page:
         end_page += 1
 
-    pdf = fitz.open(file_in)
+    pdf = fitz.Document(file_in)
     rule_dict = extract_msrb_rules(pdf, start_page, end_page)
 
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
@@ -239,7 +274,7 @@ def main(start_page, end_page, delimiter):
             )
 
     print('Saved embeddings to embeddings.pkl')
-    with open('embeddings.pkl', 'wb') as f:
+    with open('embeddings_test.pkl', 'wb') as f:
         pickle.dump(records, f)
 
 
