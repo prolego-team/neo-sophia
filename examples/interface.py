@@ -78,11 +78,18 @@ def main():
             oaiapi.embeddings([search_str]))[0]
 
         # perform a very simple vector search
-        rule_idxs = ss.find_most_similar_idxs(rules, search_emb, MAX_RULES)
+        scores, rule_idxs = ss.find_most_similar_idxs(
+            rules, search_emb, MAX_RULES)
+
+        print(scores)
 
         # find the rule_text and create context
-        rule_text = [
-            rules[idx]['name'] + ': \n' + rules[idx]['text'] for idx in rule_idxs]
+        rule_text = []
+        for score, idx in zip(scores, rule_idxs):
+            score = f'Distance: {round(score, 2)} | '
+            text = rules[idx]['name'] + ': \n' + rules[idx]['text']
+            rule_text.append(score + text)
+
         context = '\n\n'.join(rule_text)
 
         rule_names = ', '.join([rules[idx]['name'] for idx in rule_idxs])

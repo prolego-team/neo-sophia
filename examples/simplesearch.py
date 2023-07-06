@@ -110,7 +110,7 @@ def find_most_similar_idxs(records: List[Dict], emb: torch.Tensor, n: float) -> 
     for idx, record in tqdm.tqdm(enumerate(records)):
         score = torch.sum((emb - record['emb']) ** 2)
         scores.append(score.item())
-    return np.argsort(scores)[:n]
+    return np.sort(scores)[:n], np.argsort(scores)[:n]
 
 
 if __name__ == '__main__':
