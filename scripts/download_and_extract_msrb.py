@@ -260,7 +260,7 @@ def main(
 
     print('Generating embeddings for rules...')
     records = []
-    for rule_name, rule_section in tqdm.tqdm(list(rule_dict.items())):
+    for rule_name, rule_section in tqdm.tqdm(rule_dict.items()):
 
         for section_label, section_text in rule_section.sections.items():
             emb = oaiapi.extract_embeddings(oaiapi.embeddings(section_text))[0]
