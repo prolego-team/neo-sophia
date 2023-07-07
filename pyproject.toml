@@ -1,11 +1,6 @@
 [build-system]
 requires = [
     "setuptools>=61.0",
-    "datasets>=2.10.1",
-    "numpy>=1.24.2",
-    "openai>=0.27.2",
-    "torch>=2.0.0",
-    "tqdm>=4.65.0"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -22,6 +17,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
     # "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+dependencies = [
+    "datasets>=2.10.1",
+    "numpy>=1.24.2",
+    "openai>=0.27.2",
+    "torch>=2.0.0",
+    "tqdm>=4.65.0"
 ]
 
 [project.urls]
