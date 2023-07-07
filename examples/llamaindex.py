@@ -33,8 +33,10 @@ from pathlib import Path
 from llama_index import (
     VectorStoreIndex,
     ResponseSynthesizer,
-    StorageContext, load_index_from_storage,
-    LLMPredictor, VectorStoreIndex, ServiceContext
+    StorageContext,
+    LLMPredictor,
+    ServiceContext,
+    load_index_from_storage,
 )
 from llama_index.retrievers import VectorIndexRetriever
 from llama_index.query_engine import RetrieverQueryEngine
