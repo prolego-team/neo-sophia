@@ -15,10 +15,6 @@ Editable install of `neosophia` package.
     pip install -e neo-sophia
     cd neo-sophia
 
-Run tests:
-
-    ./test.sh
-
 Note that installation is required to run tests and examples due due "src layout"!
 
 Run tests:
