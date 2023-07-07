@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neosophia"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
   {name="Prolego, Inc.", email="russ@prolego.com"},
 ]
