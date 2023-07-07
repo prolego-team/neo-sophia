@@ -4,11 +4,30 @@ Basic utilities and convenience functions.
 
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Ben Zimmer
+# Cameron Fabbri
 
-from typing import Any, Dict, List, Optional, Tuple
-
-import pickle
 import json
+import pickle
+
+from typing import Any, List
+
+
+class Colors:
+    """ANSI escape sequences for different colors."""
+    RED = "\033[31m"
+    BLUE = "\033[34m"
+    CYAN = "\033[36m"
+    BLACK = "\033[30m"
+    GREEN = "\033[32m"
+    RESET = "\033[0m"
+    WHITE = "\033[37m"
+    YELLOW = "\033[33m"
+    MAGENTA = "\033[35m"
+
+
+def colorize(text: str, color: str) -> str:
+    """apply a color to text"""
+    return f"{color}{text}{Colors.RESET}"
 
 
 def load_pickle(file_path: str) -> Any:
