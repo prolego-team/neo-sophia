@@ -31,7 +31,7 @@ def get_inmemory_client() -> chromadb.Client:
     """Return a Chroma DB client.
     
     There should never be more than one client."""
-    global _client, _is_configured, _db_impl, _db_persist_path
+    global _client
     if _client is not None:
         return _client
     
