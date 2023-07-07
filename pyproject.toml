@@ -1,0 +1,30 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neosophia"
+version = "0.1.0"
+authors = [
+  {name="Prolego, Inc.", email="russ@prolego.com"},
+]
+description = "An experimental LLM library with examples and demonstrations."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    # "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "datasets>=2.10.1",
+    "numpy>=1.24.2",
+    "openai>=0.27.2",
+    "torch>=2.0.0",
+    "tqdm>=4.65.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/prolego-team/neo-sophia"
