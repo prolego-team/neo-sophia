@@ -3,10 +3,12 @@ import warnings
 
 import chromadb
 
+
 _db_persist_path = None
 _db_impl = None
 _is_configured = False
 _client = None
+
 
 def configure_db(
         persist_dir: Optional[str] = '.chroma_cache',
@@ -26,6 +28,7 @@ def configure_db(
     _db_persist_path = str(persist_dir)
     _db_impl = db_impl
     _is_configured = True
+
 
 def get_inmemory_client() -> chromadb.Client:
     """Return a Chroma DB client.

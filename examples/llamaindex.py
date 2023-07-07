@@ -32,10 +32,10 @@ from pathlib import Path
 # from llama_index.node_parser import SimpleNodeParser
 from llama_index import (
     VectorStoreIndex,
-    ResponseSynthesizer,
     StorageContext,
     LLMPredictor,
     ServiceContext,
+    get_response_synthesizer,
     load_index_from_storage,
 )
 from llama_index.retrievers import VectorIndexRetriever
@@ -44,6 +44,7 @@ from llama_index.indices.postprocessor import SimilarityPostprocessor
 from llama_index.schema import TextNode
 
 from langchain import OpenAI
+
 
 TEXT_DATA_FILE = Path('data/embeddings.pkl')
 INDEX_DATA_DIR = Path('cache/msrb_index_store')
@@ -88,6 +89,7 @@ def get_vector_store(service_context: ServiceContext) -> VectorStoreIndex:
 
     return index
 
+
 def get_llm_backend(model_name: str) -> ServiceContext:
     """Get an LLM to provide embedding and text generation service."""
 
@@ -100,6 +102,7 @@ def get_llm_backend(model_name: str) -> ServiceContext:
 
     return service_context
 
+
 def get_query_engine(index: VectorStoreIndex, response_mode: str, top_k: int, similarity_cutoff: float) -> RetrieverQueryEngine:
     """Build a query enginge by combining a retriever and response synthesizer."""
     # configure retriever
@@ -109,20 +112,25 @@ def get_query_engine(index: VectorStoreIndex, response_mode: str, top_k: int, si
     )
 
     # configure response synthesizer
-    response_synthesizer = ResponseSynthesizer.from_args(
+    response_synthesizer = get_response_synthesizer()
+
+    # assemble query engine
+    # query_engine = RetrieverQueryEngine.from_args(
+    #     retriever=retriever,
+    #     response_synthesizer=response_synthesizer,
+    #     response_mode=response_mode
+    # )
+    query_engine = RetrieverQueryEngine(
+        retriever=retriever,
+        response_synthesizer=response_synthesizer,
         node_postprocessors=[
             SimilarityPostprocessor(similarity_cutoff=similarity_cutoff)
         ]
-    )
 
-    # assemble query engine
-    query_engine = RetrieverQueryEngine.from_args(
-        retriever=retriever,
-        response_synthesizer=response_synthesizer,
-        response_mode=response_mode
     )
 
     return query_engine
+
 
 if __name__=='__main__':
 
