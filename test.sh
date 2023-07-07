@@ -5,7 +5,7 @@ pytest -s --tb=short \
     --cov=src/neosophia/llmtools \
     --cov=src/neosophia/db \
     --cov=src/neosophia/datasets \
-    src/neosophia \
+    src/neosophia
 
 if [ "$(uname)" == "Darwin" ]; then
     open htmlcov/tests/index.html
