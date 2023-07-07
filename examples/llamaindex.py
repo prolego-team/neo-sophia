@@ -145,7 +145,7 @@ if __name__=='__main__':
     query_engine = get_query_engine(index, response_mode, top_k, similarity_cutoff)
 
     # query
-    while (query := input('Ask me a quiestion about the MSRB rule book ("quit" to quit): ')) != 'quit':
+    while (query := input('Ask me a question about the MSRB rule book ("quit" to quit): ')) != 'quit':
         print(f'You asked: {query}')
         response = query_engine.query(query)
         print('Source nodes:')
