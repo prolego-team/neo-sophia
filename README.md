@@ -1,12 +1,12 @@
 # LLM Strategy from Prolego
 
-Large-language models like GPT-4 from OpenAI are foundational technologies that can be applied to almost any business problem. Unfortunately the power and flexibility of this technology comes at a cost: it is extremely difficult to identify the best opportunities for leveraging the technology within any company. 
+Large-scale language models like GPT-4 from OpenAI serve as foundational technologies that can be applied to virtually any business issue. However, the robust power and flexibility of this technology come with a significant challenge: it is extremely difficult to pinpoint the optimal opportunities for leveraging this technology within a company. 
 
-This project is designed to help analytics leaders, product managers, and development teams overcome these challenges by seeing the technology applied to a variety of common business problems. The project is broken into a series of Episodes, each of which has the following resources.
+This project is designed to assist analytics leaders, product managers, and development teams in surmounting these obstacles by demonstrating the technology's application across a variety of common business problems. The project unfolds through a series of episodes, each accompanied by the following resources:
 
-1. Walkthrough videos on [Prolego's YouTube Channel](https://www.youtube.com/@prolego9489).
-2. Tagged releases on the main branch of this repo.
-3. Conversations in [Prolego's Discord]()
+1. Walkthrough videos available on [Prolego's YouTube Channel](https://www.youtube.com/@prolego9489).
+2. Tagged releases on the main branch of this repository.
+3. Conversations held within [Prolego's Discord community](#).
 
 ## Development Environment Setup
 
@@ -33,15 +33,25 @@ Run tests:
 
     ./test.sh
 
+### Packaging and Distributing
+
+This project uses a [`pyproject.toml` file for packaging](https://packaging.python.org/en/latest/tutorials/packaging-projects/).  This file contains project metadata and a list of requirements for the core library.
+
+From the project root run:
+
+    python -m build
+    python3 -m twine upload --repository testpypi dist/*
+
 # Episodes
 ## Episode 1 - Embeddings, Semantic search and Document Q&A
 Most companies are struggling to pick the best AI use cases from many different options. By building a core competency in document embeddings you can begin developing a set of capabilities applicable for many enterprise use cases. In Episoide 1 we provide a primer on embeddings for a business audience and demonstrate the use of embeddings in semantic search and document Q&A. 
 
 Videos
-[Document embeddings are foundational capabilities for your AI strategy](#)
-[Document embeddings - technical walkthrough](#)
+- [Document embeddings are foundational capabilities for your AI strategy](#)
+- [Document embeddings - technical walkthrough](#)
 
 ### Running the Episode 1 application
+Questions? Just ask in our [Discord Community](#).
 
 This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
 
@@ -68,11 +78,6 @@ The paths can be whatever you like.  The OpenAI key file should be a text file c
 
     python -m examples.interface
 
-## Packaging and Distributing
 
-This project uses a [`pyproject.toml` file for packaging](https://packaging.python.org/en/latest/tutorials/packaging-projects/).  This file contains project metadata and a list of requirements for the core library.
-
-From the project root run:
-
-    python -m build
-    python3 -m twine upload --repository testpypi dist/*
+# About Prolego & Neo Sophia
+[Prolego](https://prolego.com) is an AI services company that started in 2017 and has helped some of the world’s biggest companies generate opportunities with AI. "Prolego" is the Greek word for "predict". We needed a name for this repo and decided to use the Greek words for "new" (neo) and "wisdom" (sophia). And we just thought that Neo Sophia sounded cool.
