@@ -51,6 +51,7 @@ Videos
 - [Document embeddings - technical walkthrough](#)
 
 ### Running the Episode 1 application
+[Release v0.1.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.0)
 Questions? Just ask in our [Discord Community](#).
 
 This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
