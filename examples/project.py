@@ -1,13 +1,11 @@
 """
 Simple project configuration.
 """
-
-# Ben Zimmer
+import os
+import sys
+import json
 
 from typing import Any, Optional
-import os
-import json
-import sys
 
 CONFIG_FILE_PATH = 'config.json'
 
@@ -23,11 +21,6 @@ def get_config(key: str, default: Optional[Any]) -> Any:
     get a config parameter from the OS environment first,
     the config file, then from a provided default.
     """
-    res = os.getenv(key)
-
-    if res is not None:
-        print(f'found config `{key}` in OS environment')
-        return res
 
     res = CONFIG.get(key)
 
