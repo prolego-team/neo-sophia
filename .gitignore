@@ -162,3 +162,4 @@ cython_debug/
 
 # Custom
 config.json
+openai_api_key.txt

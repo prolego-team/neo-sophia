@@ -72,8 +72,8 @@ python -m scripts.download_and_extract_msrb
 {
     "MODELS_DIR_PATH": "models",
     "DATASETS_DIR_PATH": "data",
-    "GENERATOR_CACHE_DIR_PATH": "cache",
-    "OPENAI_API_KEY_FILE_PATH": "openai_key_file"
+    "GENERATOR_CACHE_DIR_PATH": ".cache/generator",
+    "OPENAI_API_KEY_FILE_PATH": "openai_api_key.txt"
 }
 ```
 
