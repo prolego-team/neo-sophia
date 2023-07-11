@@ -1,7 +1,6 @@
 """
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Cameron Fabbri + Ben Zimmer
 import os
 import json
