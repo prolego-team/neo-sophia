@@ -85,4 +85,12 @@ The paths can be whatever you like.  The OpenAI key file should be a text file c
 
 
 # About Prolego & Neo Sophia
+
 [Prolego](https://prolego.com) is an AI services company that started in 2017 and has helped some of the world’s biggest companies generate opportunities with AI. "Prolego" is the Greek word for "predict". We needed a name for this repo and decided to use the Greek words for "new" (neo) and "wisdom" (sophia). And we just thought that Neo Sophia sounded cool.
+
+The team:
+
+* [Kevin Dewalt](https://github.com/kevindewalt)
+* [Justin Pounders](https://github.com/jmpounders)
+* [Cameron Fabbri](https://github.com/cameronfabbri)
+* [Ben Zimmer](https://github.com/bdzimmer)
