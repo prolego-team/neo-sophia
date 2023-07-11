@@ -1,27 +1,28 @@
 """
+Interactive application to demonstrate rewriting text to a template using
+Basis of Presentation paragraphs from 10-Qs.
 """
 
-# Cameron Fabbri + Ben Zimmer
 import os
 import json
 import random
 import difflib
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List
 
 import gradio as gr
+import datasets as hfd
 
-from datasets import load_from_disk
-
-from examples import project
 from neosophia.llmtools import openaiapi as oaiapi
+from examples import project
 
 opj = os.path.join
 
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
 
 
-def color_diff(str1, str2):
+def color_diff(str1: str, str2: str) -> str:
+    """generate a color text diff"""
 
     diff = difflib.ndiff(str1.splitlines(), str2.splitlines())
     output = ""
@@ -42,7 +43,8 @@ def color_diff(str1, str2):
     return output
 
 
-def generate_output(context: str, template: str) -> List[str]:
+def generate_output(context: str, template: str) -> str:
+    """Rewrite text to match a template."""
     base_prompt = 'Rewrite the following text to conform to the given template:\n'
     base_prompt += 'Template: ' + template + '\n\n---------------------------\n\n'
     prompt = base_prompt + 'Input Text: ' + context
@@ -51,7 +53,11 @@ def generate_output(context: str, template: str) -> List[str]:
         model=OPENAI_LLM_MODEL_NAME)
 
 
-def extract_basis_data(dataset):
+def extract_basis_data(dataset: hfd.Dataset) -> List[str]:
+    """
+    Use some heuristics to extract Basis of Presentation paragraphs
+    from a dataset of 10-Q sections.
+    """
 
     basis_data = []
     for item in dataset:
@@ -81,7 +87,9 @@ def extract_basis_data(dataset):
 
 
 def main():
-    """main program"""
+    """Main program."""
+
+    random.seed(0)
 
     # configure stuff
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
@@ -92,7 +100,7 @@ def main():
 
     if not os.path.exists(json_file):
         print('Generating json file...')
-        dataset = load_from_disk(hf_file)
+        dataset = hfd.load_from_disk(hf_file)
         basis_data = extract_basis_data(dataset)
 
         with open(json_file, 'w') as f:
@@ -118,14 +126,15 @@ def main():
             model=OPENAI_LLM_MODEL_NAME
         )
 
-
     idx = [10]
+
     def next_filing():
+        """select the next filing from the dataset"""
         idx[0] = idx[0] + 1
         return basis_data[idx[0]]
 
     with gr.Blocks() as demo:
-        gr.Markdown('# 10-Q Template Thingy')
+        gr.Markdown('# 10-Q Template Example')
         with gr.Row():
             with gr.Column():
                 text_input = gr.Textbox(
@@ -141,10 +150,10 @@ def main():
                 gen_template_button = gr.Button('Generate Template')
             with gr.Column():
                 gen_output_button = gr.Button('Generate Output')
-        #with gr.Row():
-        #    diff = gr.HTML(label='Diff')
-        #with gr.Row():
-        #    show_diff_button = gr.Button('Show Diff')
+        # with gr.Row():
+        #     diff = gr.HTML(label='Diff')
+        # `with gr.Row():
+        #     show_diff_button = gr.Button('Show Diff')
 
         next_button.click(
             next_filing, inputs=None, outputs=text_input)
@@ -154,8 +163,8 @@ def main():
             generate_output,
             inputs=[text_input, template],
             outputs=text_output)
-        #show_diff_button.click(
-        #    color_diff, inputs=[text_input, text_output], outputs=diff)
+        # show_diff_button.click(
+        #     color_diff, inputs=[text_input, text_output], outputs=diff)
 
     demo.launch()
 
