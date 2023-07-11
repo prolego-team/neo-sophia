@@ -2,8 +2,6 @@
 Downloading and extracting rules from MSRB.
 """
 
-# Cameron Fabbri + Ben Zimmer
-
 import os
 import re
 import pickle

@@ -2,8 +2,6 @@
 Simple project configuration.
 """
 
-# Ben Zimmer
-
 from typing import Any, Optional
 import os
 import json

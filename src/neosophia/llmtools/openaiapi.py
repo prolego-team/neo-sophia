@@ -2,8 +2,6 @@
 Wrappers for OpenAI API.
 """
 
-# Ben Zimmer
-
 from typing import Any, List
 
 import openai as oai

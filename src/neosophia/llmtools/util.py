@@ -2,9 +2,6 @@
 Basic utilities and convenience functions.
 """
 
-# Ben Zimmer
-# Cameron Fabbri
-
 import json
 import pickle
 

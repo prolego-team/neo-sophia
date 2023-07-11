@@ -2,8 +2,6 @@
 Tools for wrangling with PDF documents.
 """
 
-# Cameron Fabbri
-
 from typing import List
 import io
 

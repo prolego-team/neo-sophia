@@ -2,8 +2,6 @@
 Web interface for semantic search and question answering!
 """
 
-# Cameron Fabbri and Ben Zimmer
-
 import pickle
 from typing import Tuple
 
