@@ -66,7 +66,7 @@ This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/
 python -m scripts.download_and_extract_msrb
 ```
 
-2. Create a configuration file named `config.json` in the project root directory with the following contents.  
+2. Create a configuration file named `config.json` in the project root directory with the following contents. See [config_example.json](config_example.json).  
 
 ```
 {
