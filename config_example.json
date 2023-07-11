@@ -1,0 +1,6 @@
+{
+  "MODELS_DIR_PATH": "/path/to/models",
+  "DATASETS_DIR_PATH": "/path/to/datasets",
+  "GENERATOR_CACHE_DIR_PATH": ".cache/generator",
+  "OPENAI_API_KEY_FILE_PATH": "/path/to/openai/api/key/file"
+}
