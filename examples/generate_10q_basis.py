@@ -87,8 +87,8 @@ def main():
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
     oaiapi.set_api_key(api_key)
 
-    hf_file = opj('data', 'sec_10q_sections.hf')
-    json_file = opj('data', 'sec_10q_sections.json')
+    hf_file = opj(project.DATASETS_DIR_PATH, 'sec_10q_sections.hf')
+    json_file = opj(project.DATASETS_DIR_PATH, 'sec_10q_sections.json')
 
     if not os.path.exists(json_file):
         print('Generating json file...')
