@@ -255,7 +255,7 @@ def main(
     pdf = fitz.Document(file_in)
     rule_dict = extract_msrb_rules(pdf, start_page, end_page)
 
-    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
+    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
     oaiapi.set_api_key(api_key)
 
     print('Generating embeddings for rules...')
@@ -273,9 +273,12 @@ def main(
                 }
             )
 
-    print('Saved embeddings to embeddings.pkl')
-    with open('embeddings_test.pkl', 'wb') as f:
+    os.makedirs(project.DATASETS_DIR_PATH, exist_ok=True)
+
+    with open(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'), 'wb') as f:
         pickle.dump(records, f)
+
+    print('Saved embeddings to embeddings.pkl')
 
 
 if __name__ == '__main__':

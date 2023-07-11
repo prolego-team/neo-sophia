@@ -8,8 +8,11 @@ from chromadb.utils import embedding_functions
 
 import neosophia.db.chroma as chroma
 
+from examples import project
+
+
 # === Config settings ===============================================
-TEXT_DATA_FILE = Path('data/embeddings.pkl')
+TEXT_DATA_FILE = Path(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'))
 CHROMADB_PERSIST_DIR = Path('.chroma_cache')
 EMBEDDING_MODEL = 'text-embedding-ada-002'
 
