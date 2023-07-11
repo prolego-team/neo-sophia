@@ -3,8 +3,6 @@ Very basic semantic search / question answering example.
 
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
-
 import os
 import pickle
 import readline  # replaces `input` with an improved version

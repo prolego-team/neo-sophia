@@ -2,9 +2,6 @@
 Wrappers for OpenAI API.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Ben Zimmer
-
 from typing import Any, List
 import os
 import sys

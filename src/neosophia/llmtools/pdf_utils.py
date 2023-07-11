@@ -2,9 +2,6 @@
 Tools for wrangling with PDF documents.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Cameron Fabbri
-
 from typing import List
 import io
 
