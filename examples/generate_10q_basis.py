@@ -2,7 +2,6 @@
 Interactive application to demonstrate rewriting text to a template using
 Basis of Presentation paragraphs from 10-Qs.
 """
-
 import os
 import json
 import random
@@ -13,8 +12,8 @@ from typing import List
 import gradio as gr
 import datasets as hfd
 
-from neosophia.llmtools import openaiapi as oaiapi
 from examples import project
+from neosophia.llmtools import openaiapi as oaiapi
 
 opj = os.path.join
 
@@ -43,9 +42,8 @@ def color_diff(str1: str, str2: str) -> str:
     return output
 
 
-def generate_output(context: str, template: str) -> str:
+def generate_output(base_prompt: str, context: str, template: str) -> str:
     """Rewrite text to match a template."""
-    base_prompt = 'Rewrite the following text to conform to the given template:\n'
     base_prompt += 'Template: ' + template + '\n\n---------------------------\n\n'
     prompt = base_prompt + 'Input Text: ' + context
     return oaiapi.chat_completion(
@@ -98,6 +96,13 @@ def main():
     hf_file = opj(project.DATASETS_DIR_PATH, 'sec_10q_sections.hf')
     json_file = opj(project.DATASETS_DIR_PATH, 'sec_10q_sections.json')
 
+    with open(opj(project.DATASETS_DIR_PATH, 'basis_template.txt'), 'r') as f:
+        template = f.readlines()[0].rstrip()
+
+    with open(
+            opj(project.DATASETS_DIR_PATH, 'prompt_instructions.txt'), 'r') as f:
+        base_prompt = f.readlines()[0].rstrip()
+
     if not os.path.exists(json_file):
         print('Generating json file...')
         dataset = hfd.load_from_disk(hf_file)
@@ -131,40 +136,28 @@ def main():
     def next_filing():
         """select the next filing from the dataset"""
         idx[0] = idx[0] + 1
-        return basis_data[idx[0]]
+        context = basis_data[idx[0]]
+        output = generate_output(base_prompt, context, template)
+        return context, output
+
+    print('Initiating first rewrite...')
+    initial_basis, initial_rev = next_filing()
 
     with gr.Blocks() as demo:
-        gr.Markdown('# 10-Q Template Example')
+        gr.Markdown('# SEC Filing Language Standardizer')
         with gr.Row():
             with gr.Column():
                 text_input = gr.Textbox(
-                    label='10-Q Basis', value=basis_data[idx[0]])
+                    label='Original Basis of Presentation', value=initial_basis)
             with gr.Column():
-                template = gr.Textbox(label='Template')
-            with gr.Column():
-                text_output = gr.Textbox(label='Rewritten 10-Q Basis')
+                text_output = gr.Textbox(
+                    label='Revised Basis of Presentation', value=initial_rev)
         with gr.Row():
             with gr.Column():
                 next_button = gr.Button('Next')
-            with gr.Column():
-                gen_template_button = gr.Button('Generate Template')
-            with gr.Column():
-                gen_output_button = gr.Button('Generate Output')
-        # with gr.Row():
-        #     diff = gr.HTML(label='Diff')
-        # `with gr.Row():
-        #     show_diff_button = gr.Button('Show Diff')
 
         next_button.click(
-            next_filing, inputs=None, outputs=text_input)
-        gen_template_button.click(
-                generate_template, inputs=None, outputs=template)
-        gen_output_button.click(
-            generate_output,
-            inputs=[text_input, template],
-            outputs=text_output)
-        # show_diff_button.click(
-        #     color_diff, inputs=[text_input, text_output], outputs=diff)
+            next_filing, inputs=None, outputs=[text_input, text_output])
 
     demo.launch()
 
