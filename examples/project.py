@@ -44,7 +44,7 @@ def get_config(key: str, default: Optional[Any]) -> Any:
     sys.exit()
 
 
-MODELS_DIR_PATH = get_config('MODELS_DIR_PATH', None)
-DATASETS_DIR_PATH = get_config('DATASETS_DIR_PATH', None)
-GENERATOR_CACHE_DIR_PATH = get_config('GENERATOR_CACHE_DIR_PATH', None)
-OPENAI_API_KEY_FILE_PATH = get_config("OPENAI_API_KEY_FILE_PATH", None)
+MODELS_DIR_PATH = get_config('MODELS_DIR_PATH', 'models')
+DATASETS_DIR_PATH = get_config('DATASETS_DIR_PATH', 'data')
+GENERATOR_CACHE_DIR_PATH = get_config('GENERATOR_CACHE_DIR_PATH', '.cache/generator')
+OPENAI_API_KEY_FILE_PATH = get_config("OPENAI_API_KEY_FILE_PATH", 'openai_api_key.txt')

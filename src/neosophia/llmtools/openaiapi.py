@@ -3,6 +3,8 @@ Wrappers for OpenAI API.
 """
 
 from typing import Any, List
+import os
+import sys
 
 import openai as oai
 import torch
@@ -19,8 +21,11 @@ def set_api_key(api_key: str) -> None:
 
 def load_api_key(file_path: str) -> str:
     """load the API key from a text file"""
+    if not os.path.isfile(file_path):
+        print(f'OpenAI API key file `{file_path}` not found!')
+        sys.exit()
     with open(file_path, 'r') as txt_file:
-        res = txt_file.read()
+        res = txt_file.read().rstrip()
     return res
 
 
