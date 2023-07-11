@@ -25,6 +25,7 @@ the function definitions):
 """
 
 
+import os
 import pickle
 from pathlib import Path
 
@@ -45,8 +46,10 @@ from llama_index.schema import TextNode
 
 from langchain import OpenAI
 
+from examples import project
 
-TEXT_DATA_FILE = Path('data/embeddings.pkl')
+
+TEXT_DATA_FILE = Path(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'))
 INDEX_DATA_DIR = Path('cache/msrb_index_store')
 
 
@@ -107,7 +110,7 @@ def get_query_engine(index: VectorStoreIndex, response_mode: str, top_k: int, si
     """Build a query enginge by combining a retriever and response synthesizer."""
     # configure retriever
     retriever = VectorIndexRetriever(
-        index=index, 
+        index=index,
         similarity_top_k=top_k,
     )
 

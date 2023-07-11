@@ -273,9 +273,12 @@ def main(
                 }
             )
 
-    print('Saved embeddings to embeddings.pkl')
-    with open('embeddings_test.pkl', 'wb') as f:
+    os.makedirs(project.DATASETS_DIR_PATH, exist_ok=True)
+
+    with open(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'), 'wb') as f:
         pickle.dump(records, f)
+
+    print('Saved embeddings to embeddings.pkl')
 
 
 if __name__ == '__main__':

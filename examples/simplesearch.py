@@ -44,7 +44,7 @@ def main() -> int:
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
     oaiapi.set_api_key(api_key)
 
-    with open('embeddings.pkl', 'rb') as f:
+    with open(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'), 'rb') as f:
         records = pickle.load(f)
 
     rules = [
