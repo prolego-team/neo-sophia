@@ -2,7 +2,6 @@
 Dataclasses for MSRB rules.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
 
 from typing import Any, Dict, List, Tuple
 from dataclasses import dataclass

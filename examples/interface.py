@@ -2,9 +2,6 @@
 Web interface for semantic search and question answering!
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Cameron Fabbri and Ben Zimmer
-
 import os
 import pickle
 from typing import Tuple
