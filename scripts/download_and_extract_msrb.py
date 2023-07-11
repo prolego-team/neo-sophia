@@ -2,7 +2,6 @@
 Downloading and extracting rules from MSRB.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Cameron Fabbri + Ben Zimmer
 
 import os

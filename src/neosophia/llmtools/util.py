@@ -2,7 +2,6 @@
 Basic utilities and convenience functions.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Ben Zimmer
 # Cameron Fabbri
 
