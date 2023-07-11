@@ -2,7 +2,6 @@
 Simple project configuration.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Ben Zimmer
 
 from typing import Any, Optional
