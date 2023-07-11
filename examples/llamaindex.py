@@ -1,6 +1,6 @@
 """Example of how to use llamaindex for semantic search.
 
-This example assumes that initially there is a data/embeddings.pkl file
+This example assumes that initially there is a projects.DATASETS_DIR_PATH/embeddings.pkl file
 that has a list of dictionaries with each dictionary containing "text",
 "rule_name" and "section_label" fields.
 
