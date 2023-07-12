@@ -1,11 +1,12 @@
 """
 Simple project configuration.
 """
-import os
-import sys
-import json
 
 from typing import Any, Optional
+import os
+import json
+import sys
+
 
 CONFIG_FILE_PATH = 'config.json'
 

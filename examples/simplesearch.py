@@ -2,6 +2,7 @@
 Very basic semantic search / question answering example.
 
 """
+
 import os
 import pickle
 import readline  # replaces `input` with an improved version

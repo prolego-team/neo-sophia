@@ -1,13 +1,14 @@
 """
 Wrappers for OpenAI API.
 """
+
+from typing import Any, List
 import os
 import sys
 
-from typing import Any, List
 
-import torch
 import openai as oai
+import torch
 
 EMBEDDING_DIM_DEFAULT = 1536
 EMBEDDING_MODEL_DEFAULT = 'text-embedding-ada-002'
