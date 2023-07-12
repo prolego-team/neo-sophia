@@ -1,18 +1,16 @@
 """
 Web interface for semantic search and question answering!
 """
-
-# Cameron Fabbri and Ben Zimmer
-
 import pickle
+
 from typing import Tuple
 
 import gradio as gr
 
-from neosophia.llmtools import openaiapi as oaiapi
+import examples.simplesearch as ss
 
 from examples import project
-import examples.simplesearch as ss
+from neosophia.llmtools import openaiapi as oaiapi
 
 MAX_RULES = 5
 
