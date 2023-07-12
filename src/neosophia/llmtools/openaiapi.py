@@ -26,6 +26,10 @@ def load_api_key(file_path: str) -> str:
         sys.exit()
     with open(file_path, 'r') as txt_file:
         res = txt_file.read().rstrip()
+    if not res:
+        print(f'Key file `{file_path}` empty!')
+        sys.exit()
+
     return res
 
 
