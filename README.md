@@ -23,7 +23,7 @@ First install the neo-sophia code on your local machine before proceeding to the
     cp config_example.json config.json
 
 1. Change the path locations or use the defaults.
-2. Add your openai key to openai_api_key.txt.
+2. Copy `openai_api_key_example.txt` to `open_api_key.txt` and add your OpenAI API key.
 
 ### Run the tests.
 
