@@ -1,12 +1,11 @@
 """
 Tools for wrangling with PDF documents.
 """
-import io
 
 from typing import List
+import io
 
 import fitz
-
 from PIL import Image
 
 
