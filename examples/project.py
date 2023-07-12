@@ -18,8 +18,8 @@ else:
 
 def get_config(key: str, default: Optional[Any]) -> Any:
     """
-    get a config parameter from the OS environment first,
-    the config file, then from a provided default.
+    get a config parameter from the config file first,
+    then from a provided default.
     """
 
     res = CONFIG.get(key)
@@ -35,11 +35,11 @@ def get_config(key: str, default: Optional[Any]) -> Any:
         return res
 
     print(f'No default value for config `{key}`.')
-    print('Either add it to the config or the OS environment.')
+    print('Add it to the config.')
     sys.exit()
 
 
-MODELS_DIR_PATH = get_config('MODELS_DIR_PATH', None)
-DATASETS_DIR_PATH = get_config('DATASETS_DIR_PATH', None)
-GENERATOR_CACHE_DIR_PATH = get_config('GENERATOR_CACHE_DIR_PATH', None)
-OPENAI_API_KEY_FILE_PATH = get_config("OPENAI_API_KEY_FILE_PATH", None)
+MODELS_DIR_PATH = get_config('MODELS_DIR_PATH', 'models')
+DATASETS_DIR_PATH = get_config('DATASETS_DIR_PATH', 'data')
+GENERATOR_CACHE_DIR_PATH = get_config('GENERATOR_CACHE_DIR_PATH', '.cache/generator')
+OPENAI_API_KEY_FILE_PATH = get_config("OPENAI_API_KEY_FILE_PATH", 'openai_api_key.txt')

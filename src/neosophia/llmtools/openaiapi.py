@@ -1,14 +1,13 @@
 """
 Wrappers for OpenAI API.
 """
-
-# Ben Zimmer
+import os
+import sys
 
 from typing import Any, List
 
-import openai as oai
 import torch
-
+import openai as oai
 
 EMBEDDING_DIM_DEFAULT = 1536
 EMBEDDING_MODEL_DEFAULT = 'text-embedding-ada-002'
@@ -21,8 +20,15 @@ def set_api_key(api_key: str) -> None:
 
 def load_api_key(file_path: str) -> str:
     """load the API key from a text file"""
+    if not os.path.isfile(file_path):
+        print(f'OpenAI API key file `{file_path}` not found!')
+        sys.exit()
     with open(file_path, 'r') as txt_file:
-        res = txt_file.read()
+        res = txt_file.read().rstrip()
+    if not res:
+        print(f'Key file `{file_path}` empty!')
+        sys.exit()
+
     return res
 
 

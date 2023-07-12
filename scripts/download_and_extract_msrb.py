@@ -1,23 +1,21 @@
 """
 Downloading and extracting rules from MSRB.
 """
-
-# Cameron Fabbri + Ben Zimmer
-
 import os
 import re
 import pickle
+
 from typing import Dict, List, Tuple
 
-import click
 import fitz
-import requests
 import tqdm
+import click
+import requests
+
+import examples.project as project
 
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.datasets.msrb import Rule
-
-import examples.project as project
 
 opj = os.path.join
 
@@ -237,6 +235,8 @@ def main(
         end_page: int):
     """Main"""
 
+    os.makedirs(project.DATASETS_DIR_PATH, exist_ok=True)
+
     file_in = opj(project.DATASETS_DIR_PATH, RULEBOOK_FILENAME)
 
     if not os.path.exists(file_in):
@@ -254,7 +254,7 @@ def main(
     pdf = fitz.Document(file_in)
     rule_dict = extract_msrb_rules(pdf, start_page, end_page)
 
-    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH).rstrip()
+    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
     oaiapi.set_api_key(api_key)
 
     print('Generating embeddings for rules...')
@@ -272,9 +272,10 @@ def main(
                 }
             )
 
-    print('Saved embeddings to embeddings.pkl')
-    with open('embeddings_test.pkl', 'wb') as f:
+    with open(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'), 'wb') as f:
         pickle.dump(records, f)
+
+    print('Saved embeddings to embeddings.pkl')
 
 
 if __name__ == '__main__':
