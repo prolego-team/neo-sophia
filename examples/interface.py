@@ -4,15 +4,15 @@ Web interface for semantic search and question answering!
 
 import os
 import pickle
-
 from typing import Tuple
 
 import gradio as gr
 
 from neosophia.llmtools import openaiapi as oaiapi
-import examples.simplesearch as ss
 
 from examples import project
+import examples.simplesearch as ss
+
 
 MAX_RULES = 5
 
