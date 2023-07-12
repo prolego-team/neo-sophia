@@ -235,6 +235,8 @@ def main(
         end_page: int):
     """Main"""
 
+    os.makedirs(project.DATASETS_DIR_PATH, exist_ok=True)
+
     file_in = opj(project.DATASETS_DIR_PATH, RULEBOOK_FILENAME)
 
     if not os.path.exists(file_in):
@@ -269,8 +271,6 @@ def main(
                     'emb': emb
                 }
             )
-
-    os.makedirs(project.DATASETS_DIR_PATH, exist_ok=True)
 
     with open(os.path.join(project.DATASETS_DIR_PATH, 'embeddings.pkl'), 'wb') as f:
         pickle.dump(records, f)
