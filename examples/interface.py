@@ -13,7 +13,6 @@ from neosophia.llmtools import openaiapi as oaiapi
 from examples import project
 import examples.simplesearch as ss
 
-
 MAX_RULES = 5
 
 

@@ -7,7 +7,6 @@ import os
 import json
 import sys
 
-
 CONFIG_FILE_PATH = 'config.json'
 
 if os.path.isfile(CONFIG_FILE_PATH):
