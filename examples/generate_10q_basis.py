@@ -20,28 +20,6 @@ opj = os.path.join
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
 
 
-def color_diff(str1: str, str2: str) -> str:
-    """generate a color text diff"""
-
-    diff = difflib.ndiff(str1.splitlines(), str2.splitlines())
-    output = ""
-    for line in diff:
-        if line.startswith('-'):
-            # Red color for deleted lines
-            output += f"\033[31m{line}\033[0m\n"
-        elif line.startswith('+'):
-            # Green color for added lines
-            output += f"\033[32m{line}\033[0m\n"
-        elif line.startswith('?'):
-            # Cyan color for modified lines
-            output += f"\033[36m{line}\033[0m\n"
-        else:
-            # Unchanged lines
-            output += f"{line}\n"
-
-    return output
-
-
 def generate_output(base_prompt: str, context: str, template: str) -> str:
     """Rewrite text to match a template."""
     base_prompt += 'Template: ' + template + '\n\n---------------------------\n\n'
@@ -117,22 +95,7 @@ def main():
 
     random.shuffle(basis_data)
 
-    def generate_template():
-        prompt = ['Write a template given the following examples of "Basis of Presentation": ']
-
-        for c in basis_data[:10]:
-            prompt.append(
-                c + '\n----------------------------------------------\n')
-
-        prompt = ''.join(prompt)
-
-        return oaiapi.chat_completion(
-            prompt=prompt,
-            model=OPENAI_LLM_MODEL_NAME
-        )
-
     idx = [10]
-
     def next_filing():
         """select the next filing from the dataset"""
         idx[0] = idx[0] + 1
@@ -140,7 +103,7 @@ def main():
         output = generate_output(base_prompt, context, template)
         return context, output
 
-    print('Initiating first rewrite...')
+    print('\nInitiating first rewrite...')
     initial_basis, initial_rev = next_filing()
 
     with gr.Blocks() as demo:
