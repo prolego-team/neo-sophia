@@ -8,78 +8,51 @@ This project is designed to assist analytics leaders, product managers, and deve
 2. Tagged releases on the main branch of this repository.
 3. Conversations held within [Prolego's Discord community](#).
 
-## Development Environment Setup
+## Quickstart installation
+First install the neo-sophia code on your local machine before proceeding to the examples from the Episodes below.
 
-### Anaconda Environment Setup
+### Install the base neo-sophia code
 
-Create Anaconda environment:
-
-    conda env create -f env.yml
-    conda activate neosophia
-
-### Installation From Source
-
-Editable install of `neosophia` package.
-
-    cd ..
+    git clone https://github.com/prolego-team/neo-sophia.git
+    conda env create -f neo-sophia/env.yml
+    conda activate neosophia 
     pip install -e neo-sophia
     cd neo-sophia
 
-Note that installation is required to run tests and examples due due "src layout"!
+### Setup your local configuration.
+    cp config_example.json config.json
 
-### Running Tests
+1. Change the path locations or use the defaults.
+2. Add your openai key to openai_api_key.txt.
 
-Run tests:
+### Run the tests.
 
     ./test.sh
 
-### Packaging and Distributing
+If the tests pass you are ready to run the code in one of the Episodes.
 
-This project uses a [`pyproject.toml` file for packaging](https://packaging.python.org/en/latest/tutorials/packaging-projects/).  This file contains project metadata and a list of requirements for the core library.
-
-From the project root run:
-
-    python -m build
-    python3 -m twine upload --repository testpypi dist/*
+Questions? Just ask in our [Discord Community](#).
 
 # Episodes
 ## Episode 1 - Embeddings, Semantic search and Document Q&A
 Most companies are struggling to pick the best AI use cases from many different options. By building a core competency in document embeddings you can begin developing a set of capabilities applicable for many enterprise use cases. In Episoide 1 we provide a primer on embeddings for a business audience and demonstrate the use of embeddings in semantic search and document Q&A. 
+
+This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
 
 Videos
 - [Document embeddings are foundational capabilities for your AI strategy](#)
 - [Document embeddings - technical walkthrough](#)
 
 ### Running the Episode 1 application
-First checkout Episode 1, [Release v0.1.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.0)
-````
-git checkout tags/v0.1.0
-````
+1. Checkout Episode 1, [Release v0.1.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.0)
 
-Questions? Just ask in our [Discord Community](#).
+    git checkout tags/v0.1.0
 
-This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
+2. Extract text from the MSRB Rulebook:
 
-1. Extract text from the MSRB Rulebook:
+    python -m scripts.download_and_extract_msrb
 
-```
-python -m scripts.download_and_extract_msrb
-```
-
-2. Create a configuration file named `config.json` in the project root directory with the following contents. See [config_example.json](config_example.json).  
-
-```
-{
-    "MODELS_DIR_PATH": "models",
-    "DATASETS_DIR_PATH": "data",
-    "GENERATOR_CACHE_DIR_PATH": ".cache/generator",
-    "OPENAI_API_KEY_FILE_PATH": "openai_api_key.txt"
-}
-```
-
-The paths can be whatever you like.  The OpenAI key file should be a text file containing your OpenAI API key.
-
-3. Start the semantic search demo by running
+3. Start the demo by running
 
     python -m examples.interface
 
