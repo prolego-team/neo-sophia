@@ -18,14 +18,9 @@ else:
 
 def get_config(key: str, default: Optional[Any]) -> Any:
     """
-    get a config parameter from the OS environment first,
-    the config file, then from a provided default.
+    get a config parameter from the config file first,
+    then from a provided default.
     """
-    res = os.getenv(key)
-
-    if res is not None:
-        print(f'found config `{key}` in OS environment')
-        return res
 
     res = CONFIG.get(key)
 
@@ -40,7 +35,7 @@ def get_config(key: str, default: Optional[Any]) -> Any:
         return res
 
     print(f'No default value for config `{key}`.')
-    print('Either add it to the config or the OS environment.')
+    print('Add it to the config.')
     sys.exit()
 
 
