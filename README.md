@@ -23,7 +23,7 @@ First install the neo-sophia code on your local machine before proceeding to the
     cp config_example.json config.json
 
 1. Change the path locations or use the defaults.
-2. Add your openai key to openai_api_key.txt.
+2. Copy `openai_api_key_example.txt` to `open_api_key.txt` and add your OpenAI API key.
 
 ### Run the tests.
 
@@ -44,9 +44,9 @@ Videos
 - [Document embeddings - technical walkthrough](#)
 
 ### Running the Episode 1 application
-1. Checkout Episode 1, [Release v0.1.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.0)
+1. Checkout Episode 1, [Release v0.1.1](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.1)
 
-    git checkout tags/v0.1.0
+    git checkout tags/v0.1.1
 
 2. Extract text from the MSRB Rulebook:
 
