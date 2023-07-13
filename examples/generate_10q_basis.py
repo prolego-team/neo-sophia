@@ -39,8 +39,6 @@ def extract_basis_data(dataset: hfd.Dataset) -> List[str]:
     for item in dataset:
         if 'Table of Contents' in item['section']:
             continue
-        if item['ticker'] == 'ACAN':
-            continue
         if 'Item 1' not in item['section_id']:
             continue
         if 'Basis of Presentation' in item['section']:
@@ -57,7 +55,10 @@ def extract_basis_data(dataset: hfd.Dataset) -> List[str]:
             text = '\n\n'.join(text)
             if text == '':
                 continue
-            basis_data.append(text)
+
+            # This assumes only one basis of presentation section per file
+            uid = item['ticker'] + '-' + item['cik'] + '-' + item['date']
+            basis_data.append((text, uid))
 
     return basis_data
 
@@ -99,8 +100,12 @@ def main():
     def next_filing():
         """select the next filing from the dataset"""
         idx[0] = idx[0] + 1
-        context = basis_data[idx[0]]
+        res = basis_data[idx[0]]
+        context, uid = res
         output = generate_output(base_prompt, context, template)
+        with open(opj(project.DATASETS_DIR_PATH, uid + '.txt'), 'w') as f:
+            f.write(output)
+        print('Saved to', opj(project.DATASETS_DIR_PATH, uid + '.txt'))
         return context, output
 
     print('\nInitiating first rewrite...')
