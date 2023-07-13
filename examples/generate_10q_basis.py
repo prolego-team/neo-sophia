@@ -114,7 +114,7 @@ def main():
                     label='Original Basis of Presentation', value=initial_basis)
             with gr.Column():
                 text_output = gr.Textbox(
-                    label='Revised Basis of Presentation', value=initial_rev)
+                    label='Revised Basis of Presentation', value=initial_rev, interactive=True)
         with gr.Row():
             with gr.Column():
                 next_button = gr.Button('Next')
