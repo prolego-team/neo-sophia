@@ -44,6 +44,7 @@ Videos
 - [Document embeddings - technical walkthrough](#)
 
 ### Running the Episode 1 application
+
 1. Checkout Episode 1, [Release v0.1.1](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.1)
 
     git checkout tags/v0.1.1
@@ -56,6 +57,13 @@ Videos
 
     python -m examples.interface
 
+### Running the Episode 2 application
+
+1. Checkout Episode 1, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.0)
+
+2. Start the demo by running
+
+    python -m examples.generate_10q_basis
 
 # About Prolego & Neo Sophia
 
