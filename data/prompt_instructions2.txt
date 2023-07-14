@@ -1,0 +1,7 @@
+Review the following excerpt from a 10-Q filing and summarize it according to following template. Finally, score it from 1 to 5 based on the level of accounting transparency:
+
+1: No transparency, seeks to obfuscate
+3: Acceptable transparency, consistent with best practices.
+5: Excellent transparency, beyond industry standards.
+
+And provide a rationale for your score.

@@ -5,10 +5,10 @@ Basis of Presentation paragraphs from 10-Qs.
 import os
 import json
 import random
-import difflib
 
-from typing import List
+from typing import List, Tuple
 
+import click
 import gradio as gr
 import datasets as hfd
 
@@ -29,7 +29,7 @@ def generate_output(base_prompt: str, context: str, template: str) -> str:
         model=OPENAI_LLM_MODEL_NAME)
 
 
-def extract_basis_data(dataset: hfd.Dataset) -> List[str]:
+def extract_basis_data(dataset: hfd.Dataset) -> List[Tuple[str, str]]:
     """
     Use some heuristics to extract Basis of Presentation paragraphs
     from a dataset of 10-Q sections.
@@ -63,7 +63,14 @@ def extract_basis_data(dataset: hfd.Dataset) -> List[str]:
     return basis_data
 
 
-def main():
+@click.command()
+@click.option(
+    '--template_file', '-t',
+    default=f"{opj(project.DATASETS_DIR_PATH, 'basis_template.txt')}")
+@click.option(
+    '--prompt_file', '-p',
+    default=f"{opj(project.DATASETS_DIR_PATH, 'prompt_instructions.txt')}")
+def main(template_file, prompt_file):
     """Main program."""
 
     random.seed(0)
@@ -75,11 +82,17 @@ def main():
     hf_file = opj(project.DATASETS_DIR_PATH, 'sec_10q_sections.hf')
     json_file = opj(project.DATASETS_DIR_PATH, 'sec_10q_sections.json')
 
-    with open(opj(project.DATASETS_DIR_PATH, 'basis_template.txt'), 'r') as f:
+    if not os.path.exists(template_file):
+        print(f'\nFile {template_file} does not exist\n')
+        exit()
+    if not os.path.exists(prompt_file):
+        print(f'\nFile {prompt_file} does not exist\n')
+        exit()
+
+    with open(template_file, 'r') as f:
         template = f.readlines()[0].rstrip()
 
-    with open(
-            opj(project.DATASETS_DIR_PATH, 'prompt_instructions.txt'), 'r') as f:
+    with open(prompt_file, 'r') as f:
         base_prompt = f.readlines()[0].rstrip()
 
     if not os.path.exists(json_file):
