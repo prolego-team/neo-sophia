@@ -6,7 +6,7 @@ import os
 import json
 import random
 
-from typing import List
+from typing import List, Tuple
 
 import click
 import gradio as gr
@@ -29,7 +29,7 @@ def generate_output(base_prompt: str, context: str, template: str) -> str:
         model=OPENAI_LLM_MODEL_NAME)
 
 
-def extract_basis_data(dataset: hfd.Dataset) -> List[str]:
+def extract_basis_data(dataset: hfd.Dataset) -> List[Tuple[str, str]]:
     """
     Use some heuristics to extract Basis of Presentation paragraphs
     from a dataset of 10-Q sections.
