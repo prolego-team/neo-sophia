@@ -34,6 +34,21 @@ If the tests pass you are ready to run the code in one of the Episodes.
 Questions? Just ask in our [Discord Community](#).
 
 # Episodes
+## Episode 2 - Automated document processing
+Every company has businesses processes that require ingesting and processing a stream of text documents. Most of this processing requires tedious human effort to find, edit, review, summarize, score, etc. chunks of text from larger documents. In this Episode we demonstrate a generalized approach for solving many of these problems using LLMs. The example takes a set of SEC 10-Q company filings and replaces the "Basis of Presentation" section with different text based on an editable templates.
+
+Videos
+- [Your AI strategy “quick win” - automated document processing](#)
+- [Audomated document processing - technical walkthrough](#)
+
+### Running the Episode 2 application
+
+1. Checkout Episode 1, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.0)
+
+2. Start the demo by running
+
+    python -m examples.generate_10q_basis
+
 ## Episode 1 - Embeddings, Semantic search and Document Q&A
 Most companies are struggling to pick the best AI use cases from many different options. By building a core competency in document embeddings you can begin developing a set of capabilities applicable for many enterprise use cases. In Episoide 1 we provide a primer on embeddings for a business audience and demonstrate the use of embeddings in semantic search and document Q&A. 
 
@@ -57,13 +72,6 @@ Videos
 
     python -m examples.interface
 
-### Running the Episode 2 application
-
-1. Checkout Episode 1, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.0)
-
-2. Start the demo by running
-
-    python -m examples.generate_10q_basis
 
 # About Prolego & Neo Sophia
 
