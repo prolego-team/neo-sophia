@@ -93,23 +93,24 @@ class Message:
     """
     role: str
     content: str
+    function_call: Optional[dict] = None
 
     def is_valid(self) -> bool:
         """Make sure this is a valid OpenAI message."""
         return (self.role in ['system', 'user', 'assistant'] 
                 and len(self.content)>0)
 
-
     def as_dict(self) -> dict:
         """Because it's much, much faster than built in dataclasses.asdict."""
-        return vars(self)
+        return {key:value for key,value in vars(self).items() if value is not None}
 
     @classmethod
     def from_api_response(cls, response: dict):
         """Parse the API response."""
         role = response['choices'][0]['message']['role']
-        content = response['choices'][0]['message']['content']
-        return cls(role, content)
+        content = response['choices'][0]['message'].get('content', None)
+        function_call = response['choices'][0]['message'].get('function_call', None)
+        return cls(role, content, function_call)
 
 
 def start_chat(model: str) -> Callable:
@@ -118,7 +119,6 @@ def start_chat(model: str) -> Callable:
     def chat_func(messages: List[Message], *args, **kwargs) -> Message:
         input = [message.as_dict() for message in messages]
         response = oai.ChatCompletion.create(messages=input, model=model, *args, **kwargs)
-        print(response)
         return Message.from_api_response(response)
     
     return chat_func

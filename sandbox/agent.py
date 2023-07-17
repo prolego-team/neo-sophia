@@ -18,6 +18,35 @@ openai.set_api_key(os.getenv('OPENAI_API_KEY'))
 model = openai.start_chat('gpt-3.5-turbo')
 # log.info(openai.get_models_list())
 
+print('Check the weather')
+functions = [
+    {
+        'name': 'get_weather',
+        'description': 'Get the weather for a city in the United States.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'city': {
+                    'type': 'string',
+                    'description': 'The city to get the weather for.'
+                },
+                'state': {
+                    'type': 'string',
+                    'description': 'The state containing the city.'
+                }
+            },
+            'required': ['city', 'state']
+        }
+    }
+]
+messages = [
+    openai.Message('system', 'You are a helpful assistant.'),
+    openai.Message('user', 'What is the weather in Savannah, GA.')
+]
+response = model(messages, functions=functions)
+print(response)
+
+
 print('Just kidding.')
 messages = [
     openai.Message('system', 'You are a helpful assistant.'),

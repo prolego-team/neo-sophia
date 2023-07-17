@@ -79,7 +79,7 @@ def test_messages(openai_chat_response):
 
 @patch('neosophia.llmtools.openaiapi.oai.ChatCompletion.create')
 def test_chat_completion(chat_mock, openai_chat_response):
-    target_output_content = 'This is output from the LLM.'
+    target_output_content = 'Who is there?'
     target_output_role = 'assistant'
     chat_mock.return_value = openai_chat_response(
         target_output_content,
@@ -88,9 +88,7 @@ def test_chat_completion(chat_mock, openai_chat_response):
     model = openaiapi.start_chat('test_model')
     messages = [
         openaiapi.Message('system', 'You are a helpful assistant.'),
-        openaiapi.Message('user', 'Knock knock.'),
-        openaiapi.Message('assistant', 'Who is there?'),
-        openaiapi.Message('user', 'Orange.')
+        openaiapi.Message('user', 'Knock knock.')
     ]
     response = model(messages)
     assert response.content==target_output_content
