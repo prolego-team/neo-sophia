@@ -79,13 +79,29 @@ def embeddings_tensor(texts: List[str]) -> torch.Tensor:
 
 @dataclass
 class Message:
-    """Data structure for working with the messages that are passed back
-    and forth to the OpenAI chat APIs."""
+    """Simple data structure for working with the messages that are passed back
+    and forth to the OpenAI chat APIs.
+
+    The attributes of this class are currently a subset of those expected by
+    OpenAI's chat completion API.
+    
+    Why is this a class?
+    - There will be multiple instances of messages.
+    - Each message currently has two attributes, but there may be more.
+    - The input format to an LLM API call and the output format are different,
+        so the class provides methods to handle simple formatting.
+    """
     role: str
     content: str
 
+    def is_valid(self) -> bool:
+        """Make sure this is a valid OpenAI message."""
+        return (self.role in ['system', 'user', 'assistant'] 
+                and len(self.content)>0)
+
+
     def as_dict(self) -> dict:
-        """Because it's much, much faster than built in asdict."""
+        """Because it's much, much faster than built in dataclasses.asdict."""
         return vars(self)
 
     @classmethod
@@ -102,6 +118,7 @@ def start_chat(model: str) -> Callable:
     def chat_func(messages: List[Message], *args, **kwargs) -> Message:
         input = [message.as_dict() for message in messages]
         response = oai.ChatCompletion.create(messages=input, model=model, *args, **kwargs)
+        print(response)
         return Message.from_api_response(response)
     
     return chat_func
