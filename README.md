@@ -21,9 +21,10 @@ First install the neo-sophia code on your local machine before proceeding to the
 
 ### Setup your local configuration.
     cp config_example.json config.json
+    cp openai_api_key_example.txt open_api_key.txt
 
-1. Change the path locations or use the defaults.
-2. Copy `openai_api_key_example.txt` to `open_api_key.txt` and add your OpenAI API key.
+1. Change the path locations or use the defaults as desired.
+2. Add your OpenAI API key to `open_api_key.txt`.
 
 ### Run the tests.
 
@@ -45,9 +46,14 @@ Videos
 
 1. Checkout Episode 1, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.0)
 
-2. Start the demo by running
+````
+    git checkout tags/v0.2.0
+````
 
+2. Start the demo by running
+````
     python -m examples.generate_10q_basis
+````
 
 ## Episode 1 - Embeddings, Semantic search and Document Q&A
 Most companies are struggling to pick the best AI use cases from many different options. By building a core competency in document embeddings you can begin developing a set of capabilities applicable for many enterprise use cases. In Episoide 1 we provide a primer on embeddings for a business audience and demonstrate the use of embeddings in semantic search and document Q&A. 
@@ -61,17 +67,17 @@ Videos
 ### Running the Episode 1 application
 
 1. Checkout Episode 1, [Release v0.1.1](https://github.com/prolego-team/neo-sophia/releases/tag/v0.1.1)
-
+````
     git checkout tags/v0.1.1
-
+````
 2. Extract text from the MSRB Rulebook:
-
+````
     python -m scripts.download_and_extract_msrb
-
+````
 3. Start the demo by running
-
+````
     python -m examples.interface
-
+````
 
 # About Prolego & Neo Sophia
 
