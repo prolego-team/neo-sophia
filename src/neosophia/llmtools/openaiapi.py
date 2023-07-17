@@ -5,7 +5,6 @@ Wrappers for OpenAI API.
 from typing import Any, List, Callable, Optional
 import os
 import sys
-from functools import partial
 from dataclasses import dataclass
 
 import openai as oai
@@ -117,7 +116,7 @@ class Message:
         if function_call is not None:
             function_call = function_call.to_dict()
         return cls(role, content, function_call)
-    
+
     @classmethod
     def from_function_call(cls, function_name: str, function_output: Any):
         """Prepare a message from the output of a function."""
@@ -128,9 +127,8 @@ def start_chat(model: str) -> Callable:
     """Make an LLM interface function that you can use with Messages."""
 
     def chat_func(messages: List[Message], *args, **kwargs) -> Message:
-        input = [message.as_dict() for message in messages]
-        response = oai.ChatCompletion.create(messages=input, model=model, *args, **kwargs)
+        input_messages = [message.as_dict() for message in messages]
+        response = oai.ChatCompletion.create(messages=input_messages, model=model, *args, **kwargs)
         return Message.from_api_response(response)
-    
-    return chat_func
 
+    return chat_func
