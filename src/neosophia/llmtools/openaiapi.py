@@ -88,7 +88,7 @@ class Message:
     
     Why is this a class?
     - There will be multiple instances of messages.
-    - Each message currently has two attributes, but there may be more.
+    - Each message has several attributes.
     - The input format to an LLM API call and the output format are different,
         so the class provides methods to handle simple formatting.
     """
@@ -120,6 +120,7 @@ class Message:
     
     @classmethod
     def from_function_call(cls, function_name: str, function_output: Any):
+        """Prepare a message from the output of a function."""
         return cls('function', str(function_output), function_name)
 
 
