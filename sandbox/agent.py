@@ -19,6 +19,7 @@ model = openai.start_chat('gpt-3.5-turbo')
 # log.info(openai.get_models_list())
 
 print('Check the weather')
+get_weather = lambda city, state: 72
 functions = [
     {
         'name': 'get_weather',
@@ -45,6 +46,9 @@ messages = [
 ]
 response = model(messages, functions=functions)
 print(response)
+message = openai.Message.from_function_call('get_weather', 72)
+print(message)
+messages += [response, message]
 
 
 print('Just kidding.')

@@ -73,8 +73,15 @@ def test_messages(openai_chat_response):
         target_output_role
     )
     message = openaiapi.Message.from_api_response(response)
+    assert message.is_valid()
     assert message.content==target_output_content
     assert message.role==target_output_role
+
+    message = openaiapi.Message.from_function_call('get_weather', 72)
+    assert message.is_valid()
+    assert message.role=='function'
+    assert message.content=='72'
+    assert message.name=='get_weather'
 
 
 @patch('neosophia.llmtools.openaiapi.oai.ChatCompletion.create')

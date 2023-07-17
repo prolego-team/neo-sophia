@@ -82,8 +82,9 @@ class Message:
     """Simple data structure for working with the messages that are passed back
     and forth to the OpenAI chat APIs.
 
-    The attributes of this class are currently a subset of those expected by
-    OpenAI's chat completion API.
+    The role and content attributes are required when preparing a message to pass
+    to OpenAI.  The response message may contain either content or function_call
+    in addition to role.
     
     Why is this a class?
     - There will be multiple instances of messages.
@@ -93,12 +94,15 @@ class Message:
     """
     role: str
     content: str
+    name: Optional[str] = None
     function_call: Optional[dict] = None
 
     def is_valid(self) -> bool:
         """Make sure this is a valid OpenAI message."""
-        return (self.role in ['system', 'user', 'assistant'] 
-                and len(self.content)>0)
+        valid = True
+        valid &= self.role in ['system', 'user', 'assistant', 'function']
+        valid &= (len(self.content)>0) or (self.function_call is not None)
+        return valid
 
     def as_dict(self) -> dict:
         """Because it's much, much faster than built in dataclasses.asdict."""
@@ -110,7 +114,13 @@ class Message:
         role = response['choices'][0]['message']['role']
         content = response['choices'][0]['message'].get('content', None)
         function_call = response['choices'][0]['message'].get('function_call', None)
+        if function_call is not None:
+            function_call = function_call.to_dict()
         return cls(role, content, function_call)
+    
+    @classmethod
+    def from_function_call(cls, function_name: str, function_output: Any):
+        return cls('function', str(function_output), function_name)
 
 
 def start_chat(model: str) -> Callable:
