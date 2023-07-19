@@ -18,16 +18,15 @@ log = logging.getLogger('agent')
 
 openai.set_api_key(os.getenv('OPENAI_API_KEY'))
 model = openai.start_chat('gpt-3.5-turbo')
-# log.info(openai.get_models_list())
 
+# Connect to the DB and get the table names
 log.debug('Getting the DB information.')
 con = sqlite3.connect('synthbank.db')
-cur = con.cursor()
-
-
 cursor = con.cursor()
 tables = cursor.execute('SELECT name FROM sqlite_master').fetchall()
 
+# Construct a description of the DB schema for the LLM by retrieving the
+# CREATE commands used to create the tables.
 schema_description = "The bank's database tables were created using the following commands.\n"
 for table in tables:
     table_name = table[0]
@@ -37,7 +36,8 @@ for table in tables:
     description = cursor.execute(f"select sql from sqlite_master where type='table' and name='{table_name}'").fetchone()[0]
     schema_description += '  '+description+'\n'
 
-
+# Defina a function to query the database.  The LLM will be "told" about this
+# function.  (TODO don't return string on failure, so something better.)
 def query_database(sqlite_query: str):
     cur = con.cursor()
     try:
@@ -46,6 +46,8 @@ def query_database(sqlite_query: str):
         results = 'Query failed.'
     return results
 
+# Following is how GPT wants to be told what functions are available and their
+# arguments.
 functions = [
     {
         'name': 'query_database',
@@ -63,18 +65,20 @@ functions = [
     }
 ]
 
+# Prepare to call the LLM
 system_message = \
 """You are an assistant for a retail bank.  You have the ability to run sqlite queries 
 against the bank's databse to collect information for the user.\n\n"""
 system_message += schema_description
-log.debug(f'System message = {system_message}')
-log.debug('Calling the LLM')
 messages = [
     openai.Message('system', system_message),
     openai.Message('user', 'Get a list of customers who have an auto loan.')
 ]
+
+log.debug(f'System message = {system_message}')
 log.debug('Input messages (excluding system):')
 log.debug(messages[1:])
+log.debug('Calling the LLM')
 response = model(messages, functions=functions)
 
 if response.function_call is not None:
