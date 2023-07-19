@@ -58,6 +58,26 @@ def get_schema(conn):
     return pd.read_sql_query(query, conn).to_string()
 
 
+def setup(csv_file):
+    db_file = opj(project.DATASETS_DIR_PATH, 'bank_database.db')
+    conn = sqlite3.connect(db_file)
+    create_database_from_csv(conn, csv_file, db_file)
+    schema = get_schema(conn)
+    return db_file, schema
+
+
+def extract_query_from_response(response):
+    explanation = response.split('```')[0]
+    pattern = r"```(SQLite|SQLITE|sqlite|sql|SQL|\n|)((.|\n)*)```"
+    matches = re.search(pattern, response, re.DOTALL)
+    if matches:
+        query = ' '.join(matches.group(2).split('\n')).rstrip().strip()
+    else:
+        query = ' '.join(response.split('query:')[1:]).rstrip().strip()
+
+    return explanation, query
+
+
 @click.command()
 @click.option(
     '--csv_file', '-c',
@@ -71,11 +91,7 @@ def main(csv_file):
     # - Multiple tables/queries
     # - Speculate what the user wants based on their failed queries
 
-    db_file = opj(project.DATASETS_DIR_PATH, 'bank_database.db')
-    conn = sqlite3.connect(db_file)
-    create_database_from_csv(conn, csv_file, db_file)
-
-    schema = get_schema(conn)
+    db_file, schema = setup(csv_file)
 
     user_agent_bp = 'Given the following SQLite schema and question, write a SQL query to retrieve data that answers the question. Return the answer in the following format, and do not include "sql" or "SQL" as part of the SQL query:'
     user_agent_bp += 'Explanation: [explain query]'
@@ -88,58 +104,83 @@ def main(csv_file):
 
     user_agent_bp += schema_prompt
 
+    sql_error_bp = 'Fix the query given the following schema, question, original query, and the resulting error message:\n'
+    sql_error_bp += f'TABLE SCHEMA:\n'
+    sql_error_bp += schema + '\n\n'
+
     first_response = oaiapi.chat_completion(
         prompt=user_agent_bp,
         model=OPENAI_LLM_MODEL_NAME)
 
     db_agent_bp = 'Given the following schema, question, SQL query, and result from executing the query, answer the question.\n\n'
 
+    dummy = [False]
 
     def respond(question, chat_history):
 
         conn = sqlite3.connect(db_file)
         user_prompt = user_agent_bp + question
 
-        response = oaiapi.chat_completion(
-            prompt=user_prompt,
-            model=OPENAI_LLM_MODEL_NAME)
 
-        explanation = response.split('```')[0]
-
-        pattern = r"```(SQLite|SQLITE|sqlite|sql|SQL|\n|)((.|\n)*)```"
-        matches = re.search(pattern, response, re.DOTALL)
-        if matches:
-            query = ' '.join(matches.group(2).split('\n')).rstrip().strip()
+        if not dummy[0]:
+            response = 'null'
+            query = 'SELECT state FROM data'
+            dummy[0] = True
         else:
-            query = ' '.join(response.split('query:')[1:]).rstrip().strip()
-
-        print('\n----------------RESPONSE_START----------------\n')
-        print(response)
-        print('\n----------------RESPONSE_END----------------\n')
-
-        print('\n----------------QUERY_START----------------\n')
-        print(query)
-        print('\n----------------QUERY_END----------------\n')
-        print('\n===========================================================\n')
+            response = oaiapi.chat_completion(
+                prompt=user_prompt,
+                model=OPENAI_LLM_MODEL_NAME)
+            explanation, query = extract_query_from_response(response)
 
         if query == '':
             chat_history.append((question, response))
-            return "", chat_history, None, ''
+            return '', chat_history, None, '', ''
 
-        res = pd.read_sql_query(query, conn)
+        success = False
+        for _ in range(5):
+            try:
+                res = pd.read_sql_query(query, conn)
+                success = True
+                break
+            except Exception as sql_error_message:
+                sql_error_prompt = sql_error_bp
+                sql_error_prompt += 'QUESTION:\n'
+                sql_error_prompt += question + '\n\n'
+                sql_error_prompt += 'QUERY:\n'
+                sql_error_prompt += query + '\n\n'
+                sql_error_prompt += 'SQL ERROR:\n'
+                sql_error_prompt += str(sql_error_message) + '\n\n'
 
-        db_res_prompt = db_agent_bp + schema_prompt
-        db_res_prompt += 'question: ' + question + '\n'
-        db_res_prompt += 'SQL query: ' + query + '\n'
-        db_res_prompt += 'SQL result: ' + res.to_string()
+                response = oaiapi.chat_completion(
+                    prompt=sql_error_prompt,
+                    model=OPENAI_LLM_MODEL_NAME)
+                explanation, query = extract_query_from_response(response)
 
-        response = oaiapi.chat_completion(
-            prompt=db_res_prompt,
-            model=OPENAI_LLM_MODEL_NAME)
+                print('\n----------------RESPONSE_START----------------\n')
+                print(response)
+                print('\n----------------RESPONSE_END----------------\n')
 
-        chat_history.append((question, response))
+                print('\n----------------QUERY_START----------------\n')
+                print(query)
+                print('\n----------------QUERY_END----------------\n')
+                print('\n===========================================================\n')
 
-        conn.close()
+        if success:
+            db_res_prompt = db_agent_bp + schema_prompt
+            db_res_prompt += 'question: ' + question + '\n'
+            db_res_prompt += 'SQL query: ' + query + '\n'
+            db_res_prompt += 'SQL result: ' + res.to_string()
+
+            response = oaiapi.chat_completion(
+                prompt=db_res_prompt,
+                model=OPENAI_LLM_MODEL_NAME)
+
+            chat_history.append((question, response))
+
+            conn.close()
+
+        else:
+            res = ''
 
         return "", chat_history, res, query, explanation
 
@@ -157,8 +198,9 @@ def main(csv_file):
             [question, chatbot],
             [question, chatbot, dataframe, query_text_box, explanation_text_box])
 
-    demo.launch(share=True)
+    demo.launch()
 
+    # Based on the state each customer  lives in, which customers do not pay federal income tax?
 
 
 if __name__ == '__main__':
