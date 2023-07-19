@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from dataclasses import dataclass, field
 
@@ -26,6 +26,7 @@ class Customer:
 class AutoLoan:
     loan_amount: float
     interest_rate: float
+    account_open_date: Optional[str] = None
     account_number: int = field(default_factory=get_new_account_number)
     product: str = 'auto_loan'
     
@@ -34,6 +35,7 @@ class AutoLoan:
 class Mortgage:
     loan_amount: float
     interest_rate: float
+    account_open_date: Optional[str] = None
     account_number: int = field(default_factory=get_new_account_number)
     product = 'mortgage'
 
@@ -41,16 +43,19 @@ class Mortgage:
 class CreditCard:
     credit_limit: int
     interest_rate: float
+    account_open_date: Optional[str] = None
     account_number: int = field(default_factory=get_new_account_number)
     product = 'credit_card'
 
 @dataclass
 class CheckingAccount:
+    account_open_date: Optional[str] = None
     account_number: int = field(default_factory=get_new_account_number)
     product = 'checking_account'
 
 @dataclass
 class SavingsAccount:
     interest_rate: float
+    account_open_date: Optional[str] = None
     account_number: int = field(default_factory=get_new_account_number)
     product = 'savings_account'

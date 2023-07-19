@@ -78,9 +78,12 @@ def get_name():
     name_first = random.choice(names_first)
     return name_first+' '+name_last
 
+def get_random_date(date1, date2):
+    return date1 + (date2-date1)*random.random()
+
 def get_dob(age_range):
     age = random.randint(*age_range)
-    dob = today - datetime.timedelta(days=age*365.25)
+    dob = today - datetime.timedelta(days=(age+random.random())*365.25)
     return dob
 
 def get_credit_score(credit_score_range):
@@ -141,21 +144,26 @@ def make_customer():
 
     name = get_name()
     dob = get_dob(persona.age_range)
+    date_eligible = dob + datetime.timedelta(days=365.25*18)
+    
     credit_score = get_credit_score(persona.credit_range)
     customer = Customer(name, dob, credit_score, [])
 
     n_proucts = random.randint(1,4)
     customer_products = [random.choice(products) for _ in range(n_proucts)]
-    for product in customer_products:
-        if product=='auto_loan':
-            customer.products.append(make_auto_loan(credit_score))
-        elif product=='mortgage':
-            customer.products.append(make_morgage(credit_score))
-        elif product=='credit_card':
-            customer.products.append(make_credit_card(credit_score))
-        elif product=='checking_account':
-            customer.products.append(make_checking_account())
-        elif product=='savings_account':
-            customer.products.append(make_savings_account())
+    for product_type in customer_products:
+        account_open_date = get_random_date(date_eligible, today)
+        if product_type=='auto_loan':
+            product = make_auto_loan(credit_score)
+        elif product_type=='mortgage':
+            product = make_morgage(credit_score)
+        elif product_type=='credit_card':
+            product = make_credit_card(credit_score)
+        elif product_type=='checking_account':
+            product = make_checking_account()
+        elif product_type=='savings_account':
+            product = make_savings_account()
+        product.account_open_date = account_open_date
+        customer.products.append(product)
     
     return customer
