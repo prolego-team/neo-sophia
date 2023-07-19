@@ -17,7 +17,8 @@ log = logging.getLogger('agent')
 # ===================================================================
 
 openai.set_api_key(os.getenv('OPENAI_API_KEY'))
-model = openai.start_chat('gpt-3.5-turbo')
+# model = openai.start_chat('gpt-3.5-turbo')
+model = openai.start_chat('gpt-4')
 
 # Connect to the DB and get the table names
 log.debug('Getting the DB information.')
@@ -44,6 +45,7 @@ def query_database(sqlite_query: str):
         results = cur.execute(sqlite_query).fetchall()
     except:
         results = 'Query failed.'
+        raise
     return results
 
 # Following is how GPT wants to be told what functions are available and their
@@ -68,11 +70,15 @@ functions = [
 # Prepare to call the LLM
 system_message = \
 """You are an assistant for a retail bank.  You have the ability to run sqlite queries 
-against the bank's databse to collect information for the user.\n\n"""
+against the bank's databse to collect information for the user.
+
+Each customer has one or more products at the bank.  Each product has a globally unique
+account number.  Each customer has a globally unique guid identifier.  The customer guids
+and the product account numbers are related in the "products" database table.\n\n"""
 system_message += schema_description
 messages = [
     openai.Message('system', system_message),
-    openai.Message('user', 'Get a list of customers who have an auto loan.')
+    openai.Message('user', 'How many customers have opened a new checking account in the last two years?')
 ]
 
 log.debug(f'System message = {system_message}')
@@ -89,4 +95,6 @@ if response.function_call is not None:
         results = query_database(**arguments)
         log.debug('Results:')
         log.debug(results)
+else:
+    log.debug(f'LLM responded with content: {response}')
 
