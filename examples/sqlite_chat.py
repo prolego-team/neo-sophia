@@ -1,24 +1,21 @@
 """
 Script to interact with a SQLite database using natural language commands
 """
+
 import os
-import re
-import csv
 import json
-import pprint
 import sqlite3
 import readline
-
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 import click
 import gradio as gr
 import pandas as pd
 
 import neosophia.db.sqlite_utils as sql_utils
+from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import project
-from neosophia.llmtools import openaiapi as oaiapi
 
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
 
@@ -65,7 +62,7 @@ def get_error_prompt(
     return prompt
 
 
-def extract_query_from_response(response: str) -> Tuple[str, str]:
+def extract_query_from_response(response: str) -> Tuple[str, Optional[str]]:
     """
     Extracts the explanation and SQL query out of the response from the model
     """
@@ -86,6 +83,7 @@ def extract_query_from_response(response: str) -> Tuple[str, str]:
         # complete it
         return response, None
 
+
 def get_table_prompt(schema: str, table_name: str) -> str:
     """ Writes a prompt to show information about the table """
     prompt = 'Below is the information for an SQLite table.'
@@ -98,7 +96,8 @@ def get_table_prompt(schema: str, table_name: str) -> str:
 def get_user_agent_prompt(schema: str, table_name: str, question: str) -> str:
     """ Writes the prompt to ask the question given by the user """
     prompt = get_table_prompt(schema, table_name)
-    prompt += 'Below is a question input from a user. Generate an SQL query that pulls the necessary data to answer the question.'
+    prompt += 'Below is a question input from a user. '
+    prompt += 'Generate an SQL query that pulls the necessary data to answer the question.\n\n'
     prompt += f'Question: {question}\n\n'
     prompt += 'Return your answer by filling out the following template:\n'
     prompt += EXP_QUERY_TEMPLATE
@@ -127,13 +126,14 @@ def get_db_agent_prompt(
         question: str,
         query: str,
         explanation: str,
-        result: pd.core.frame.DataFrame):
+        result: pd.DataFrame) -> str:
     """
     Writes the prompt to answer the question the user had given the result from
     the query to the database
     """
     prompt = get_table_prompt(schema, table_name)
-    prompt += 'Below is a question, SQL query, explanation, and the result from executing the query. Use these pieces of information to answer the question.\n\n'
+    prompt += 'Below is a question, SQL query, explanation, and the result from executing the query. '
+    prompt += 'Use these pieces of information to answer the question.\n\n'
     prompt += get_question_result(
         question, query, explanation, result.to_string())
     return prompt
@@ -143,7 +143,7 @@ def get_db_agent_prompt(
 @click.option(
     '--csv_file', '-c',
     default=f'{project.DATASETS_DIR_PATH}/bank_customers.csv')
-def main(csv_file):
+def main(csv_file: str):
     """Main program."""
 
     key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -151,8 +151,8 @@ def main(csv_file):
 
     db_file, schema = setup(csv_file)
 
-    def respond(question, chat_history):
-        """ """
+    def respond(question: str, chat_history: List[Tuple[str, str]]) -> Tuple:
+        """Respond to a chat message."""
 
         conn = sqlite3.connect(db_file)
 
@@ -164,6 +164,7 @@ def main(csv_file):
         explanation, query = extract_query_from_response(ua_response)
 
         if query is None:
+            conn.close()
             return '', chat_history, '', '', explanation
 
         success = False
@@ -175,13 +176,14 @@ def main(csv_file):
             except Exception as sql_error_message:
 
                 sql_error_prompt = get_error_prompt(
-                    schema, TABLE_NAME, question, query, sql_error_message)
+                    schema, TABLE_NAME, question, query, str(sql_error_message))
 
                 response = oaiapi.chat_completion(
                     prompt=sql_error_prompt,
                     model=OPENAI_LLM_MODEL_NAME)
                 explanation, query = extract_query_from_response(response)
                 if query is None:
+                    conn.close()
                     return '', chat_history, '', '', explanation
 
         if success:
@@ -193,12 +195,12 @@ def main(csv_file):
                 model=OPENAI_LLM_MODEL_NAME)
 
             chat_history.append((question, chat_response))
-            conn.close()
 
         else:
             query_result = ''
 
-        return "", chat_history, query_result, query, explanation
+        conn.close()
+        return '', chat_history, query_result, query, explanation
 
     with gr.Blocks() as demo:
         gr.Markdown('# VaultVibe')
