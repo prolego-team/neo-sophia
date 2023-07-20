@@ -5,7 +5,6 @@ Script to interact with a SQLite database using natural language commands
 import os
 import json
 import sqlite3
-import readline
 from typing import List, Optional, Tuple
 
 import click
@@ -202,13 +201,23 @@ def main(csv_file: str):
         conn.close()
         return '', chat_history, query_result, query, explanation
 
+    conn = sqlite3.connect(db_file)
+
     with gr.Blocks() as demo:
         gr.Markdown('# VaultVibe')
-        dataframe = gr.Dataframe()
-        query_text_box = gr.Textbox(label='Last Query')
-        explanation_text_box = gr.Textbox(label='Explanation')
+        initial_query = 'select * from data;'
+        initial_explanation = (
+            'Interact with the data with natural language questions or commands. Some examples:\n\n' +
+            'What fraction of customers are millennials?\n\n' +
+            'Describe the data.\n\n' +
+            'What are the unique states that customers live in?\n\n' +
+            'What is the average of total assets across customers?\n\n'
+        )
+        dataframe = gr.Dataframe(value=pd.read_sql_query(initial_query, conn))
+        query_text_box = gr.Textbox(value=initial_query, label='Last Query')
+        explanation_text_box = gr.Textbox(value=initial_explanation, label='Explanation')
         chatbot = gr.Chatbot()
-        question = gr.Textbox(value='Which customer is the coolest?')
+        question = gr.Textbox(value='Which customer is the coolest?', label='Ask that chatbot a question')
         clear = gr.ClearButton([question, chatbot])
 
         question.submit(
