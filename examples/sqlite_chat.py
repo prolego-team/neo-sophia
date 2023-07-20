@@ -144,7 +144,10 @@ def get_db_agent_prompt(
     '--csv_file', '-c',
     default=f'{project.DATASETS_DIR_PATH}/bank_customers.csv')
 def main(csv_file):
-    """ """
+    """Main program."""
+
+    key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    oaiapi.set_api_key(key)
 
     db_file, schema = setup(csv_file)
 
