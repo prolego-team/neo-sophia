@@ -18,7 +18,7 @@ log = logging.getLogger('agent')
 
 openai.set_api_key(os.getenv('OPENAI_API_KEY'))
 # model = openai.start_chat('gpt-3.5-turbo')
-model = openai.start_chat('gpt-4')
+model = openai.start_chat('gpt-3.5-turbo')
 
 # Connect to the DB and get the table names
 log.debug('Getting the DB information.')
@@ -76,25 +76,49 @@ Each customer has one or more products at the bank.  Each product has a globally
 account number.  Each customer has a globally unique guid identifier.  The customer guids
 and the product account numbers are related in the "products" database table.\n\n"""
 system_message += schema_description
+system_message += \
+"""
+
+In your interactions use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of the function calls available to you
+Observation: the result of the action
+... (this Thought/Action/Observation can repeat N times)
+Thought: I have now answered the question
+Final Answer: the final answer to the original input question"
+"""
 messages = [
     openai.Message('system', system_message),
-    openai.Message('user', 'How many customers have opened a new checking account in the last two years?')
+    # openai.Message('user', 'How many customers have opened a new checking account in the last two years?')
+    # openai.Message('user', 'What functions do you have at your disposal?')
 ]
 
 log.debug(f'System message = {system_message}')
-log.debug('Input messages (excluding system):')
-log.debug(messages[1:])
-log.debug('Calling the LLM')
-response = model(messages, functions=functions)
 
-if response.function_call is not None:
-    name = response.function_call['name']
-    arguments = json.loads(response.function_call['arguments'])
-    log.debug(f'LLM responded with a function call: {name}({arguments}')
-    if name=='query_database':
-        results = query_database(**arguments)
-        log.debug('Results:')
-        log.debug(results)
-else:
-    log.debug(f'LLM responded with content: {response}')
+while (input_msg:=input(">"))!='':
+    input_msg = f'Question: {input_msg}\nThought: '
+    message = openai.Message('user', input_msg)
+    log.debug('Calling the LLM')
+    response = model(messages, functions=functions)
+    log.debug(f'Response content = \n{response.content}')
+    if response.function_call is not None:
+        name = response.function_call['name']
+        arguments = json.loads(response.function_call['arguments'])
+        log.debug(f'LLM responded with a function call: {name}({arguments}')
+        if name=='query_database':
+            results = query_database(**arguments)
+            results = f'Observation: {str(results)}'
+            message_output = openai.Message.from_function_call(name, results)
+            messages.append(message_output)
+            log.debug('Function results:')
+            log.debug(messages[-1])
+
+    while "Final Answer" not in response.content:
+        log.debug('Another call to the LLM')
+        response = model(messages, functions=functions)
+        log.debug(response)
+        input('continue?')
+        print()
 
