@@ -35,7 +35,7 @@ def setup(csv_file: str) -> Tuple[str, str]:
     """ Makes initial connection to the database and gets the table schema """
     db_file = opj(project.DATASETS_DIR_PATH, 'bank_database.db')
     conn = sqlite3.connect(db_file)
-    sql_utils.create_database_from_csv(conn, csv_file, db_file, TABLE_NAME)
+    sql_utils.create_database_from_csv(conn, csv_file, TABLE_NAME)
     schema = sql_utils.get_table_schema(conn, TABLE_NAME).to_string()
     return db_file, schema
 
