@@ -164,7 +164,7 @@ def main(csv_file: str):
 
         if query is None:
             conn.close()
-            return '', chat_history, '', '', explanation
+            return '', chat_history, None, '', explanation
 
         success = False
         for _ in range(5):
@@ -183,7 +183,7 @@ def main(csv_file: str):
                 explanation, query = extract_query_from_response(response)
                 if query is None:
                     conn.close()
-                    return '', chat_history, '', '', explanation
+                    return '', chat_history, None, '', explanation
 
         if success:
             db_res_prompt = get_db_agent_prompt(
