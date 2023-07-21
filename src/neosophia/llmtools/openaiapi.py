@@ -112,10 +112,11 @@ class Message:
         """Parse the API response."""
         role = response['choices'][0]['message']['role']
         content = response['choices'][0]['message'].get('content', None)
+        name = response['choices'][0]['message'].get('name', None)
         function_call = response['choices'][0]['message'].get('function_call', None)
         if function_call is not None:
             function_call = function_call.to_dict()
-        return cls(role, content, 'assistant', function_call)
+        return cls(role, content, name, function_call)
 
     @classmethod
     def from_function_call(cls, function_name: str, function_output: Any):
