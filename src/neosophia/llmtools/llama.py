@@ -1,12 +1,8 @@
 """
-Various open source LLMs.
+Llama 2 stuff using llama-cpp-python.
 """
 
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Ben Zimmer
-
-from typing import Any, Dict, List, Optional, Tuple
-import os
+from typing import Optional
 
 import llama_cpp
 
