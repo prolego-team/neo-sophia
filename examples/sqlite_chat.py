@@ -12,7 +12,7 @@ import gradio as gr
 import pandas as pd
 
 import neosophia.db.sqlite_utils as sql_utils
-from neosophia.llmtools import openaiapi as oaiapi
+# from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import project
 
