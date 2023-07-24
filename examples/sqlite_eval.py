@@ -2,19 +2,21 @@
 Evaluate the SQLLite question-answering system.
 """
 
-import sqlite3
 from typing import List, Optional, Tuple, Callable, Any
+import sqlite3
+import re
 
 import click
 import numpy as np
 import pandas as pd
+import tqdm
 
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.llmtools.util import Colors
+from neosophia.llmtools import bleurt
 
 from examples import project
 from examples import sqlite_chat as sc
-
-from neosophia.llmtools.util import Colors
 
 
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
@@ -87,16 +89,11 @@ def evaluate(
     bleurt_results = []
     numeric_results = []
 
-    from neosophia.llmtools import bleurt
 
     model_and_tokenizer = bleurt.load_bleurt(
         model_name=bleurt.BLEURT_20_D12,
         cache_dir_path=project.MODELS_DIR_PATH
     )
-
-    import re
-
-    import tqdm
 
     for question, expected_answer in tqdm.tqdm(tests):
         answer = qa_func(question)
