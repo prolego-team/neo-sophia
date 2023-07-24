@@ -1,12 +1,29 @@
 """
 Tools for wrangling with PDF documents.
 """
-
-from typing import List
 import io
 
+from typing import List
+
 import fitz
+
 from PIL import Image
+
+
+def extract_text_from_pdf(file_path: str) -> dict:
+    """ """
+    pdf_file_obj = open(file_path, 'rb')
+    pdf_reader = PyPDF2.PdfReader(pdf_file_obj)
+    num_pages = len(pdf_reader.pages)
+    data = {}
+    for page_num in range(num_pages):
+        if page_num not in data:
+            data[page_num + 1] = []
+        page_obj = pdf_reader.pages[page_num]
+        data[page_num + 1] = page_obj.extract_text()
+        data[page_num + 1]
+    pdf_file_obj.close()
+    return data
 
 
 def pdf_to_image(path: str, zoom_x: int, zoom_y: int) -> List[Image.Image]:
