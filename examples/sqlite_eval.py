@@ -6,12 +6,15 @@ import sqlite3
 from typing import List, Optional, Tuple, Callable, Any
 
 import click
+import numpy as np
 import pandas as pd
 
 from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import project
 from examples import sqlite_chat as sc
+
+from neosophia.llmtools.util import Colors
 
 
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
@@ -21,7 +24,7 @@ def question_answer(
         question: str,
         db_file: str,
         schema: str
-    ) -> Optional[str]:
+        ) -> Optional[str]:
 
     """
     Ask a question, get answer. This is basically copied from
@@ -73,8 +76,13 @@ def question_answer(
     return chat_response
 
 
-
-def evaluate(qa_func: Callable, tests: List[Tuple[str, Any]]):
+def evaluate(
+        qa_func: Callable,
+        tests: List[Tuple[str, Any]],
+        bleurt_thresh: float,
+        delta_thresh: float
+        ) -> Tuple[int, int]:
+    """evaluate model and print results"""
 
     bleurt_results = []
     numeric_results = []
@@ -88,7 +96,9 @@ def evaluate(qa_func: Callable, tests: List[Tuple[str, Any]]):
 
     import re
 
-    for question, expected_answer in tests:
+    import tqdm
+
+    for question, expected_answer in tqdm.tqdm(tests):
         answer = qa_func(question)
 
         if isinstance(expected_answer, str):
@@ -105,25 +115,48 @@ def evaluate(qa_func: Callable, tests: List[Tuple[str, Any]]):
 
         else:
             # extract a numeric response and compare
-
-            values = re.findall('[\d,]+\.?\d*', answer)
-            if values:
-                value = float(values[0])
-            else:
+            values = re.findall(r'[\d,]+\.?\d*', answer)
+            try:
+                value = values[0]
+                value = value.replace(',', '')
+                value = float(value)
+                delta = value - expected_answer
+            except:
                 value = None
+                delta = np.nan
 
             # TODO: some kind of score?
             numeric_results.append((
-                question, answer, value, expected_answer
+                question, answer, value, expected_answer, delta
             ))
 
+    correct = 0
+    missing = 0
+
     print('BLEURT results:')
-    for x in bleurt_results:
-        print(x)
+    for idx, (question, answer, expected_answer, score) in enumerate(bleurt_results):
+        print(f'{idx}. {question}')
+        if score > bleurt_thresh:
+            correct += 1
+            color = Colors.GREEN
+        else:
+            color = Colors.RED
+        print(f'\t{color}`{answer}` vs `{expected_answer}` (expected) {round(score, 3)}{Colors.RESET}')
 
     print('Numeric results:')
-    for x in numeric_results:
-        print(x)
+    for idx, (question, answer, value, expected_answer, delta) in enumerate(numeric_results):
+        # Not sure what the right way to do a binary result here is
+        if delta is not None and np.abs(delta) < delta_thresh:
+            correct += 1
+            color = Colors.GREEN
+        else:
+            if delta is None:
+                missing += 1
+            color = Colors.RED
+        print(f'{idx}. {question}')
+        print(f'\t{color}`{answer}` vs `{expected_answer}` (expected) {round(delta, 3)}{Colors.RESET}')
+
+    return correct, missing
 
 
 @click.command()
@@ -143,8 +176,7 @@ def main(csv_file: str):
     tests = [
         (
             'How many customers are millennials?',
-            # 'Three customers are millennials.'
-            'Ten customers are millennials'  # incorrect
+            'Three customers are millennials.'
         ),
         (
             'Which customer has the most money?',
@@ -156,7 +188,11 @@ def main(csv_file: str):
         )
     ]
 
-    evaluate(qa_func, tests)
+    correct, missing = evaluate(
+        qa_func, tests, 0.35, 1.0)
+
+    print('correct:', correct, '/', len(tests), '=', round((correct * 1.0) / len(tests), 3))
+    print('missing:', missing, '/', len(tests), '=', round((missing * 1.0) / len(tests), 3))
 
 
 if __name__ == '__main__':
