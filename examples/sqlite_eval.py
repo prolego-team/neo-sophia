@@ -89,7 +89,6 @@ def evaluate(
     bleurt_results = []
     numeric_results = []
 
-
     model_and_tokenizer = bleurt.load_bleurt(
         model_name=bleurt.BLEURT_20_D12,
         cache_dir_path=project.MODELS_DIR_PATH
