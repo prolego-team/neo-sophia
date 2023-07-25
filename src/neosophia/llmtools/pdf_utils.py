@@ -6,6 +6,7 @@ import io
 from typing import List
 
 import fitz
+import PyPDF2
 
 from PIL import Image
 
@@ -16,12 +17,12 @@ def extract_text_from_pdf(file_path: str) -> dict:
     pdf_reader = PyPDF2.PdfReader(pdf_file_obj)
     num_pages = len(pdf_reader.pages)
     data = {}
-    for page_num in range(num_pages):
+    for page_num in range(0, num_pages):
         if page_num not in data:
-            data[page_num + 1] = []
+            data[page_num] = []
         page_obj = pdf_reader.pages[page_num]
-        data[page_num + 1] = page_obj.extract_text()
-        data[page_num + 1]
+        data[page_num] = page_obj.extract_text()
+        data[page_num]
     pdf_file_obj.close()
     return data
 
