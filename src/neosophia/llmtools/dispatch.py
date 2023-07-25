@@ -23,7 +23,6 @@ class FunctionDesc:
     params: Dict[str, ParamDesc]
 
 
-
 def make_prompt(
         question: str,
         functions: Dict[str, FunctionDesc]
