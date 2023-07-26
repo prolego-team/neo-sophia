@@ -3,8 +3,7 @@ Classes and functions for custom-built function-calling
 functionality.
 """
 
-from typing import List, Dict, Any, Tuple, Optional, Callable
-
+from typing import  Dict, Any, Tuple, Optional, Callable
 from dataclasses import dataclass
 
 
@@ -18,7 +17,7 @@ class ParamDesc:
 
 @dataclass
 class FunctionDesc:
-    """Function description"""
+    """Function description."""
     description: str
     params: Dict[str, ParamDesc]
 
@@ -27,10 +26,16 @@ def dispatch_prompt(
         question: str,
         functions: Dict[str, FunctionDesc]
         ) -> str:
-    """aldsjkfaldfjhadf"""
+    """
+    Build a prompt for an LLM to choose between functions
+    to answer a question.
+    """
 
     def _param_str(pname: str, pdesc: ParamDesc) -> str:
-        """aldsfjahldsjf"""
+        """
+        Make a string to represent a parameter
+        name and description.
+        """
         required_str = '' if not pdesc.required else ', required'
         return f'{pname} ({pdesc.typ.__name__}{required_str}) - {pdesc.description}'
 
@@ -64,7 +69,7 @@ def parse_dispatch_response(
         response: str,
         functions: Dict[str, Any]
         ) -> Optional[Tuple[str, Dict[str, Any]]]:
-    """Parse the dispatch response."""
+    """Parse an LLMs response to the above dispatch prompt."""
     lines = response.split('\n')
 
     func_prefix = 'FUNCTION: '
@@ -102,8 +107,8 @@ def parse_dispatch_response(
                 value = value.strip('\'')
                 value = value.strip('"')
         except Exception as e:
-            print(e)
             print(f'Error parsing parameter `{pname}={value}')
+            print(e)
         res[pname] = value
 
     return name, res
