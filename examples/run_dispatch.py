@@ -51,15 +51,14 @@ def main():
         )
     }
 
-    prompt = dp.dispatch_prompt(
+    name, params = dp.dispatch_prompt_llm(
+        llm = lambda x: oaiapi.chat_completion(x, model='gpt-4'),
         question='Find up to three documents that describes the process for second mortgages.',
         functions=functions
     )
 
-    response = oaiapi.chat_completion(prompt, model='gpt-4')
-
-    print(response)
-
+    print('function name:', name)
+    print('function params:', params)
 
 
 if __name__ == '__main__':
