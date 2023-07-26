@@ -2,6 +2,8 @@
 Tools for wrangling with PDF documents.
 """
 import io
+import os
+import fnmatch
 
 from typing import List
 
@@ -11,18 +13,22 @@ import PyPDF2
 from PIL import Image
 
 
-def extract_text_from_pdf(file_path: str) -> dict:
+def find_pdfs_in_directory(directory: str) -> List[str]:
+    pdf_paths = []
+    for root, _, files in os.walk(directory):
+        for filename in fnmatch.filter(files, "*.pdf"):
+            pdf_path = os.path.join(root, filename)
+            pdf_paths.append(pdf_path)
+    return pdf_paths
+
+
+def extract_text_from_pdf(filepath: str) -> List[str]:
     """ """
-    pdf_file_obj = open(file_path, 'rb')
+    pdf_file_obj = open(filepath, 'rb')
     pdf_reader = PyPDF2.PdfReader(pdf_file_obj)
-    num_pages = len(pdf_reader.pages)
-    data = {}
-    for page_num in range(0, num_pages):
-        if page_num not in data:
-            data[page_num] = []
-        page_obj = pdf_reader.pages[page_num]
-        data[page_num] = page_obj.extract_text()
-        data[page_num]
+    data = []
+    for page_obj in pdf_reader.pages:
+        data.append(page_obj.extract_text())
     pdf_file_obj.close()
     return data
 
