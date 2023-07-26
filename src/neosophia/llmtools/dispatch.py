@@ -23,10 +23,10 @@ class FunctionDesc:
     params: Dict[str, ParamDesc]
 
 
-def make_prompt(
+def dispatch_prompt(
         question: str,
         functions: Dict[str, FunctionDesc]
-    ) -> str:
+        ) -> str:
     """aldsjkfaldfjhadf"""
 
     def _param_str(pname: str, pdesc: ParamDesc) -> str:
@@ -53,9 +53,17 @@ def make_prompt(
         'FUNCTION DESCRIPTIONS:' + '\n\n' +
         functions_str + '\n\n' +
         'Your answer should be in this form:\n\n' +
-        'FUNCTION NAME: function_name]\n' +
-        '[parameter name 0]: [parameter value 0]\n' +
-        '[parameter name 1]: [parameter value 1]\n' +
+        'FUNCTION: [function_name]\n' +
+        'PARAMETER: [parameter name 0] [parameter value 0]\n' +
+        'PARAMETER: [parameter name 1] [parameter value 1]\n' +
         '...\n'
     )
 
+
+def parse_dispatch_response(response: str) -> Dict[str, Any]:
+    """aaldfkjhalsdfjh adaldkjfhaldjfh"""
+    lines = response.split('\n')
+
+    # TODO: parsing
+
+    return None

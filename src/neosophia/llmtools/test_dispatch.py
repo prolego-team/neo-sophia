@@ -23,11 +23,24 @@ def test_dataclasses():
                     required=False
                 )
             }
+        ),
+        'query_db': dp.FunctionDesc(
+            description=(
+                'Run a query on a SQLite database. ' +
+                'Contains a Customers table with Name, Address, Checking, and Savings columns'
+            ),
+            params={
+                'query_str': dp.ParamDesc(
+                    description='query string',
+                    typ=str,
+                    required=True
+                )
+            }
         )
     }
 
-    prompt = dp.make_prompt(
-        question='Find the document that describes the process for second mortgages.',
+    prompt = dp.dispatch_prompt(
+        question='Find up to three documents that describes the process for second mortgages.',
         functions=functions
     )
 
