@@ -2,9 +2,11 @@
 Classes and functions for custom-built function-calling
 functionality.
 """
-
+import json
 from typing import  Dict, Any, Tuple, Optional, Callable
 from dataclasses import dataclass
+
+from neosophia.llmtools import openaiapi as oaiapi
 
 
 @dataclass
@@ -133,5 +135,69 @@ def dispatch_prompt_llm(
     )
 
 
-def dispatch_openai_functioncall():
-    pass
+def dispatch_openai_functioncall(
+        model: str,
+        question: str,
+        functions: Dict[str, FunctionDesc],
+        ) -> Optional[Tuple[str, Dict[str, Any]]]:
+    """aldskfjhaldfjkhaf"""
+
+    # TODO: type map
+
+    type_to_name = {
+        str: 'string',
+        int: 'integer'
+    }
+
+    fdicts = []
+    for name, desc in functions.items():
+        fdict = {
+            'type': 'object',
+            'name': name,
+            'description': desc.description,
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    pname: {
+                        'type': type_to_name.get(pdesc.typ),
+                        'description': str(pdesc.description)
+                    }
+                    for pname, pdesc in desc.params.items()
+                },
+                'required': [
+                    pname
+                    for pname, pdesc in desc.params.items()
+                    if pdesc.required
+                ]
+            }
+        }
+        fdicts.append(fdict)
+
+    chat = oaiapi.start_chat(model)
+
+    prompt = (
+        'Answer the following question with a function call.\n\n' +
+        'QUESTION: ' + question
+    )
+
+    response = chat(
+        messages=[
+            oaiapi.Message(
+                role='user',
+                content=prompt
+            )
+        ],
+        functions=fdicts
+    )
+
+    if response.function_call is None:
+        print('no function call in response!')
+        return None
+
+    # TODO: check for additional issues here?
+
+    function_call = response.function_call
+    name = function_call['name']
+    params = json.loads(function_call['arguments'])
+
+    return name, params
