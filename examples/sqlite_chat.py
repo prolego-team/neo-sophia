@@ -1,10 +1,10 @@
 """
 Script to interact with a SQLite database using natural language commands
 """
-
 import os
 import json
 import sqlite3
+
 from typing import List, Optional, Tuple
 
 import click
@@ -12,16 +12,15 @@ import gradio as gr
 import pandas as pd
 
 import neosophia.db.sqlite_utils as sql_utils
-from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import project
-
-OPENAI_LLM_MODEL_NAME = 'gpt-4'
+from neosophia.llmtools import openaiapi as oaiapi
 
 opj = os.path.join
 
+OPENAI_LLM_MODEL_NAME = 'gpt-4'
 TABLE_NAME = 'data'
-
+DEFAULT_QUESTION = 'Which customer has the most amount of money in checking and savings accounts combined?'
 EXP_QUERY_TEMPLATE = json.dumps(
     {
         'explanation': '[explain what the query does]',
@@ -30,12 +29,12 @@ EXP_QUERY_TEMPLATE = json.dumps(
 )
 
 
-def setup(csv_file: str) -> Tuple[str, str]:
+def setup(csv_file: str) -> Tuple[str, pd.DataFrame]:
     """ Makes initial connection to the database and gets the table schema """
     db_file = opj(project.DATASETS_DIR_PATH, 'bank_database.db')
     conn = sqlite3.connect(db_file)
     sql_utils.create_database_from_csv(conn, csv_file, TABLE_NAME)
-    schema = sql_utils.get_table_schema(conn, TABLE_NAME).to_string()
+    schema = sql_utils.get_table_schema(conn, TABLE_NAME)
     return db_file, schema
 
 
@@ -155,7 +154,8 @@ def main(csv_file: str):
 
         conn = sqlite3.connect(db_file)
 
-        user_prompt = get_user_agent_prompt(schema, TABLE_NAME, question)
+        user_prompt = get_user_agent_prompt(
+            schema.to_string(), TABLE_NAME, question)
 
         ua_response = oaiapi.chat_completion(
             prompt=user_prompt,
@@ -175,7 +175,7 @@ def main(csv_file: str):
             except Exception as sql_error_message:
 
                 sql_error_prompt = get_error_prompt(
-                    schema, TABLE_NAME, question, query, str(sql_error_message))
+                    schema.to_string(), TABLE_NAME, question, query, str(sql_error_message))
 
                 response = oaiapi.chat_completion(
                     prompt=sql_error_prompt,
@@ -187,7 +187,7 @@ def main(csv_file: str):
 
         if success:
             db_res_prompt = get_db_agent_prompt(
-                schema, TABLE_NAME, question, query, explanation, query_result)
+                schema.to_string(), TABLE_NAME, question, query, explanation, query_result)
 
             chat_response = oaiapi.chat_completion(
                 prompt=db_res_prompt,
@@ -204,7 +204,7 @@ def main(csv_file: str):
     conn = sqlite3.connect(db_file)
 
     with gr.Blocks() as demo:
-        gr.Markdown('# VaultVibe')
+        gr.Markdown('# Chat with your database demo')
         initial_query = 'select * from data;'
         initial_explanation = (
             'Interact with the data with natural language questions or commands. Some examples:\n\n' +
@@ -213,14 +213,33 @@ def main(csv_file: str):
             'What are the unique states that customers live in?\n\n' +
             'What is the average of total assets across customers?\n\n'
         )
-        dataframe = gr.Dataframe(value=pd.read_sql_query(initial_query, conn))
+        with gr.Row():
+            with gr.Column(scale=2):
+                gr.Markdown('## Query Result')
+                dataframe = gr.Dataframe(
+                    value=pd.read_sql_query(initial_query, conn))
+            with gr.Column():
+                gr.Markdown('## Schema')
+                schema_box = gr.Dataframe(value=schema)
+
         query_text_box = gr.Textbox(value=initial_query, label='Last Query')
         explanation_text_box = gr.Textbox(value=initial_explanation, label='Explanation')
         chatbot = gr.Chatbot()
-        question = gr.Textbox(value='Which customer is the coolest?', label='Ask that chatbot a question')
-        clear = gr.ClearButton([question, chatbot])
+        question = gr.Textbox(
+            value=DEFAULT_QUESTION, label='Ask that chatbot a question')
+
+        with gr.Row():
+            with gr.Column():
+                ask_button = gr.Button('Ask')
+            with gr.Column():
+                clear = gr.ClearButton([question, chatbot])
 
         question.submit(
+            respond,
+            [question, chatbot],
+            [question, chatbot, dataframe, query_text_box, explanation_text_box])
+
+        ask_button.click(
             respond,
             [question, chatbot],
             [question, chatbot, dataframe, query_text_box, explanation_text_box])
