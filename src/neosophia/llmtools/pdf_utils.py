@@ -24,12 +24,11 @@ def find_pdfs_in_directory(directory: str) -> List[str]:
 
 def extract_text_from_pdf(filepath: str) -> List[str]:
     """ """
-    pdf_file_obj = open(filepath, 'rb')
-    pdf_reader = PyPDF2.PdfReader(pdf_file_obj)
-    data = []
-    for page_obj in pdf_reader.pages:
-        data.append(page_obj.extract_text())
-    pdf_file_obj.close()
+    with open(filepath, 'rb') as pdf_file_obj:
+        pdf_reader = PyPDF2.PdfReader(pdf_file_obj)
+        data = []
+        for page_obj in pdf_reader.pages:
+            data.append(page_obj.extract_text())
     return data
 
 
