@@ -131,3 +131,7 @@ def dispatch_prompt_llm(
         response=response,
         functions=functions
     )
+
+
+def dispatch_openai_functioncall():
+    pass
