@@ -8,11 +8,11 @@ import sqlite3
 
 from ..db.sqlite_utils import get_db_creation_sql
 
-
 def make_sqlite_query_tool(db_connection: sqlite3.Connection) -> Callable:
     """Run a sqlite query against a given database connection."""
 
-    description = 'Function for running a sqlite query against a databse.'
+
+    description = 'Run a sqlite query against a databse.'
     params = {
         'query': {
             'description': 'The query to run',
@@ -21,14 +21,13 @@ def make_sqlite_query_tool(db_connection: sqlite3.Connection) -> Callable:
         }
     }
 
-    def sqlite_tool(query: str):
+
+    def sqlite_tool(query: str) -> str:
         cursor = db_connection.cursor()
-        results = cursor.execute(query).fetchall()
+        try:
+            results = str(cursor.execute(query).fetchall())
+        except Exception as e:
+            results = f'Query failed: {e}'
         return results
 
     return sqlite_tool, (description, params)
-
-
-conn = sqlite3.connect('synthbank.db')
-print(get_db_creation_sql(conn))
-tool = make_sqlite_query_tool(conn)
