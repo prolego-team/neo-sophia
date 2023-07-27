@@ -32,7 +32,7 @@ def openai_chat_response():
                 "total_tokens": 99
             }
         }
-    
+
     return _chat_output
 
 
@@ -77,7 +77,7 @@ def test_messages(openai_chat_response):
     assert message==openaiapi.Message(
         role=target_output_role,
         content=target_output_content,
-        name='assistant'
+        name=None
     )
 
     message = openaiapi.Message.from_function_call('get_weather', 72)
