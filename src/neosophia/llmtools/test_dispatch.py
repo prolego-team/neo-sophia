@@ -48,3 +48,83 @@ def test_dataclasses():
     print(prompt)
 
     # TODO: assertions
+
+
+def test_parse_dispatch_response():
+    """Test dispatch response parsing"""
+
+    functions = {
+        'combine': dp.FunctionDesc(
+            'combine parameters somehow',
+            params={
+                'a': dp.ParamDesc('First parameter', int, True),
+                'b': dp.ParamDesc('Second parameter', float, True),
+                'c': dp.ParamDesc('Third parameter', str, True)
+            }
+        )
+    }
+
+    # correct format
+    name, params = dp.parse_dispatch_response(
+        response=(
+            'blah blah baloney\n' +
+            'FUNCTION: combine\n' +
+            'PARAMETER: a 5\n' +
+            'PARAMETER: b 6\n' +
+            'PARAMETER: c "Hello, world!"'
+        ),
+        functions=functions
+    )
+    assert name == 'combine'
+    assert params == {'a': 5, 'b': 6.0, 'c': 'Hello, world!'}
+
+    # name doesn't match
+    res = dp.parse_dispatch_response(
+        response='FUNCTION: baloney\nPARAMETER: a 5',
+        functions=functions
+    )
+    assert res is None
+
+    # param names don't match
+    name, params = dp.parse_dispatch_response(
+        response=(
+            'FUNCTION: combine\n' +
+            'PARAMETER: a 5\n' +
+            'PARAMETER: b 6\n' +
+            'PARAMETER: d "Hello, world!"'
+        ),
+        functions=functions
+    )
+    assert name == 'combine'
+    assert params == {'a': 5, 'b': 6.0}
+
+    # param types can't be parsed
+    name, params = dp.parse_dispatch_response(
+        response=(
+            'FUNCTION: combine\n' +
+            'PARAMETER: a "Hello, world!"\n' +
+            'PARAMETER: b 6\n' +
+            'PARAMETER: c "Hello, world!"'
+        ),
+        functions=functions
+    )
+    assert name == 'combine'
+    assert params == {'b': 6.0, 'c': 'Hello, world!'}
+
+
+def test_convert_function_descs():
+    """test conver_function_descs"""
+
+    res = dp.convert_function_descs(EXAMPLE_FUNCTIONS)
+
+    # assert a few things
+
+    assert len(res) == 2
+
+    assert res[0]['name'] == 'find_document'
+    assert list(res[0]['parameters']['properties'].keys()) == ['search_str', 'n_closest']
+    assert res[0]['parameters']['required'] == ['search_str']
+
+    assert res[1]['name'] == 'query_db'
+    assert list(res[1]['parameters']['properties'].keys()) == ['query_str']
+    assert res[1]['parameters']['required'] == ['query_str']

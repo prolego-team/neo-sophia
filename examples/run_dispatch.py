@@ -3,7 +3,8 @@ Default Python Template.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
-import os
+
+import time
 
 from neosophia.llmtools import dispatch as dp
 from neosophia.llmtools import test_dispatch as tdp
@@ -36,7 +37,8 @@ def main():
             functions=f
         ),
         'OpenAI - Function Calling': lambda q, f: dp.dispatch_openai_functioncall(
-            model='gpt-4',
+            # model='gpt-4',
+            model='gpt-4-0613',
             question=q,
             functions=f
         )
@@ -49,7 +51,6 @@ def main():
 
             print(question)
 
-            import time
             start_time = time.time()
 
             res = dispatcher(question, functions)

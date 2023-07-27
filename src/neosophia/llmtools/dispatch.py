@@ -2,8 +2,9 @@
 Classes and functions for custom-built function-calling
 functionality.
 """
+
 import json
-from typing import  Dict, Any, Tuple, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 from neosophia.llmtools import openaiapi as oaiapi
@@ -108,10 +109,10 @@ def parse_dispatch_response(
                 # There is probably a better way to do this
                 value = value.strip('\'')
                 value = value.strip('"')
+            res[pname] = value
         except Exception as e:
             print(f'Error parsing parameter `{pname}={value}')
-            print(e)
-        res[pname] = value
+            print('\t', str(e))
 
     return name, res
 
@@ -135,18 +136,18 @@ def dispatch_prompt_llm(
     )
 
 
-def dispatch_openai_functioncall(
-        model: str,
-        question: str,
-        functions: Dict[str, FunctionDesc],
-        ) -> Optional[Tuple[str, Dict[str, Any]]]:
-    """aldskfjhaldfjkhaf"""
+def convert_function_descs(functions: Dict[str, FunctionDesc]) -> List[Dict[str, Any]]:
+    """"
+    Convert function descriptions to the dicts expected by the
+    OpenAI API.
+    """
 
-    # TODO: type map
-
+    # TODO: additional types in mapping
+    # TODO: what are the available types in the OpenAI API?
     type_to_name = {
         str: 'string',
-        int: 'integer'
+        int: 'integer',
+        float: 'float'
     }
 
     fdicts = []
@@ -173,6 +174,18 @@ def dispatch_openai_functioncall(
         }
         fdicts.append(fdict)
 
+    return fdicts
+
+
+def dispatch_openai_functioncall(
+        model: str,
+        question: str,
+        functions: Dict[str, FunctionDesc],
+        ) -> Optional[Tuple[str, Dict[str, Any]]]:
+    """Choose a function using OpenAI function calling"""
+
+    fdicts = convert_function_descs(functions)
+
     chat = oaiapi.start_chat(model)
 
     prompt = (
@@ -194,7 +207,7 @@ def dispatch_openai_functioncall(
         print('no function call in response!')
         return None
 
-    # TODO: check for additional issues here?
+    # TODO: other issues here to check for?
 
     function_call = response.function_call
     name = function_call['name']
