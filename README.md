@@ -42,10 +42,10 @@ Videos
 - [Unified Natural Language Query is the enerprise AI "killer app"](#)
 - [SQL generation and interpretation with LLMs](#)
 
-1. Checkout Episode 3, [Release v0.3.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.0)
+1. Checkout Episode 3, [Release v0.3.1](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.0)
 
 ````
-    git checkout tags/v0.3.0
+    git checkout tags/v0.3.1
 ````
 2. Start the demo by running
 
