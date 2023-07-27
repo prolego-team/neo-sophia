@@ -45,9 +45,14 @@ def test_dataclasses():
         functions=EXAMPLE_FUNCTIONS
     )
 
+    # two functions and 3 parameters between them
     print(prompt)
 
-    # TODO: assertions
+    lines = prompt.split('\n')
+    assert len([x for x in lines if x.startswith('name:')]) == 2
+    assert len([x for x in lines if x.startswith('description:')]) == 2
+    assert len([x for x in lines if x.startswith('parameters:')]) == 2
+    assert len([x for x in lines if x.startswith('- ')]) == 3
 
 
 def test_parse_dispatch_response():

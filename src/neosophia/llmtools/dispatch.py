@@ -51,7 +51,7 @@ def dispatch_prompt(
             '\n'.join([
                 '- ' + _param_str(pname, pdesc)
                 for pname, pdesc in desc.params.items()]
-            )
+            ) + '\n\n'
         )
 
     return (
@@ -59,7 +59,7 @@ def dispatch_prompt(
         'based on the function descriptions below.\n\n'
         'QUESTION: ' + question + '\n\n' +
         'FUNCTION DESCRIPTIONS:' + '\n\n' +
-        functions_str + '\n\n' +
+        functions_str +
         'Your answer should be in this form:\n\n' +
         'FUNCTION: [function_name]\n' +
         'PARAMETER: [parameter name 0] [parameter value 0]\n' +
