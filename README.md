@@ -45,7 +45,7 @@ Videos
 1. Checkout Episode 3, [Release v0.3.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.0)
 
 ````
-    git checkout tags/vX.X.X
+    git checkout tags/v0.3.0
 ````
 2. Start the demo by running
 
