@@ -108,10 +108,14 @@ def make_simple_react_agent(
         functions: list[dict],
         max_llm_calls: int | None = 2
     ) -> Callable:
-    """Return a ReAct agent.
+    """Return a simple ReAct agent.
     
     The agent will answer one question at a time given the tools presented via the
     function_descriptions and functions arguments.
+
+    This "simple" agent has the constraint that only one function call can be made.
+    This often makes the agent more concise, but it prevents multi-step question
+    answering.
     
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
@@ -145,10 +149,8 @@ def make_simple_react_agent(
 
         function_call_counter = 0
         for _ in range(max_llm_calls):
-            print('calling llm')
             response = model(messages, functions=function_descriptions)
             messages.append(response)
-            print(response)
 
             if 'Observation:' in response.content:
                 next_message = openai.Message(

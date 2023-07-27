@@ -1,9 +1,7 @@
 import os
 import sys
-from collections.abc import Callable
 import logging
 import sqlite3
-import json
 
 from neosophia.llmtools import (
     openaiapi as openai,
@@ -39,6 +37,17 @@ DATABASE = 'data/synthbank.db'
 # arguments.
 
 
+def summarize_interaction(messages: list[openai.Message]):
+    """Print the transcription of an agent/LLM interaction."""
+    print('='*20)
+    print('SUMMARY')
+    print('='*20)
+    for i,message in enumerate(messages[1:]):
+        print(f'MESSAGE {i}')
+        print(f'{message.role}:')
+        print(message.content)
+        print(f'<name={message.name}, function_call={message.function_call}>')
+        print('='*20)
 
 def main():
     # Setup
@@ -50,9 +59,6 @@ def main():
     # Connect to the DB and get the table names
     log.debug('Getting the DB information.')
     db_connection = sqlite3.connect(DATABASE)
-
-    cursor = db_connection.cursor()
-    tables = cursor.execute('SELECT name FROM sqlite_master').fetchall()
 
     # Build the functions that the agent can use
     query_database, _ = tools.make_sqlite_query_tool(db_connection)
@@ -76,7 +82,6 @@ def main():
         }
     ]
 
-
     # Construct a description of the DB schema for the LLM by retrieving the
     # CREATE commands used to create the tables.
     schema_description = (
@@ -86,14 +91,8 @@ def main():
         "The bank's database tables were created using the following commands.\n"
     )
     schema_description += get_db_creation_sql(db_connection)
-    # for table in tables:
-    #     table_name = table[0]
-    #     if 'autoindex' in table_name or 'sqlite_sequence' in table_name:
-    #         continue
 
-    #     description = cursor.execute(f"select sql from sqlite_master where type='table' and name='{table_name}'").fetchone()[0]
-    #     schema_description += '  '+description+'\n'
-
+    # Setup the agent
     system_message = (
         "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
         "against the bank's databse to collect information for the user.  Answer the user's "
@@ -102,16 +101,22 @@ def main():
     system_message += schema_description
     agent = make_simple_react_agent(system_message, model, function_descriptions, functions)
 
+    # Execute the agent call and summarize the interaction
     input_msg = input('>')
     messages = agent(input_msg)
+    summarize_interaction(messages)
+    if 'i cannot construct a final answer' in messages[-1].content.lower():
+        print("Looks like the simple agent couldn't cut it.  Let's pull out the big gun.")
+        agent = make_react_agent(
+            system_message,
+            model,
+            function_descriptions,
+            functions
+        )
+        messages = agent(input_msg)
+        summarize_interaction(messages)
 
-    print('SUMMARY')
-    for i,message in enumerate(messages[1:]):
-        print(f'MESSAGE {i}')
-        print(f'{message.role}:')
-        print(message.content)
-        print(f'<name={message.name}, function_call={message.function_call}>')
-        print('='*20)
+    
     # print('='*40)
 
     # transcription = ''
@@ -133,8 +138,6 @@ def main():
     # print('='*40)
     # # print(messages)
     # print(response.content)
-
-
 
 
 if __name__=='__main__':
