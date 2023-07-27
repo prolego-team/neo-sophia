@@ -1,5 +1,5 @@
 """
-Default Python Template.
+Run sort of an integration test to compare various dispatch functions.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
