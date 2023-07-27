@@ -226,7 +226,7 @@ def main(csv_file: str):
         explanation_text_box = gr.Textbox(value=initial_explanation, label='Explanation')
         chatbot = gr.Chatbot()
         question = gr.Textbox(
-            value=DEFAULT_QUESTION, label='Ask that chatbot a question')
+            value=DEFAULT_QUESTION, label='Ask a question about the data')
 
         with gr.Row():
             with gr.Column():
