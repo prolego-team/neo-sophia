@@ -39,10 +39,10 @@ Questions? Just ask in our [Discord Community](#).
 What will be the AI "killer app" in the enterprise? Our bet is Unified Natural Language Query (NQL). It gives executives and business leaders the ability to get insights from data by asking "natural" questions, similar to how you currently use ChatGPT. In this Episode we describe the business problem and show the extensible power of a simple example of SQL generation supplemented with the reasoning power of an LLM like GPT-4.
 
 Videos
-- [Unified Natural Language Query is the enerprise AI "killer app"]
-- [SQL generation and interpretation with LLMs]
+- [Unified Natural Language Query is the enerprise AI "killer app"](#)
+- [SQL generation and interpretation with LLMs](#)
 
-1. Checkout Episode 3, [Release vX.X.X](#)
+1. Checkout Episode 3, [Release v0.3.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.0)
 
 ````
     git checkout tags/vX.X.X
