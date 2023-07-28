@@ -145,7 +145,8 @@ def convert_function_descs(functions: Dict[str, FunctionDesc]) -> List[Dict[str,
     """
 
     # TODO: additional types in mapping
-    # TODO: what are the available types in the OpenAI API?
+    # TODO: what are the available types in the OpenAI API and what are there names?
+    #       ie `int` vs `integer`?
     type_to_name = {
         str: 'string',
         int: 'integer',
