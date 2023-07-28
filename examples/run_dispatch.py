@@ -45,7 +45,9 @@ def main():
     }
 
     # add local llama-2 dispatcher
-
+    # this takes a long time to run and doesn't produce very good results
+    # so excluding this pending further experimentation
+    # (some prompt tweaks might work)
     # try:
     #
     #     import os
