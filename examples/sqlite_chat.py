@@ -160,7 +160,6 @@ def main(csv_file: str):
         ua_response = oaiapi.chat_completion(
             prompt=user_prompt,
             model=OPENAI_LLM_MODEL_NAME)
-
         explanation, query = extract_query_from_response(ua_response)
 
         if query is None:
@@ -181,7 +180,6 @@ def main(csv_file: str):
                 response = oaiapi.chat_completion(
                     prompt=sql_error_prompt,
                     model=OPENAI_LLM_MODEL_NAME)
-
                 explanation, query = extract_query_from_response(response)
                 if query is None:
                     conn.close()
