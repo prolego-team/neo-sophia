@@ -3,11 +3,9 @@ import sys
 import logging
 import sqlite3
 
-from neosophia.llmtools import (
-    openaiapi as openai,
-    tools
-)
+import gradio as gr
 
+from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent, make_simple_react_agent
 from neosophia.db.sqlite_utils import get_db_creation_sql
 
@@ -24,17 +22,23 @@ log = logging.getLogger('agent')
 DATABASE = 'data/synthbank.db'
 
 
+def format_message(message):
+    text = f'{message.role}: '
+    text += message.content
+    text += f'<name={message.name}, function_call={message.function_call}>'
+    text += '\n'
+    return text
+
+
 def summarize_interaction(messages: list[openai.Message]):
     """Print the transcription of an agent/LLM interaction."""
-    print('='*20)
-    print('SUMMARY')
-    print('='*20)
-    for i,message in enumerate(messages[1:]):
-        print(f'MESSAGE {i}')
-        print(f'{message.role}:')
-        print(message.content)
-        print(f'<name={message.name}, function_call={message.function_call}>')
-        print('='*20)
+
+    responses = []
+    for i, message in enumerate(messages[1:]):
+        text = format_message(message)
+        responses.append(text)
+
+    return responses
 
 
 def main():
@@ -48,11 +52,6 @@ def main():
     log.debug('Getting the DB information.')
     db_connection = sqlite3.connect(DATABASE)
 
-    # Build the functions that the agent can use
-    query_database, _ = tools.make_sqlite_query_tool(db_connection)
-    functions = {
-        'query_database': query_database
-    }
     function_descriptions = [
         {
             'name': 'query_database',
@@ -79,6 +78,7 @@ def main():
         "The bank's database tables were created using the following commands.\n"
     )
     schema_description += get_db_creation_sql(db_connection)
+    db_connection.close()
 
     # Setup the agent
     system_message = (
@@ -87,22 +87,89 @@ def main():
         "questions as best as you can.  Only use the functions you have been provided with."
     )
     system_message += schema_description
-    agent = make_simple_react_agent(system_message, model, function_descriptions, functions)
 
-    # Execute the agent call and summarize the interaction
-    input_msg = input('>')
-    messages = agent(input_msg)
-    summarize_interaction(messages)
-    if 'i cannot construct a final answer' in messages[-1].content.lower():
-        print("Looks like the simple agent couldn't cut it.  Let's pull out the big gun.")
-        agent = make_react_agent(
-            system_message,
-            model,
-            function_descriptions,
-            functions
-        )
-        messages = agent(input_msg)
-        summarize_interaction(messages)
+    DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
+
+    def user_wrapper(question, chat_history):
+        return '', chat_history + [[question, None]]
+
+    import time
+
+    def agent_wrapper(chat_history):
+
+        question = chat_history[-1][0]
+
+        chat_history[-1][1] = 'Calling api...'
+        yield chat_history
+
+        # Build the functions that the agent can use
+        db_connection = sqlite3.connect(DATABASE)
+        query_database, _ = tools.make_sqlite_query_tool(db_connection)
+        functions = {
+            'query_database': query_database
+        }
+
+        agent = make_simple_react_agent(
+            system_message, model, function_descriptions, functions)
+
+        messages = agent(question)
+
+        for response in summarize_interaction(messages):
+            chat_history.append([None, response])
+            time.sleep(0.05)
+            yield chat_history
+
+        final_answer = True
+        for message in messages:
+            if 'i cannot construct a final answer' in message.content.lower():
+                final_answer = False
+                break
+
+        if not final_answer:
+            agent = make_react_agent(
+                system_message,
+                model,
+                function_descriptions,
+                functions
+            )
+            messages = agent(question)
+
+            for response in summarize_interaction(messages):
+                chat_history.append([None, response])
+                time.sleep(0.05)
+                yield chat_history
+
+        db_connection.close()
+
+    with gr.Blocks() as demo:
+        gr.Markdown('# Chat with your database demo')
+
+        chatbot = gr.Chatbot()
+        question = gr.Textbox(
+            value=DEFAULT_QUESTION, label='Ask a question about the data')
+
+        with gr.Row():
+            with gr.Column():
+                ask_button = gr.Button('Ask')
+            with gr.Column():
+                clear_button = gr.ClearButton([question, chatbot])
+
+        question.submit(
+            user_wrapper,
+            inputs=[question, chatbot],
+            outputs=[question, chatbot],
+            queue=False).then(agent_wrapper, chatbot, chatbot)
+
+        ask_button.click(
+            user_wrapper,
+            inputs=[question, chatbot],
+            outputs=[question, chatbot],
+            queue=False).then(agent_wrapper, chatbot, chatbot)
+
+        clear_button.click(lambda: None, None, chatbot, queue=False)
+
+    demo.queue()
+    demo.launch()
 
 
 if __name__=='__main__':

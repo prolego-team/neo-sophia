@@ -1,20 +1,22 @@
 """
 Implementation of ReAct agent.
 """
+import json
 
 from collections.abc import Callable
-import json
 
 from ..llmtools import openaiapi as openai
 
 
-def get_next_message(response: openai.Message, functions: list[dict]) -> tuple[openai.Message, bool]:
+def get_next_message(
+        response: openai.Message,
+        functions: list[dict]) -> tuple[openai.Message, bool]:
     """Get a response to a ReAct LLM call."""
 
     function_called = False
     if 'Observation:' in response.content:
         next_message = openai.Message(
-            'user', 
+            'user',
             ('Your response contained an observation from a function call, but '
                 'function calls should only be executed by the user.  Please do '
                 'not make up responses to function calls!')
@@ -31,7 +33,7 @@ def get_next_message(response: openai.Message, functions: list[dict]) -> tuple[o
         function_called = True
     else:
         next_message = openai.Message(
-            'user', 
+            'user',
             ('You did not call a function as your "Action", or it was not in '
                 'the correct format.  Please try again.')
         )
@@ -47,10 +49,10 @@ def make_react_agent(
         max_llm_calls: int | None = 10
     ) -> Callable:
     """Return a ReAct agent.
-    
+
     The agent will answer one question at a time given the tools presented via the
     function_descriptions and functions arguments.
-    
+
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
 
@@ -108,14 +110,14 @@ def make_simple_react_agent(
         max_llm_calls: int | None = 2
     ) -> Callable:
     """Return a simple ReAct agent.
-    
+
     The agent will answer one question at a time given the tools presented via the
     function_descriptions and functions arguments.
 
     This "simple" agent has the constraint that only one function call can be made.
     This often makes the agent more concise, but it prevents multi-step question
     answering.
-    
+
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
 
