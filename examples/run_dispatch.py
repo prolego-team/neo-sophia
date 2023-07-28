@@ -46,33 +46,33 @@ def main():
 
     # add local llama-2 dispatcher
 
-    try:
-
-        import os
-        from neosophia.llmtools import llama
-
-        TOKENS = 1024
-
-        model_path = os.path.join(
-            '/Users/ben/Prolego/code/llama.cpp',
-            'llama-2-13b-chat.ggmlv3.q4_0.bin'
-        )
-
-        llama_model = llama.load_llama2(
-            model_file_path=model_path,
-            context_tokens=TOKENS
-        )
-
-        llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
-            llm=lambda x: llama.llama2_text(llama_model, x, TOKENS),
-            question=q,
-            functions=f
-        )
-
-        dispatchers['llama-2-13b-chat - Custom Propmpt'] = llama_dispatcher
-
-    except:
-        print("Could not load llama-2 chat model")
+    # try:
+    #
+    #     import os
+    #     from neosophia.llmtools import llama
+    #
+    #     TOKENS = 1024
+    #
+    #     model_path = os.path.join(
+    #         '/Users/ben/Prolego/code/llama.cpp',
+    #         'llama-2-13b-chat.ggmlv3.q4_0.bin'
+    #     )
+    #
+    #     llama_model = llama.load_llama2(
+    #         model_file_path=model_path,
+    #         context_tokens=TOKENS
+    #     )
+    #
+    #     llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
+    #         llm=lambda x: llama.llama2_text(llama_model, x, TOKENS),
+    #         question=q,
+    #         functions=f
+    #     )
+    #
+    #     dispatchers['llama-2-13b-chat - Custom Propmpt'] = llama_dispatcher
+    #
+    # except:
+    #     print("Could not load llama-2 chat model")
 
     results = {}
 

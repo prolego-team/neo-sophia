@@ -47,11 +47,15 @@ def dispatch_prompt(
         functions_str += (
             'name: ' + name + '\n' +
             'description: ' + desc.description + '\n' +
-            'parameters:\n' +
+            # 'parameters:\n' +
+            # '\n'.join([
+            #     '- ' + _param_str(pname, pdesc)
+            #     for pname, pdesc in desc.params.items()]
+            # ) + '\n\n'
             '\n'.join([
-                '- ' + _param_str(pname, pdesc)
-                for pname, pdesc in desc.params.items()]
-            ) + '\n\n'
+                'parameter: ' + _param_str(pname, pdesc)
+                for pname, pdesc in desc.params.items()
+            ]) + '\n\n'
         )
 
     return (
@@ -86,13 +90,11 @@ def parse_dispatch_response(
             name = line.removeprefix(func_prefix)
         elif line.startswith(param_prefix):
             line = line.removeprefix(param_prefix).strip()
-            # word at start of line is paramter name
+            # word at start of line is parameter name
             words = line.split()
             pname = words[0]
             value = line.removeprefix(pname).strip()
             params[pname] = value
-
-    # Need to think more about the best day to handle potential issues here
 
     res = {}
 
@@ -185,21 +187,14 @@ def dispatch_openai_functioncall(
     """Choose a function using OpenAI function calling"""
 
     fdicts = convert_function_descs(functions)
-
     chat = oaiapi.start_chat(model)
-
     prompt = (
         'Answer the following question with a function call.\n\n' +
         'QUESTION: ' + question
     )
 
     response = chat(
-        messages=[
-            oaiapi.Message(
-                role='user',
-                content=prompt
-            )
-        ],
+        messages=[oaiapi.Message(role='user', content=prompt)],
         functions=fdicts
     )
 
