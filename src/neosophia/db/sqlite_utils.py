@@ -16,7 +16,7 @@ def get_db_creation_sql(conn: sqlite3.Connection) -> str:
     """Construct a description of the DB schema for the LLM by retrieving the
     CREATE commands used to create the tables."""
     cursor = conn.cursor()
-    
+
     query = "SELECT sql FROM sqlite_master WHERE type='table'"
     results = cursor.execute(query).fetchall()
     results = [col[0] for col in results]

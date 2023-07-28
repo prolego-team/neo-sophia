@@ -1,12 +1,17 @@
+"""
+Example of using an LLM to chat with a database.
+"""
+
 import os
 import sys
 import logging
 import sqlite3
+from datetime import datetime
 
 import gradio as gr
 
 from neosophia.llmtools import openaiapi as openai, tools
-from neosophia.agents.react import make_react_agent, make_simple_react_agent
+from neosophia.agents.react import make_react_agent
 from neosophia.db.sqlite_utils import get_db_creation_sql
 
 # === Basic setup ===================================================
@@ -23,17 +28,17 @@ DATABASE = 'data/synthbank.db'
 DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
 
 def format_message(message):
+    """Convert a message into plain text"""
     text = f'{message.role.capitalize()}:\n'
     text += message.content
-    text += f'\n\n<name={message.name}, function_call={message.function_call}>\n'
+    text += f'\n\n_<name={message.name}, function_call={message.function_call}>_\n'
     return text
 
 
 def summarize_interaction(messages: list[openai.Message]):
     """Generate a transcription of an agent/LLM interaction."""
-
     responses = []
-    for i, message in enumerate(messages[1:]):
+    for message in messages[1:]:
         text = format_message(message)
         responses.append(text)
 
@@ -41,6 +46,8 @@ def summarize_interaction(messages: list[openai.Message]):
 
 
 def main():
+    """Setup and run gradio app."""
+
     # Setup
     openai.set_api_key(os.getenv('OPENAI_API_KEY'))
 
@@ -83,14 +90,13 @@ def main():
     system_message = (
         "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
         "against the bank's databse to collect information for the user.  Answer the user's "
-        "questions as best as you can.  Only use the functions you have been provided with."
+        "questions as best as you can.  Only use the functions you have been provided with.\n\n"
+        f"Todayy's date is {datetime.today()}."
     )
     system_message += schema_description
 
     def user_wrapper(question, chat_history):
         return '', chat_history + [[question, None]]
-
-    import time
 
     def agent_wrapper(chat_history):
 
@@ -109,11 +115,38 @@ def main():
         for message in agent(question):
             chat_history.append([None, format_message(message)])
             yield chat_history
-        
+
         db_connection.close()
 
     with gr.Blocks() as demo:
-        gr.Markdown('# Chat a Bank Database')
+        gr.Markdown('# Chat With a Bank Database')
+        gr.Markdown(
+            "You can use the Chatbot below to answer questions about SynthBank's "
+            "database.  SynthBank is (fake) bank, and the database contains information "
+            "about it's customers and their accounts.\n"
+            "## About the bank's database:\n"
+            "The database contains the name and date of birth for each of the banks "
+            "customers.  Each customer may have one or more associated products:\n"
+            "savings account, checking account, mortgage or auto loan.\n\n"
+            "For each account the database stores the account open date and the interest rate "
+            "if applicable.  Account balances and transactions are _not_ stored in the database.\n"
+            "## Example questions:\n"
+            "Here are a few questions you could ask:\n"
+            "- Who most recently opened a checking account?\n"
+            "- How many people have opened a savings account in the last year?\n"
+            "- How many products does the person who most recently opened a mortgage have?\n"
+            "- Which customer has the highest interest rate on their credit card, and what "
+            "is that interest rate?\n"
+            "## Interacting with the Chatbot:\n"
+            'When the Chatbot thinks it has your answer it will respond with "Final Answer:".\n\n'
+            "Sometimes the Chatbot will struggle to get the right answer.  It is programmed "
+            "to try again if it makes a mistake up to a limit of 10 tries.  It's reasoning "
+            "process and database interactions will be printed in the chat dialogue so that "
+            "you can follow along.\n\n"
+            'Sometimes the Chatbot will make things up (or "hallucinate").  The code tries '
+            "to catch the situations, but if anything looks unusual you can try repeating the "
+            "question to make sure you get the same response again."
+        )
 
         chatbot = gr.Chatbot()
         question = gr.Textbox(

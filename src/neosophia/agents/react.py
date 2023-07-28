@@ -5,7 +5,7 @@ import json
 
 from collections.abc import Callable
 
-from ..llmtools import openaiapi as openai
+from neosophia.llmtools import openaiapi as openai
 
 
 def get_next_message(

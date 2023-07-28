@@ -25,8 +25,8 @@ def make_sqlite_query_tool(db_connection: sqlite3.Connection) -> Callable:
         cursor = db_connection.cursor()
         try:
             results = str(cursor.execute(query).fetchall())
-        except Exception as e:
-            results = f'Query failed: {e}'
+        except Exception as error:
+            results = f'Query failed: {error}'
         return results
 
     return sqlite_tool, (description, params)
