@@ -30,8 +30,6 @@ def llama2_text(
         print(text)
 
         output = model(
-            # prompt='[INST]What is the capital of France?[/INST]',
-            # prompt='[INST]What is the difference between SO(3) and Spin(3)?[/INST]',
             prompt=f'[INST]{text}[/INST]',
             temperature=0.7,
             repeat_penalty=1.1,
