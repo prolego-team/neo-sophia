@@ -20,18 +20,17 @@ log = logging.getLogger('agent')
 # ===================================================================
 
 DATABASE = 'data/synthbank.db'
-
+DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
 
 def format_message(message):
-    text = f'{message.role}: '
+    text = f'{message.role.capitalize()}:\n'
     text += message.content
-    text += f'<name={message.name}, function_call={message.function_call}>'
-    text += '\n'
+    text += f'\n\n<name={message.name}, function_call={message.function_call}>\n'
     return text
 
 
 def summarize_interaction(messages: list[openai.Message]):
-    """Print the transcription of an agent/LLM interaction."""
+    """Generate a transcription of an agent/LLM interaction."""
 
     responses = []
     for i, message in enumerate(messages[1:]):
@@ -88,8 +87,6 @@ def main():
     )
     system_message += schema_description
 
-    DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
-
     def user_wrapper(question, chat_history):
         return '', chat_history + [[question, None]]
 
@@ -109,7 +106,7 @@ def main():
             'query_database': query_database
         }
 
-        agent = make_simple_react_agent(
+        agent = make_react_agent(
             system_message, model, function_descriptions, functions)
 
         messages = agent(question)
@@ -119,30 +116,30 @@ def main():
             time.sleep(0.05)
             yield chat_history
 
-        final_answer = True
-        for message in messages:
-            if 'i cannot construct a final answer' in message.content.lower():
-                final_answer = False
-                break
+        # final_answer = True
+        # for message in messages:
+        #     if 'i cannot construct a final answer' in message.content.lower():
+        #         final_answer = False
+        #         break
 
-        if not final_answer:
-            agent = make_react_agent(
-                system_message,
-                model,
-                function_descriptions,
-                functions
-            )
-            messages = agent(question)
+        # if not final_answer:
+        #     agent = make_react_agent(
+        #         system_message,
+        #         model,
+        #         function_descriptions,
+        #         functions
+        #     )
+        #     messages = agent(question)
 
-            for response in summarize_interaction(messages):
-                chat_history.append([None, response])
-                time.sleep(0.05)
-                yield chat_history
+        #     for response in summarize_interaction(messages):
+        #         chat_history.append([None, response])
+        #         time.sleep(0.05)
+        #         yield chat_history
 
         db_connection.close()
 
     with gr.Blocks() as demo:
-        gr.Markdown('# Chat with your database demo')
+        gr.Markdown('# Chat a Bank Database')
 
         chatbot = gr.Chatbot()
         question = gr.Textbox(
