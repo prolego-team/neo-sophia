@@ -82,12 +82,14 @@ def make_react_agent(
         """Engage an LLM ReACT agent to answer a question."""
         input_msg = f'Question: {user_input}'
         messages.append(openai.Message('user', input_msg))
+        yield messages[-1]
 
         function_call_counter = 0
         for _ in range(max_llm_calls):
             print('calling llm')
             response = model(messages, functions=function_descriptions)
             messages.append(response)
+            yield messages[-1]
 
             if ("Final Answer" in response.content) and (function_call_counter>0):
                 break
@@ -96,8 +98,9 @@ def make_react_agent(
             function_call_counter += function_called
 
             messages.append(next_message)
+            yield messages[-1]
 
-        return messages
+        # return messages
 
     return run_once
 

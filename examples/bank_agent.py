@@ -96,9 +96,6 @@ def main():
 
         question = chat_history[-1][0]
 
-        chat_history[-1][1] = 'Calling api...'
-        yield chat_history
-
         # Build the functions that the agent can use
         db_connection = sqlite3.connect(DATABASE)
         query_database, _ = tools.make_sqlite_query_tool(db_connection)
@@ -109,33 +106,10 @@ def main():
         agent = make_react_agent(
             system_message, model, function_descriptions, functions)
 
-        messages = agent(question)
-
-        for response in summarize_interaction(messages):
-            chat_history.append([None, response])
-            time.sleep(0.05)
+        for message in agent(question):
+            chat_history.append([None, format_message(message)])
             yield chat_history
-
-        # final_answer = True
-        # for message in messages:
-        #     if 'i cannot construct a final answer' in message.content.lower():
-        #         final_answer = False
-        #         break
-
-        # if not final_answer:
-        #     agent = make_react_agent(
-        #         system_message,
-        #         model,
-        #         function_descriptions,
-        #         functions
-        #     )
-        #     messages = agent(question)
-
-        #     for response in summarize_interaction(messages):
-        #         chat_history.append([None, response])
-        #         time.sleep(0.05)
-        #         yield chat_history
-
+        
         db_connection.close()
 
     with gr.Blocks() as demo:
