@@ -8,6 +8,37 @@ import json
 from ..llmtools import openaiapi as openai
 
 
+def get_next_message(response: openai.Message, functions: list[dict]) -> tuple[openai.Message, bool]:
+    """Get a response to a ReAct LLM call."""
+
+    function_called = False
+    if 'Observation:' in response.content:
+        next_message = openai.Message(
+            'user', 
+            ('Your response contained an observation from a function call, but '
+                'function calls should only be executed by the user.  Please do '
+                'not make up responses to function calls!')
+        )
+    elif response.function_call is not None:
+        name = response.function_call['name']
+        arguments = json.loads(response.function_call['arguments'])
+        results = functions[name](**arguments)
+        next_message = openai.Message.from_function_call(
+            name,
+            f'Observation: {str(results)}'
+        )
+
+        function_called = True
+    else:
+        next_message = openai.Message(
+            'user', 
+            ('You did not call a function as your "Action", or it was not in '
+                'the correct format.  Please try again.')
+        )
+
+    return next_message, function_called
+
+
 def make_react_agent(
         system_message: str,
         model: Callable,
@@ -55,50 +86,18 @@ def make_react_agent(
             print('calling llm')
             response = model(messages, functions=function_descriptions)
             messages.append(response)
-            print(response)
-
-            if 'Observation:' in response.content:
-                next_message = openai.Message(
-                    'user', 
-                    ('Your response contained an observation from a function call, but '
-                     'function calls should only be executed by the user.  Please do '
-                     'not make up responses to function calls!')
-                )
-            elif response.function_call is not None:
-                name = response.function_call['name']
-                arguments = json.loads(response.function_call['arguments'])
-                results = functions[name](**arguments)
-                next_message = openai.Message.from_function_call(
-                    name,
-                    f'Observation: {str(results)}'
-                )
-
-                function_call_counter += 1
-            else:
-                next_message = openai.Message(
-                    'user', 
-                    ('You did not call a function as your "Action", or it was not in '
-                     'the correct format.  Please try again.')
-                )
 
             if ("Final Answer" in response.content) and (function_call_counter>0):
                 break
+
+            next_message, function_called = get_next_message(response, functions)
+            function_call_counter += function_called
 
             messages.append(next_message)
 
         return messages
 
     return run_once
-
-
-"""
-Implementation of ReAct agent.
-"""
-
-from collections.abc import Callable
-import json
-
-from ..llmtools import openaiapi as openai
 
 
 def make_simple_react_agent(
@@ -152,32 +151,11 @@ def make_simple_react_agent(
             response = model(messages, functions=function_descriptions)
             messages.append(response)
 
-            if 'Observation:' in response.content:
-                next_message = openai.Message(
-                    'user', 
-                    ('Your response contained an observation from a function call, but '
-                     'function calls should only be executed by the user.  Please do '
-                     'not make up responses to function calls!')
-                )
-            elif response.function_call is not None:
-                name = response.function_call['name']
-                arguments = json.loads(response.function_call['arguments'])
-                results = functions[name](**arguments)
-                next_message = openai.Message.from_function_call(
-                    name,
-                    f'Observation: {str(results)}'
-                )
-
-                function_call_counter += 1
-            else:
-                next_message = openai.Message(
-                    'user', 
-                    ('You did not call a function as your "Action", or it was not in '
-                     'the correct format.  Please try again.')
-                )
-
             if "Final Answer" in response.content:
                 break
+
+            next_message, function_called = get_next_message(response, functions)
+            function_call_counter += function_called
 
             messages.append(next_message)
 

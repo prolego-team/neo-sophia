@@ -110,6 +110,8 @@ class Message:
         function_call = response['choices'][0]['message'].get('function_call', None)
         if function_call is not None:
             function_call = function_call.to_dict()
+
+        content = '' if content is None else content
         return cls(role, content, name, function_call)
 
     @classmethod

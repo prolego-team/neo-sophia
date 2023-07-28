@@ -23,19 +23,6 @@ log = logging.getLogger('agent')
 
 DATABASE = 'data/synthbank.db'
 
-# # Defina a function to query the database.  The LLM will be "told" about this
-# # function.  (TODO don't return string on failure, so something better.)
-# def query_database(sqlite_query: str):
-#     cur = con.cursor()
-#     try:
-#         results = cur.execute(sqlite_query).fetchall()
-#     except Exception as e:
-#         results = f'Query failed: {e}'
-#     return results
-
-# Following is how GPT wants to be told what functions are available and their
-# arguments.
-
 
 def summarize_interaction(messages: list[openai.Message]):
     """Print the transcription of an agent/LLM interaction."""
@@ -48,6 +35,7 @@ def summarize_interaction(messages: list[openai.Message]):
         print(message.content)
         print(f'<name={message.name}, function_call={message.function_call}>')
         print('='*20)
+
 
 def main():
     # Setup
@@ -115,29 +103,6 @@ def main():
         )
         messages = agent(input_msg)
         summarize_interaction(messages)
-
-    
-    # print('='*40)
-
-    # transcription = ''
-    # for message in messages:
-    #     transcription += f'{message.role}: {message.content}\n'
-    #     transcription += f'OpenAI API call metadata: `{{"name": "{message.name}", "function_call": "{message.function_call}}}"`\n'
-
-    # system_message = (
-    #     "You are an assistant that provides feedback to another AI assistant.  You should provide feedback to improve future "
-    #     "interactions between a user and the other AI assistant."
-    # )
-    # user_message = (
-    #     "Below is a transcription of an interaction I had with an AI assistant.  How could this interaction have been improved?\n\n"
-    # )
-    # user_message += transcription
-
-    # messages = [openai.Message('system', system_message), openai.Message('user', user_message)]
-    # response = model(messages, functions=functions)
-    # print('='*40)
-    # # print(messages)
-    # print(response.content)
 
 
 if __name__=='__main__':

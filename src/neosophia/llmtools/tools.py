@@ -6,7 +6,6 @@ A tool is a function with a standard description.
 from collections.abc import Callable
 import sqlite3
 
-from ..db.sqlite_utils import get_db_creation_sql
 
 def make_sqlite_query_tool(db_connection: sqlite3.Connection) -> Callable:
     """Run a sqlite query against a given database connection."""
