@@ -23,61 +23,73 @@ MAX_INPUT_TOKENS = {
 
 
 class PDFDB:
-    def __init__(self, db_dir: str):
+    def __init__(self, db_dir: str, api_key: str):
+        """ """
+
         self.db_dir = db_dir
+
+        oaiapi.set_api_key(api_key)
 
         chroma.configure_db(self.db_dir)
         self.chroma_client = chroma.get_inmemory_client()
 
-        self.openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-                        api_key=os.getenv('OPENAI_API_KEY'),
-                        model_name=EMBEDDING_MODEL
-        )
+        openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+                        api_key=api_key, model_name=EMBEDDING_MODEL)
 
         self.pdf_collection = self.chroma_client.get_or_create_collection(
             name='pdf_collection',
-            embedding_function=self.openai_ef
+            embedding_function=openai_ef
         )
 
         self.page_collection = self.chroma_client.get_or_create_collection(
             name='page_collection',
-            embedding_function=self.openai_ef
+            embedding_function=openai_ef
         )
 
         self.section_collection = self.chroma_client.get_or_create_collection(
             name='section_collection',
-            embedding_function=self.openai_ef
+            embedding_function=openai_ef
         )
 
-    def search_by_embedding(self, query: str, n_results: int):
-        query_embedding = oaiapi.extract_embeddings(oaiapi.embeddings(query))[0]
-        return self.section_collection.query(
-            query_embeddings=[query_embedding.tolist()], n_results=n_results)
+    def get_context_from_query(self, query: str, n_results=4):
+        """
+        Given a query, this function searches across all sections in the
+        database for the closest match, then returns the context around that
+        match in the form of a prompt for a LLM.
+        """
 
-    def get_context(self, query: str):
-        """ """
+        # Get the top n results matching the query
+        res = self.section_collection.query(
+            query_texts=[query], n_results=n_results)
 
-        res = self.search_by_embedding(query, n_results=8)
-
-        pages = []
-        for rid in res['ids'][0]:
-            filename, page_num, _ = rid.split('~')
-            if page_num not in pages:
-                pages.append(page_num)
-
+        # Extract the metadata from each result so we can trace back if needed
+        # This also filters out sections on the same page
         data = []
-        for page_num in pages:
-            page_res = self.page_collection.get(
-                filename + '~' + str(page_num))
-            data.append(
-                {
-                    'text': page_res['documents'][0],
-                    'filename': filename,
-                    'page_num': page_num
-                }
-            )
+        page_nums = []
+        for metadata in res['metadatas'][0]:
+            if metadata['page_num'] not in page_nums:
+                page_nums.append(metadata['page_num'])
 
-        return data
+                page_res = self.page_collection.get(
+                    metadata['filename'] + '~' + str(metadata['page_num']))
+
+                data.append(
+                    (
+                        metadata['filename'],
+                        metadata['page_num'],
+                        metadata['section_id'],
+                        page_res['documents'][0]
+                    )
+                )
+
+        prompts = []
+        for context in data:
+            prompt = f"| Filename: {context[0]} |\n"
+            prompt += f"| Page Number: {context[1]} |\n"
+            prompt += f"Text: {context[3]}"
+            prompts.append(prompt)
+
+        return prompts
 
     def add_pdf(self, filename):
         """
@@ -89,13 +101,8 @@ class PDFDB:
 
         1. Extract flat text from PDF into a list of pages
         2. Create an embedding for each page
-        section
         3. Split pages into sections and create an embedding for each section
-        4. Split entire PDF into sections of length `max_chars`
-        6. Create an embedding for each page, then average the embeddings to
-        create a full document embedding
-        6. Another option would be to recursively split and summarize the
-        document into chunks of size `max_chars`, then embed the final summary
+        4. Average section embeddings to obtain full PDF embedding
         """
 
         if not os.path.isfile(filename):
@@ -106,82 +113,67 @@ class PDFDB:
         # List of text for each page in the PDF
         page_texts = pdf_utils.extract_text_from_pdf(filename)
 
-        '''
-        # Maximum number of characters we can send to the embedding model
-        max_chars = MAX_INPUT_TOKENS['text-embedding-ada-002'] * 4
-        print('max_chars:', max_chars)
-
-        all_text = ' '.join([pt for pt in page_texts])
-        print('all_text:', len(all_text))
-
-        num_large_sections = int(len(all_text) / max_chars) + 1
-        print('num_large_sections:', num_large_sections)
-
-        large_sections = text_utils.split_text_into_sections(
-            all_text, num_large_sections)
-
-        prompt = 'Give me the TLDR:\n\n'
-        summarized_sections = []
-        for text in tqdm(large_sections):
-            summarized_sections.append(
-                oaiapi.chat_completion(
-                    prompt=prompt + text,
-                    model='gpt-4'))
-        summarized_sections = '\n'.join(summarized_sections)
-        '''
-
-        # Get page and section embeddings
-        page_data, section_data_dict = text_utils.create_page_embeddings(
-            page_texts)
-
-        # Add whole pages to collection
-        for page_num, data in enumerate(page_data):
-            self.page_collection.upsert(
-                embeddings=[data['embedding'].tolist()],
-                documents=[data['text']],
-                metadatas=[
-                    {
-                        'filename': filename,
-                        'page_num': page_num
-                    }
-                ],
-                ids=[filename + '~' + str(page_num)]
+        # Get page ids and metadata
+        page_ids = [
+            filename + '~' + str(page_num) for page_num in range(
+                0, len(page_texts)
+            )
+        ]
+        page_metadatas = []
+        for page_num in range(0, len(page_texts)):
+            page_metadatas.append(
+                {
+                    'filename': filename,
+                    'page_num': page_num
+                }
             )
 
-        # Compute the average embedding across all sections
-        pdf_embedding = torch.mean(
-            torch.cat(
-                [
-                    torch.unsqueeze(
-                        x['embedding'], 0
-                    ) for x in section_data_dict.values()
-                ]),
-            axis=0
-        )
+        # Add whole pages to collection
+        self.page_collection.upsert(
+            ids=page_ids, documents=page_texts, metadatas=page_metadatas)
 
-        # Add full pdf to collection
-        self.pdf_collection.upsert(
-            embeddings=[pdf_embedding.tolist()],
-            documents=['\n'.join(page_texts)],
-            metadatas=[{'filename': filename}],
-            ids=[filename]
-        )
+        # Split each page into 4 sections
+        page_sections = []
+        for page_text in page_texts:
+            page_sections.append(
+                text_utils.split_text_into_sections(page_text, 4))
 
-        # Add sections to collection
-        for page_id, data in section_data_dict.items():
-            page_num, section_id = page_id.split('-')
-            self.section_collection.upsert(
-                embeddings=[data['embedding'].tolist()],
-                documents=[data['text']],
-                metadatas=[
+        # Get section ids and metadata
+        section_ids = []
+        section_texts = []
+        section_metadatas = []
+        for page_num, sections in enumerate(page_sections):
+            for section_id, section_text in enumerate(sections):
+                section_ids.append(
+                    filename + '~' + str(page_num) + '~' + str(section_id))
+                section_texts.append(section_text)
+                section_metadatas.append(
                     {
                         'filename': filename,
                         'page_num': page_num,
                         'section_id': section_id
                     }
-                ],
-                ids=[filename + '~' + str(page_num) + '~' + str(section_id)]
-            )
+                )
+
+        # Add sections to collection
+        self.section_collection.upsert(
+            ids=section_ids, documents=section_texts, metadatas=section_metadatas)
+
+        # Compute the average embedding across all sections for full pdf
+        section_embeddings = self.section_collection.get(
+            include=['embeddings'])['embeddings']
+        section_embeddings = torch.tensor(section_embeddings)
+        pdf_embedding = torch.mean(section_embeddings, axis=0)
+
+        # Add full pdf to collection
+        self.pdf_collection.upsert(
+            ids=[filename],
+            documents='\n'.join(page_texts),
+            embeddings=[pdf_embedding.tolist()],
+            metadatas={
+                'filename': filename
+            }
+        )
 
     def get_pdf(self, filename):
         return self.pdf_collection.get(filename)

@@ -1,6 +1,7 @@
 """
 """
 import os
+import re
 import time
 import pickle
 
@@ -10,6 +11,7 @@ import click
 import torch
 import chromadb
 import numpy as np
+import gradio as gr
 
 from tqdm import tqdm
 
@@ -20,77 +22,67 @@ from examples import project
 from neosophia.llmtools import openaiapi as oaiapi, pdf_utils, text_utils
 from neosophia.db.pdfdb import PDFDB
 
-MAX_TOKENS = {
-    'gpt-4': 8192,
-    'gpt-3.5-turbo': 4096,
-    'gpt-3.5-turbo-16k': 16385
-}
-
-
-def format_page_res(context):
-    """ """
-    prompt = f"Filename: {context['filename']}\n"
-    prompt += f"Page Number: {context['page_num']}\n"
-    prompt += f"Text: {context['text']}"
-    return prompt
-
 
 @click.command()
 @click.option(
-    '--llm', default='gpt-4',
-    type=click.Choice(['gpt-4', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo']))
-@click.option(
     '--data_dir', '-f', help='Path to a directory containing PDFs',
     default=f'{project.DATASETS_DIR_PATH}/Title-12')
-def main(llm, data_dir):
-    """ """
+def main(data_dir):
+    """ main """
 
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
-    oaiapi.set_api_key(api_key)
 
     # Create database
-    pdfdb = PDFDB('pdf_db')
+    pdfdb = PDFDB('pdf_db', api_key)
 
-    #filename1 = 'data/Title-12-Small/out.pdf'
-    filename1 = 'data/Title-12/Title-12-Volume-1.pdf'
-    filename2 = 'data/2306.05284.pdf'
-    #pdfdb.add_pdf(filename1)
-    #pdfdb.add_pdf(filename2)
+    # Add PDFs from the directory to the database
+    filenames = sorted(pdf_utils.find_pdfs_in_directory(data_dir))
+    for filename in tqdm(filenames):
+        pdfdb.add_pdf(filename)
 
-    question = 'What is the difference between a Type I and Type II security?'
-    result = pdfdb.get_context(question)
+    base_prompt = 'Determine if the following context has enough information to answer the question. If it doesn\'t, say "There is not enough context to provide an answer". If it does, provide the answer. THINK STEP BY STEP. ALWAYS PROVIDE QUOTES AND PAGE CITATIONS. ALWAYS PROVIDE AN ESTIMATED CONFIDENCE SCORE WITH YOUR ANSWER\n\n'
 
-    '''
-    out = pdfdb.section_collection.query(
-        query_embeddings=[query_embedding.tolist()],
-        n_results=4,
-    )
+    def ask_question(question):
 
-    page = pdfdb.get_page(filename=filename1, page_num=1)
-    out = pdfdb.get_section(
-        filename=filename1, page_num=0, section_id=0)
-    res = pdfdb.section_collection.query(
-        query_embeddings=[question_emb.tolist()], n_results=4)
-    '''
+        # Get the top n closest pages for the question
+        result = pdfdb.get_context_from_query(question, n_results=4)
 
-    for res in result:
+        answers = []
+        for res in result:
+            prompt = base_prompt
+            prompt += 'Question: ' + question
+            prompt += res
 
-        prompt = 'Determine if the following context has enough information to answer the question. If it doesn\'t, say "There is not enough context to provide an answer". If it does, provide the answer. THINK STEP BY STEP. ALWAYS PROVIDE QUOTES AND PAGE CITATIONS.\n\n'
-        prompt += f'Question: {question}\n'
+            page_number = re.search(r'\bPage Number: (\d+)\b', res).group(1)
 
-        context = format_page_res(res)
-        prompt += f'Context: \n{context}'
+            out = oaiapi.chat_completion(
+                prompt=prompt,
+                model='gpt-4')
 
-        out = oaiapi.chat_completion(
-            prompt=prompt,
-            model=llm)
+            if 'There is no' in out:
+                print(f'Not enough information on page {page_number}.')
+                continue
+            else:
+                answers.append(out)
 
-        if 'There is no' in out:
-            print(f'Not enough information on page', str(res['page_num']))
-        else:
-            print('Answer found on page', res['page_num'])
-            print(out)
-            print('\n-----------------------------------------------------------\n')
+        return '\n--\n'.join(answers)
+
+    question = 'What happens when a national bank\'s investment in securities no longer conforms to the regulations but conformed when made?'
+    with gr.Blocks() as demo:
+        gr.Markdown('# Semantic Search')
+        with gr.Row():
+            text_input = gr.Textbox(value=question)
+        with gr.Row():
+            question_button = gr.Button('Ask a question')
+
+        gr.Markdown("# Results")
+        with gr.Row():
+            text_output = gr.Textbox()
+
+        question_button.click(
+            ask_question, inputs=text_input, outputs=text_output)
+
+    demo.launch()
 
 
 if __name__ == '__main__':
