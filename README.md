@@ -47,8 +47,7 @@ Videos
 ````
     git checkout tags/v0.3.2
 ````    
-    
-````
+
 2. Start the demo by running
 
 ````
