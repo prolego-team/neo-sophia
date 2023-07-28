@@ -144,15 +144,8 @@ def get_db_agent_prompt(
 def main(csv_file: str):
     """Main program."""
 
-    # key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
-    # oaiapi.set_api_key(key)
-
-    from neosophia.llmtools import llama
-    tokens = 1024
-    model = llama.load_llama2(
-        model_file_path=os.path.join('/Users/ben/Prolego/code/llama.cpp',  'llama-2-13b-chat.ggmlv3.q4_0.bin'),
-        context_tokens=tokens
-    )
+    key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    oaiapi.set_api_key(key)
 
     db_file, schema = setup(csv_file)
 
@@ -164,10 +157,9 @@ def main(csv_file: str):
         user_prompt = get_user_agent_prompt(
             schema.to_string(), TABLE_NAME, question)
 
-        # ua_response = oaiapi.chat_completion(
-        #     prompt=user_prompt,
-        #     model=OPENAI_LLM_MODEL_NAME)
-        ua_response = llama.llama2_text(model, user_prompt, tokens)
+        ua_response = oaiapi.chat_completion(
+            prompt=user_prompt,
+            model=OPENAI_LLM_MODEL_NAME)
 
         explanation, query = extract_query_from_response(ua_response)
 
@@ -186,10 +178,9 @@ def main(csv_file: str):
                 sql_error_prompt = get_error_prompt(
                     schema.to_string(), TABLE_NAME, question, query, str(sql_error_message))
 
-                # response = oaiapi.chat_completion(
-                #     prompt=sql_error_prompt,
-                #     model=OPENAI_LLM_MODEL_NAME)
-                response = llama.llama2_text(model, sql_error_prompt, tokens)
+                response = oaiapi.chat_completion(
+                    prompt=sql_error_prompt,
+                    model=OPENAI_LLM_MODEL_NAME)
 
                 explanation, query = extract_query_from_response(response)
                 if query is None:
@@ -200,10 +191,9 @@ def main(csv_file: str):
             db_res_prompt = get_db_agent_prompt(
                 schema.to_string(), TABLE_NAME, question, query, explanation, query_result)
 
-            # chat_response = oaiapi.chat_completion(
-            #     prompt=db_res_prompt,
-            #     model=OPENAI_LLM_MODEL_NAME)
-            chat_response = llama.llama2_text(model, db_res_prompt, tokens)
+            chat_response = oaiapi.chat_completion(
+                prompt=db_res_prompt,
+                model=OPENAI_LLM_MODEL_NAME)
 
             chat_history.append((question, chat_response))
 
