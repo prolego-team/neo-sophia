@@ -2,9 +2,10 @@
 Wrappers for OpenAI API.
 """
 
-from typing import Any, List
+from typing import Any, List, Callable, Optional
 import os
 import sys
+from dataclasses import dataclass
 
 import openai as oai
 import torch
@@ -31,6 +32,12 @@ def load_api_key(file_path: str) -> str:
         sys.exit()
 
     return res
+
+
+def get_models_list() -> List:
+    """Return a list of available models."""
+    model_obj= oai.Model.list()
+    return [model.id for model in model_obj.data]
 
 
 def embeddings(texts: List[str]) -> Any:
@@ -67,3 +74,62 @@ def embeddings_tensor(texts: List[str]) -> torch.Tensor:
     res = extract_embeddings(embs)
     assert res.shape == (len(texts), EMBEDDING_DIM_DEFAULT)
     return res
+
+
+@dataclass
+class Message:
+    """Simple data structure for working with the messages that are passed back
+    and forth to the OpenAI chat APIs.
+
+    The role and content attributes are required when preparing a message to pass
+    to OpenAI.  The response message may contain either content or function_call
+    in addition to role.
+    
+    Why is this a class?
+    - There will be multiple instances of messages.
+    - Each message has several attributes.
+    - The input format to an LLM API call and the output format are different,
+        so the class provides methods to handle simple formatting.
+    """
+    role: str
+    content: str
+    name: Optional[str] = None
+    function_call: Optional[dict] = None
+
+    def is_valid(self) -> bool:
+        """Make sure this is a valid OpenAI message."""
+        valid = True
+        valid &= self.role in ['system', 'user', 'assistant', 'function']
+        valid &= (len(self.content)>0) or (self.function_call is not None)
+        return valid
+
+    def as_dict(self) -> dict:
+        """Because it's much, much faster than built in dataclasses.asdict."""
+        return {key:value for key,value in vars(self).items() if value is not None}
+
+    @classmethod
+    def from_api_response(cls, response: dict):
+        """Parse the API response."""
+        role = response['choices'][0]['message']['role']
+        content = response['choices'][0]['message'].get('content', None)
+        name = response['choices'][0]['message'].get('name', None)
+        function_call = response['choices'][0]['message'].get('function_call', None)
+        if function_call is not None:
+            function_call = function_call.to_dict()
+        return cls(role, content, name, function_call)
+
+    @classmethod
+    def from_function_call(cls, function_name: str, function_output: Any):
+        """Prepare a message from the output of a function."""
+        return cls('function', str(function_output), function_name)
+
+
+def start_chat(model: str) -> Callable:
+    """Make an LLM interface function that you can use with Messages."""
+
+    def chat_func(messages: List[Message], *args, **kwargs) -> Message:
+        input_messages = [message.as_dict() for message in messages]
+        response = oai.ChatCompletion.create(messages=input_messages, model=model, *args, **kwargs)
+        return Message.from_api_response(response)
+
+    return chat_func
