@@ -5,6 +5,8 @@ Run sort of an integration test to compare various dispatch functions.
 from typing import Any, Dict, List, Optional, Tuple
 
 import time
+import os
+from typing import Callable
 
 from neosophia.llmtools import dispatch as dp
 from neosophia.llmtools import test_dispatch as tdp
@@ -45,36 +47,17 @@ def main():
     }
 
     # add local llama-2 dispatcher
-    # this takes a long time to run and doesn't produce very good results
-    # so excluding this pending further experimentation
-    # (some prompt tweaks might work)
-    try:
 
-        import os
-        from neosophia.llmtools import llama
+    llama_models_dir_path = '/Users/ben/Prolego/code/llama.cpp'
 
-        TOKENS = 1024
-
-        model_path = os.path.join(
-            '/Users/ben/Prolego/code/llama.cpp',
-            'llama-2-13b-chat.ggmlv3.q4_0.bin'
-        )
-
-        llama_model = llama.load_llama2(
-            model_file_path=model_path,
-            context_tokens=TOKENS
-        )
-
-        llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
-            llm=lambda x: llama.llama2_text(llama_model, x, TOKENS),
-            question=q,
-            functions=f
-        )
-
-        dispatchers['llama-2-13b-chat - Custom Propmpt'] = llama_dispatcher
-
-    except:
-        print("Could not load llama-2 chat model")
+    for name, path in [
+            ('llama-2-13b-chat - Custom Prompt', 'llama-2-13b-chat.ggmlv3.q4_0.bin'),
+            # ('llama-2-13b - Custom Prompt', 'llama-2-13b.ggmlv3.q4_0.bin')
+            ]:
+        model_file_path = os.path.join(llama_models_dir_path, path)
+        dispatcher = build_llama2_dispatcher(model_file_path)
+        if dispatcher is not None:
+            dispatchers[name] = dispatcher
 
     results = {}
 
@@ -135,6 +118,34 @@ def main():
             f.write(line)
 
     print(f'wrote `{output_file_name}`')
+
+
+
+def build_llama2_dispatcher(model_file_path: str) -> Callable:
+    """build a llama2 dispatcher"""
+
+    try:
+
+        from neosophia.llmtools import llama
+
+        tokens = 1024
+
+        llama_model = llama.load_llama2(
+            model_file_path=model_file_path,
+            context_tokens=tokens
+        )
+
+        llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
+            llm=lambda x: llama.llama2_text(llama_model, x, tokens),
+            question=q,
+            functions=f
+        )
+
+        return llama_dispatcher
+
+    except:
+        print("Could not load llama-2 chat model")
+        return None
 
 
 if __name__ == '__main__':
