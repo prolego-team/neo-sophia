@@ -120,30 +120,23 @@ def main():
     print(f'wrote `{output_file_name}`')
 
 
-
-def build_llama2_dispatcher(model_file_path: str) -> Callable:
+def build_llama2_dispatcher(model_file_path: str) -> Optional[Callable]:
     """build a llama2 dispatcher"""
 
     try:
-
         from neosophia.llmtools import llama
-
         tokens = 1024
-
         llama_model = llama.load_llama2(
             model_file_path=model_file_path,
             context_tokens=tokens
         )
-
         llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
             llm=lambda x: llama.llama2_text(llama_model, x, tokens),
             question=q,
             functions=f
         )
-
         return llama_dispatcher
-
-    except:
+    except Exception:
         print("Could not load llama-2 chat model")
         return None
 
