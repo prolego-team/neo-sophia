@@ -1,9 +1,6 @@
 """
-Various open source LLMs.
+Wrappers for running llama models.
 """
-
-# Copyright (c) 2023 Prolego Inc. All rights reserved.
-# Ben Zimmer
 
 from typing import Optional
 
