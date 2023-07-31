@@ -47,11 +47,6 @@ def dispatch_prompt(
         functions_str += (
             'name: ' + name + '\n' +
             'description: ' + desc.description + '\n' +
-            # 'parameters:\n' +
-            # '\n'.join([
-            #     '- ' + _param_str(pname, pdesc)
-            #     for pname, pdesc in desc.params.items()]
-            # ) + '\n\n'
             '\n'.join([
                 'parameter: ' + _param_str(pname, pdesc)
                 for pname, pdesc in desc.params.items()
@@ -59,8 +54,9 @@ def dispatch_prompt(
         )
 
     return (
-        'Answer the question by choosing a function and generating parameters for the function ' +
-        'based on the function descriptions below.\n\n'
+        'Answer the question by choosing a single function and generating parameters for the function ' +
+        'based on the function descriptions below. If none of the functions can be used to answer the question, '
+        'answer None.\n\n' +
         'QUESTION: ' + question + '\n\n' +
         'FUNCTION DESCRIPTIONS:' + '\n\n' +
         functions_str +
@@ -68,7 +64,8 @@ def dispatch_prompt(
         'FUNCTION: [function_name]\n' +
         'PARAMETER: [parameter name 0] [parameter value 0]\n' +
         'PARAMETER: [parameter name 1] [parameter value 1]\n' +
-        '...\n'
+        '...\n\n' +
+        'Begin!\n'
     )
 
 
