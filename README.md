@@ -79,8 +79,8 @@ Most companies are struggling to pick the best AI use cases from many different 
 This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
 
 Videos
-- [Document embeddings are foundational capabilities for your AI strategy](#)
-- [Document embeddings - technical walkthrough](#)
+- [Document embeddings are foundational capabilities for your AI strategy](https://www.youtube.com/watch?v=EQx-iTjQClM)
+- [Document embeddings - technical walkthrough](https://www.youtube.com/watch?v=RfGOvkGj678)
 
 ### Running the Episode 1 application
 
