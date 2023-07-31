@@ -5,8 +5,7 @@ Various open source LLMs.
 # Copyright (c) 2023 Prolego Inc. All rights reserved.
 # Ben Zimmer
 
-from typing import Any, Dict, List, Optional, Tuple
-import os
+from typing import Optional
 
 import llama_cpp
 
