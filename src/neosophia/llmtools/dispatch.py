@@ -86,6 +86,7 @@ def parse_dispatch_response(
     params = {}
 
     for line in lines:
+        line = line.strip()
         if line.startswith(func_prefix):
             name = line.removeprefix(func_prefix)
         elif line.startswith(param_prefix):
@@ -103,10 +104,14 @@ def parse_dispatch_response(
         print(f'Error parsing function name: `{name}`')
         return None
 
+    print(f'parsing parameters for function: `{name}`')
+
     for pname, value in params.items():
         try:
             typ = desc.params[pname].typ
+            print('\t', typ)
             value = typ(value)
+            print('\t', value)
             if isinstance(value, str):
                 # There is probably a better way to do this
                 value = value.strip('\'')
@@ -114,7 +119,8 @@ def parse_dispatch_response(
             res[pname] = value
         except Exception as e:
             print(f'Error parsing parameter `{pname}={value}')
-            print('\t', str(e))
+            # print('\t', str(e))
+            print(e)
 
     return name, res
 

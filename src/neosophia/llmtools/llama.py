@@ -35,8 +35,10 @@ def llama2_text(
             repeat_penalty=1.1,
             max_tokens=max_tokens
         )
-        print(output)
         answer = output['choices'][0]['text']
+        print('~~~~ ANSWER ~~~~ ~~~~ ~~~~')
+        print(answer)
+        print('~~~~ ~~~~ ~~~~ ~~~~')
     except:
         answer = None
 

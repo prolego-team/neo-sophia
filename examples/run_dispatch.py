@@ -48,33 +48,33 @@ def main():
     # this takes a long time to run and doesn't produce very good results
     # so excluding this pending further experimentation
     # (some prompt tweaks might work)
-    # try:
-    #
-    #     import os
-    #     from neosophia.llmtools import llama
-    #
-    #     TOKENS = 1024
-    #
-    #     model_path = os.path.join(
-    #         '/Users/ben/Prolego/code/llama.cpp',
-    #         'llama-2-13b-chat.ggmlv3.q4_0.bin'
-    #     )
-    #
-    #     llama_model = llama.load_llama2(
-    #         model_file_path=model_path,
-    #         context_tokens=TOKENS
-    #     )
-    #
-    #     llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
-    #         llm=lambda x: llama.llama2_text(llama_model, x, TOKENS),
-    #         question=q,
-    #         functions=f
-    #     )
-    #
-    #     dispatchers['llama-2-13b-chat - Custom Propmpt'] = llama_dispatcher
-    #
-    # except:
-    #     print("Could not load llama-2 chat model")
+    try:
+
+        import os
+        from neosophia.llmtools import llama
+
+        TOKENS = 1024
+
+        model_path = os.path.join(
+            '/Users/ben/Prolego/code/llama.cpp',
+            'llama-2-13b-chat.ggmlv3.q4_0.bin'
+        )
+
+        llama_model = llama.load_llama2(
+            model_file_path=model_path,
+            context_tokens=TOKENS
+        )
+
+        llama_dispatcher = lambda q, f: dp.dispatch_prompt_llm(
+            llm=lambda x: llama.llama2_text(llama_model, x, TOKENS),
+            question=q,
+            functions=f
+        )
+
+        dispatchers['llama-2-13b-chat - Custom Propmpt'] = llama_dispatcher
+
+    except:
+        print("Could not load llama-2 chat model")
 
     results = {}
 
@@ -120,13 +120,15 @@ def main():
     with open(output_file_name, 'w') as f:
         f.write(header)
         for rid, info in results.items():
+            param_str = str(info['params'])
+            param_str = param_str.replace("\"", '``')
             line = [
                 f'"{rid[0]}"',
                 f'"{rid[1]}"',
                 info['time'],
                 info['missing'],
                 info['name'],
-                f"\"{info['params']}\""
+                f"\"{param_str}\""
             ]
             line = [str(x) for x in line]
             line = ','.join(line) + '\n'
