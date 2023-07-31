@@ -18,6 +18,8 @@ from examples import project
 def main():
     """main program"""
 
+    llama_models_dir_path = '/Users/ben/Prolego/code/llama.cpp'
+
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
     oaiapi.set_api_key(api_key)
@@ -46,9 +48,7 @@ def main():
         )
     }
 
-    # add local llama-2 dispatcher
-
-    llama_models_dir_path = '/Users/ben/Prolego/code/llama.cpp'
+    # add local llama-2 dispatchers
 
     for name, path in [
             ('llama-2-13b-chat - Custom Prompt', 'llama-2-13b-chat.ggmlv3.q4_0.bin'),
