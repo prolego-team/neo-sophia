@@ -12,6 +12,19 @@ def get_table_schema(conn: sqlite3.Connection, table_name: str) -> pd.DataFrame:
     return pd.read_sql_query(query, conn)
 
 
+def get_db_creation_sql(conn: sqlite3.Connection) -> str:
+    """Construct a description of the DB schema for the LLM by retrieving the
+    CREATE commands used to create the tables."""
+    cursor = conn.cursor()
+
+    query = "SELECT sql FROM sqlite_master WHERE type='table'"
+    results = cursor.execute(query).fetchall()
+    results = [col[0] for col in results]
+    schema_description = '\n'.join(results)
+
+    return schema_description
+
+
 def create_database_from_csv(conn: sqlite3.Connection, csv_file: str, table_name: str) -> None:
     """Create database table from a CSV file."""
 
