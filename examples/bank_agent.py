@@ -91,7 +91,7 @@ def main():
         "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
         "against the bank's databse to collect information for the user.  Answer the user's "
         "questions as best as you can.  Only use the functions you have been provided with.\n\n"
-        f"Todayy's date is {datetime.today()}."
+        f"Today's date is {datetime.today()}."
     )
     system_message += schema_description
 
