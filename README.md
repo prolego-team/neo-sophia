@@ -1,4 +1,4 @@
-# LLM Strategy from Prolego
+# Create you AI or LLM Strategy
 
 Large-scale language models like GPT-4 from OpenAI serve as foundational technologies that can be applied to virtually any business issue. However, the robust power and flexibility of this technology come with a significant challenge: it is extremely difficult to pinpoint the optimal opportunities for leveraging this technology within a company. 
 
@@ -7,6 +7,25 @@ This project is designed to assist analytics leaders, product managers, and deve
 1. Walkthrough videos available on [Prolego's YouTube Channel](https://www.youtube.com/@prolego9489).
 2. Tagged releases on the main branch of this repository.
 3. Conversations held within [Prolego's Discord community](https://discord.gg/tzjEEjyg).
+
+## Capabilities approach
+We advise our clients to take a capabilties-based approach when building their AI. That is, create foundational solutions that allow you to solve many different business use cases. Unfortunately too many teams begin solving specifing business problems withough building a generalizable foundation. 
+
+Most companies are developing the following capabilties as part of their AI strategy.
+
+| Capability                     | Explanation                                                                                                                  | Examples                                                               |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| text classification            | Assigning categories to documents or document sections.                                                                      | [Episode 2](#episode-2---automated-document-processing)                |
+| information extraction         | Pulling out names, places, or specific sections from documents.                                                              | [Episode 2](#episode-2---automated-document-processing)                |
+| semantic search                | Finding information based on its meaning instead of keywords.                                                                | [Episode 1](#episode-1---embeddings-semantic-search-and-document-qa), [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)   |
+| information summarization      | Condense extensive documents into concise and essential highlights.                                                          |                                                                        |
+| information comparison         | Identifying similar documents or sections of documents.                                                                      |                                                                        |
+| document generation            | Creating precisely written content consistent with style and needs. Often includes a review step.                              | [Episode 2](#episode-2---automated-document-processing)                |
+| unified natural language query | Empowering anyone to get answers to questions about data and documents without SQL or tools.                                   | [Episode 3](#episode-3---intro-to-unified-natural-language-query), [Episode 4](#episode-4---unified-nlq-with-a-table-and-document), [Episode 5](#episode-5---unified-nlq-with-multiple-tables) |
+| routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |                                                                        |
+
+
+
 
 ## Quickstart installation
 First install the neo-sophia code on your local machine before proceeding to the examples from the Episodes below.
@@ -35,6 +54,11 @@ If the tests pass you are ready to run the code in one of the Episodes.
 Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
 
 # Episodes
+
+## Episode 5 - Unified NLQ with multiple tables
+
+## Episode 4 - Unified NLQ with a table and document
+
 ## Episode 3 - Intro to Unified Natural Language Query
 What will be the AI "killer app" in the enterprise? Our bet is Unified Natural Language Query (NQL). It gives executives and business leaders the ability to get insights from data by asking "natural" questions, similar to how you currently use ChatGPT. In this Episode we describe the business problem and show the extensible power of a simple example of SQL generation supplemented with the reasoning power of an LLM like GPT-4.
 
@@ -42,10 +66,10 @@ Videos (coming soon!)
 - [Unified Natural Language Query is the enerprise AI "killer app"]
 - [SQL generation and interpretation with LLMs]
 
-1. Checkout Episode 3, [Release v0.3.1](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.0)
+1. Checkout Episode 3, [Release v0.3.2](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.2)
 
 ````
-    git checkout tags/v0.3.1
+    git checkout tags/v0.3.2
 ````
 2. Start the demo by running
 
