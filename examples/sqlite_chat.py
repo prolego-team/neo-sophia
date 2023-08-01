@@ -223,7 +223,11 @@ def main(csv_file: str):
                 schema_box = gr.Dataframe(value=schema)
 
         query_text_box = gr.Textbox(value=initial_query, label='Last Query')
-        explanation_text_box = gr.Textbox(value=initial_explanation, label='Explanation')
+        explanation_text_box = gr.Textbox(
+            value=initial_explanation, label='Explanation',
+            lines=5,
+            max_lines=20
+        )
         chatbot = gr.Chatbot()
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question about the data')
