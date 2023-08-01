@@ -1,21 +1,20 @@
 """
 Downloading and extracting rules from MSRB.
 """
-
 import os
 import re
 import pickle
+
 from typing import Dict, List, Tuple
 
-import click
 import fitz
+import click
 import requests
-import tqdm
+
+import examples.project as project
 
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.datasets.msrb import Rule
-
-import examples.project as project
 
 opj = os.path.join
 

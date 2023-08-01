@@ -1,8 +1,9 @@
 """ Text utilities """
-from neosophia.llmtools import openaiapi as oaiapi
+from typing import List
 
 
-def split_text_into_sections(text, n):
+def split_text_into_sections(text: str, n: int) -> List[str]:
+    """ Splits a string into `n` sections """
     page_length = len(text)
     section_length = page_length // n
     sections = [
