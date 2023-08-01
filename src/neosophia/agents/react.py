@@ -3,7 +3,7 @@ Implementation of ReAct agent.
 """
 import json
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 
 from neosophia.llmtools import openaiapi as openai
 
@@ -78,7 +78,7 @@ def make_react_agent(
         openai.Message('system', system_message)
     ]
 
-    def run_once(user_input: str) -> list[openai.Message]:
+    def run_once(user_input: str) -> Generator:
         """Engage an LLM ReACT agent to answer a question."""
         input_msg = f'Question: {user_input}'
         messages.append(openai.Message('user', input_msg))
