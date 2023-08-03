@@ -96,9 +96,9 @@ def main():
     system_message += schema_description
 
     def user_wrapper(question, chat_history):
-        return '', chat_history + [[question, None]]
+        return question, chat_history + [[question, None]]
 
-    def agent_wrapper(chat_history):
+    def agent_wrapper(status, chat_history):
 
         question = chat_history[-1][0]
 
@@ -113,23 +113,69 @@ def main():
             system_message, model, function_descriptions, functions)
 
         for message in agent(question):
-            chat_history.append([None, format_message(message)])
-            yield chat_history
+            if message.role=='user':
+                status = 'User agent asked a question or provided feedback to the LLM.  Awaiting LLM response...'
+                update = [format_message(message), None]
+            elif message.role=='function':
+                status = 'A query was run against the database.  Awaiting LLM response...'
+                update = [format_message(message), None]
+            elif message.role=='assistant':
+                if 'Final Answer:' in message.content:
+                    status = 'The final answer has been determined.'
+                else:
+                    status = 'The assistant responded.  Awaiting LLM next response...'
+                update = [None, format_message(message)]
+            chat_history.append(update)
+            yield status, chat_history
 
         db_connection.close()
 
+    def answer_wrapper(chat_history):
+        final_message = chat_history[-1][1]
+        if final_message is None:
+            response = 'It appears the agent couldn\'t answer the questions.'
+        elif 'Final Answer:' in final_message:
+            response = final_message.split('Final Answer:')[1].strip()
+            response = response.split('\n')[0].strip()
+        else:
+            response = 'It appears the agent couldn\'t answer the questions.'
+            
+        return response
+
     with gr.Blocks() as demo:
         gr.Markdown('# Chat With a Bank Database')
+        
+        question = gr.Textbox(
+            value=DEFAULT_QUESTION, label='Ask a question about the data')
+        status = gr.Textbox(
+            value='Status will appear here', label='Agent status', interactive=False
+        )
+        final_answer = gr.Textbox(value='', label='Answer')
+
+        with gr.Row():
+            with gr.Column():
+                ask_button = gr.Button('Ask')
+            with gr.Column():
+                clear_button = gr.ClearButton()
+
+        chatbot = gr.Chatbot(label='Chatbot message log')
+
         gr.Markdown(
-            "You can use the Chatbot below to answer questions about SynthBank's "
-            "database.  SynthBank is (fake) bank, and the database contains information "
-            "about it's customers and their accounts.\n"
-            "## About the bank's database:\n"
+            "## About the database:\n"
             "The database contains the name and date of birth for each of the banks "
             "customers.  Each customer may have one or more associated products:\n"
             "savings account, checking account, mortgage or auto loan.\n\n"
             "For each account the database stores the account open date and the interest rate "
-            "if applicable.  Account balances and transactions are _not_ stored in the database.\n"
+            "if applicable.  Account balances and transactions are _not_ stored in the database.\n\n"
+            "The database has eight tables:\n"
+            "- The `customers` table has three fields: `guid`, `name` and `dob`\n"
+            "- The `credit_scores` table has two fields: `guid`, `credit_score`\n"
+            "- The `products` table has two fields: `account_number` and `guid`\n"
+            "- The `auto_loan` table has four fields: `loan_amount`, `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `mortgage` table has four fields: `loan_amount`, `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `checking_account` table has two fields: `account_open_date`, `account_number`\n"
+            "- The `savings_account` table has three fields: `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `credit_card` table has four fields: `credit_limit`, `interest_rate`, `account_open_date`, `account_number`\n"
             "## Example questions:\n"
             "Here are a few questions you could ask:\n"
             "- Who most recently opened a checking account?\n"
@@ -148,27 +194,23 @@ def main():
             "question to make sure you get the same response again."
         )
 
-        chatbot = gr.Chatbot()
-        question = gr.Textbox(
-            value=DEFAULT_QUESTION, label='Ask a question about the data')
-
-        with gr.Row():
-            with gr.Column():
-                ask_button = gr.Button('Ask')
-            with gr.Column():
-                clear_button = gr.ClearButton([question, chatbot])
+        clear_button.add([question, chatbot])
 
         question.submit(
             user_wrapper,
             inputs=[question, chatbot],
             outputs=[question, chatbot],
-            queue=False).then(agent_wrapper, chatbot, chatbot)
+            queue=False) \
+        .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
+        .then(answer_wrapper, chatbot, final_answer)
 
         ask_button.click(
             user_wrapper,
             inputs=[question, chatbot],
             outputs=[question, chatbot],
-            queue=False).then(agent_wrapper, chatbot, chatbot)
+            queue=False) \
+        .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
+        .then(answer_wrapper, chatbot, final_answer)
 
         clear_button.click(lambda: None, None, chatbot, queue=False)
 
