@@ -134,7 +134,7 @@ def main():
         final_message = chat_history[-1][1]
         if final_message is None:
             response = 'It appears the agent couldn\'t answer the questions.'
-        if 'Final Answer:' in final_message:
+        elif 'Final Answer:' in final_message:
             response = final_message.split('Final Answer:')[1].strip()
             response = response.split('\n')[0].strip()
         else:
@@ -161,12 +161,21 @@ def main():
         chatbot = gr.Chatbot(label='Chatbot message log')
 
         gr.Markdown(
-            "## About the bank's database:\n"
+            "## About the database:\n"
             "The database contains the name and date of birth for each of the banks "
             "customers.  Each customer may have one or more associated products:\n"
             "savings account, checking account, mortgage or auto loan.\n\n"
             "For each account the database stores the account open date and the interest rate "
-            "if applicable.  Account balances and transactions are _not_ stored in the database.\n"
+            "if applicable.  Account balances and transactions are _not_ stored in the database.\n\n"
+            "The database has eight tables:\n"
+            "- The `customers` table has three fields: `guid`, `name` and `dob`\n"
+            "- The `credit_scores` table has two fields: `guid`, `credit_score`\n"
+            "- The `products` table has two fields: `account_number` and `guid`\n"
+            "- The `auto_loan` table has four fields: `loan_amount`, `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `mortgage` table has four fields: `loan_amount`, `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `checking_account` table has two fields: `account_open_date`, `account_number`\n"
+            "- The `savings_account` table has three fields: `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `credit_card` table has four fields: `credit_limit`, `interest_rate`, `account_open_date`, `account_number`\n"
             "## Example questions:\n"
             "Here are a few questions you could ask:\n"
             "- Who most recently opened a checking account?\n"
