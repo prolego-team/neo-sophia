@@ -31,22 +31,22 @@ class PDFDB:
         oaiapi.set_api_key(api_key)
 
         chroma.configure_db(self.db_dir)
-        self.chroma_client = chroma.get_inmemory_client()
+        self.client = chroma.get_inmemory_client()
 
         openai_ef = embedding_functions.OpenAIEmbeddingFunction(
                         api_key=api_key, model_name=EMBEDDING_MODEL)
 
-        self.pdf_collection = self.chroma_client.get_or_create_collection(
+        self.pdf_collection = self.client.get_or_create_collection(
             name='pdf_collection',
             embedding_function=openai_ef
         )
 
-        self.page_collection = self.chroma_client.get_or_create_collection(
+        self.page_collection = self.client.get_or_create_collection(
             name='page_collection',
             embedding_function=openai_ef
         )
 
-        self.section_collection = self.chroma_client.get_or_create_collection(
+        self.section_collection = self.client.get_or_create_collection(
             name='section_collection',
             embedding_function=openai_ef
         )
