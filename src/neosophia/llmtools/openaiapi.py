@@ -125,7 +125,15 @@ def start_chat(model: str) -> Callable:
 
     def chat_func(messages: List[Message], *args, **kwargs) -> Message:
         input_messages = [message.as_dict() for message in messages]
-        response = oai.ChatCompletion.create(messages=input_messages, model=model, *args, **kwargs)
-        return Message.from_api_response(response)
+        try:
+            response = oai.ChatCompletion.create(
+                messages=input_messages,
+                model=model,
+                *args,
+                **kwargs
+            )
+            return Message.from_api_response(response)
+        except oai.APIError:
+            return Message('system', 'There was an API error.  Please try again.')
 
     return chat_func

@@ -12,6 +12,7 @@ import gradio as gr
 
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent
+from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
 
 # === Basic setup ===================================================
@@ -26,6 +27,7 @@ log = logging.getLogger('agent')
 
 DATABASE = 'data/synthbank.db'
 DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
+MAX_LLM_CALLS_PER_INTERACTION = 10
 
 def format_message(message):
     """Convert a message into plain text"""
@@ -33,16 +35,6 @@ def format_message(message):
     text += message.content
     text += f'\n\n_<name={message.name}, function_call={message.function_call}>_\n'
     return text
-
-
-def summarize_interaction(messages: list[openai.Message]):
-    """Generate a transcription of an agent/LLM interaction."""
-    responses = []
-    for message in messages[1:]:
-        text = format_message(message)
-        responses.append(text)
-
-    return responses
 
 
 def main():
@@ -95,12 +87,28 @@ def main():
     )
     system_message += schema_description
 
-    def user_wrapper(question, chat_history):
-        return question, chat_history + [[question, None]]
+    def new_question_wrapper():
+        return ''
 
-    def agent_wrapper(status, chat_history):
+    def agent_wrapper(question, status, chat_history):
 
-        question = chat_history[-1][0]
+        # Check the reasonableness of the question
+        response = check_question(
+            question,
+            schema_description,
+            model,
+            function_descriptions
+        )
+        chat_history.append([None, response])
+
+        if "This is a reasonable question" in response:
+            yield 'Checked that the question is answerable', chat_history
+        else:
+            response = 'Final Answer: ' + response
+            chat_history[-1][1] = response
+            yield 'Could not answer question', chat_history
+            return
+
 
         # Build the functions that the agent can use
         db_connection = sqlite3.connect(DATABASE)
@@ -110,7 +118,13 @@ def main():
         }
 
         agent = make_react_agent(
-            system_message, model, function_descriptions, functions)
+            system_message,
+            model,
+            function_descriptions,
+            functions,
+            MAX_LLM_CALLS_PER_INTERACTION,
+            simple_formatting=True
+        )
 
         for message in agent(question):
             if message.role=='user':
@@ -139,24 +153,23 @@ def main():
             response = response.split('\n')[0].strip()
         else:
             response = 'It appears the agent couldn\'t answer the questions.'
-            
+
         return response
 
     with gr.Blocks() as demo:
         gr.Markdown('# Chat With a Bank Database')
-        
+
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question about the data')
-        status = gr.Textbox(
-            value='Status will appear here', label='Agent status', interactive=False
-        )
-        final_answer = gr.Textbox(value='', label='Answer')
-
         with gr.Row():
             with gr.Column():
                 ask_button = gr.Button('Ask')
             with gr.Column():
                 clear_button = gr.ClearButton()
+        status = gr.Textbox(
+            value='Status will appear here', label='Agent status', interactive=False
+        )
+        final_answer = gr.Textbox(value='', label='Answer', interactive=False)
 
         chatbot = gr.Chatbot(label='Chatbot message log')
 
@@ -170,11 +183,11 @@ def main():
             "The database has eight tables:\n"
             "- The `customers` table has three fields: `guid`, `name` and `dob`\n"
             "- The `credit_scores` table has two fields: `guid`, `credit_score`\n"
-            "- The `products` table has two fields: `account_number` and `guid`\n"
+            "- The `products` table has three fields: `account_number`, `product_name` and `guid`\n"
             "- The `auto_loan` table has four fields: `loan_amount`, `interest_rate`, `account_open_date`, `account_number`\n"
             "- The `mortgage` table has four fields: `loan_amount`, `interest_rate`, `account_open_date`, `account_number`\n"
-            "- The `checking_account` table has two fields: `account_open_date`, `account_number`\n"
-            "- The `savings_account` table has three fields: `interest_rate`, `account_open_date`, `account_number`\n"
+            "- The `checking_account` table has three fields: `account_open_date`, `account_number` and `account_balance`\n"
+            "- The `savings_account` table has four fields: `interest_rate`, `account_open_date`, `account_number` and `account_balance`\n"
             "- The `credit_card` table has four fields: `credit_limit`, `interest_rate`, `account_open_date`, `account_number`\n"
             "## Example questions:\n"
             "Here are a few questions you could ask:\n"
@@ -197,22 +210,24 @@ def main():
         clear_button.add([question, chatbot])
 
         question.submit(
-            user_wrapper,
-            inputs=[question, chatbot],
-            outputs=[question, chatbot],
-            queue=False) \
-        .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
+            new_question_wrapper,
+            outputs=final_answer) \
+        .then(
+            agent_wrapper,
+            [question, status, chatbot],
+            [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
         ask_button.click(
-            user_wrapper,
-            inputs=[question, chatbot],
-            outputs=[question, chatbot],
-            queue=False) \
-        .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
+            new_question_wrapper,
+            outputs=final_answer) \
+        .then(
+            agent_wrapper,
+            [question, status, chatbot],
+            [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
-        clear_button.click(lambda: None, None, chatbot, queue=False)
+        clear_button.click(lambda: None, None, [chatbot, status, final_answer], queue=False)
 
     demo.queue()
     demo.launch()
