@@ -1,90 +1,31 @@
 """
 """
+import os
+import types
+import sqlite3
 import readline
 
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List
 
+import click
+
 import neosophia.db.chroma as chroma
+import neosophia.agents.utils as autils
 
 from examples import project
 
-from neosophia.llmtools import dispatch as dp, openaiapi as oaiapi, pdf_utils
-from neosophia.db.pdfdb import PDFDB
+from neosophia.db import sqlite_utils as sql_utils
+from neosophia.llmtools import dispatch as dp, openaiapi as oaiapi
+from neosophia.agents.system_prompts import FUNCTION_GPT_PROMPT
 
-api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+opj = os.path.join
+
+TABLE_NAME = 'data'
 
 NO_CONVERSATION_CONSTRAINT = (
     'Do not engage in conversation or provide '
     'an explanation. Simply provide an answer.')
-
-DEFAULT_SYSTEM_PROMPT = """You are a Unified Natural Language Query chatbot
-(UNLQ-GPT) and your job is to assist a user in different tasks that require
-gathering and interpreting data from multiple sources. The user will provide
-the task, and it is your job to come up with a plan in order to provide what is
-necessary given the available resources and constraints. Each step in your plan
-must be tied to an available action you can take to execute the step."""
-
-"""Provide your output as outlined in the example below."""
-
-"""
-User input:
-
---------------------------COMMAND--------------------------
-James Smith has applied for a mortgage loan. Determine if there are any
-immediate concerns that would disqualify him from obtaining a loan.
-
--------------------------------DATA RESOURCES-------------------------------
-- SQLite Database:
-
-Table Name: data
-Table Schema:
-   cid              name type  notnull dflt_value  pk
-0    0              Name             0       None   0
-1    1     Date_of_Birth             0       None   0
-2    2           Address             0       None   0
-3    3  Checking_Account             0       None   0
-4    4   Savings_Account             0       None   0
-5    5          ROTH_IRA             0       None   0
-
-- ChromaDB database
-
-Collections: pdf_collection, page_collection, section_collection
-
-------------------------------TOOLS-------------------------------
-Function Name: sqlite_query
-Function Description: 'run a SQLite query on a database'
-Function Params: {'query_str': ParamDesc(description='query string', typ=<class 'str'>, required=True)}
-
-Function Name: find_pdf_by_keyword
-Function Description: Returns the Lists the IDs of a collection in a ChromaDB database
-Function Params: {'name': ParamDesc(description='The collection name', typ=<class 'str'>, required=True)}
--------------------------------------------------------------------------------
-
-UNLQ-GPT Output:
-
-Plan:
-    1.
-    Action: Query the SQLite database for account information regarding James
-    Smith
-    Function: `sqlite_query`
-
-    2.
-    Action: Search the `pdf_collection` for any forms related to James Smith
-    that may cause concern for a loan, e.g., a bankruptcy form.
-    Function: `find_pdf_by_keyword`
-
-    3.
-
-
-    4.
-    Action: Aggregate the collected information into a concise summary.
-    Function:
-
-
-    5. Determine if James Smith should be considered for a loan.
-"""
-
 
 class Prompt:
 
@@ -137,7 +78,21 @@ class Prompt:
 
 class Agent:
 
-    def __init__(self, tools: Dict, resources: Dict):
+    def __init__(
+            self,
+            system_prompt: str,
+            name: str,
+            modules: List[types.ModuleType],
+            resources: Dict):
+        """
+        - Takes as inputs a list of modules that are available to use
+        - Converts each function to a function description
+
+        """
+        self.workspace = opj('.agents', f'agent_{name}')
+        os.makedirs(self.workspace, exist_ok=True)
+
+        exit()
 
         self.tools = tools
         self.resources = resources
@@ -210,35 +165,58 @@ class Agent:
         return functions_str_list
 
 
-def build_find_pdf_by_keyword(client):
-
-    description = dp.FunctionDesc(
-        description='Lists the IDs of a collection in a ChromaDB database',
-        params={
-            'name': dp.ParamDesc(
-                description='The collection name',
-                typ=str,
-                required=True
-            ),
-            'keyword': dp.ParamDesc(
-                description='The keyword to search for',
-                typ=str,
-                required=True
-            )
-        }
-    )
-
-    def find_pdf_by_keyword(name, keyword):
-
-    return find_pdf_by_keyword, description
+def setup():
+    db_file = opj(project.DATASETS_DIR_PATH, 'synthbank.db')
+    conn = sqlite3.connect(db_file)
+    api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    return api_key, conn
 
 
-tools = {
-}
+def main():
+    """ main """
 
-resources = {
-}
+    api_key, conn = setup()
 
-agent = Agent(tools, resources)
-agent.chat()
+    module_list = [sql_utils]
+
+    function_list = [autils.build_function_str_from_module(sql_utils)[0]]
+
+    module_dict = {}
+    for fstr in function_list:
+        prompt = FUNCTION_GPT_PROMPT + fstr
+
+        description = oaiapi.chat_completion(
+            prompt=prompt,
+            model='gpt-4')
+
+        print('description:', description)
+        exit()
+
+    base_agent = Agent(tools, resources)
+
+
+    exit()
+
+    db_file = opj(project.DATASETS_DIR_PATH, 'bank_database.db')
+    conn = sqlite3.connect(db_file)
+    sql_utils.create_database_from_csv(conn, csv_file, TABLE_NAME)
+    schema = sql_utils.get_table_schema(conn, TABLE_NAME)
+
+    print(schema, '\n-\n')
+
+    print(sql_utils.get_tables_from_db(conn))
+    exit()
+
+    tools = {
+    }
+
+    resources = {
+    }
+
+    agent = Agent(tools, resources)
+    agent.chat()
+
+
+if __name__ == '__main__':
+    main()
 
