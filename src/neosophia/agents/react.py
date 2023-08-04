@@ -44,8 +44,8 @@ def get_next_message(
 def make_react_agent(
         system_message: str,
         model: Callable,
-        function_descriptions: dict[str, Callable],
-        functions: list[dict],
+        function_descriptions: list[dict],
+        functions: dict[str, Callable],
         max_llm_calls: int | None = 10
     ) -> Callable:
     """Return a ReAct agent.
@@ -101,69 +101,5 @@ def make_react_agent(
             yield messages[-1]
 
         # return messages
-
-    return run_once
-
-
-def make_simple_react_agent(
-        system_message: str,
-        model: Callable,
-        function_descriptions: dict[str, Callable],
-        functions: list[dict],
-        max_llm_calls: int | None = 2
-    ) -> Callable:
-    """Return a simple ReAct agent.
-
-    The agent will answer one question at a time given the tools presented via the
-    function_descriptions and functions arguments.
-
-    This "simple" agent has the constraint that only one function call can be made.
-    This often makes the agent more concise, but it prevents multi-step question
-    answering.
-
-    There is a maximum number of times the LLM (model) may be called, max_llm_calls.
-    """
-
-    format_message = (
-        "ALWAYS use the following format:\n\n"
-        "Question: the input question you have to answer\n"
-        "Thought: you should always think about what to do\n"
-        "Action: the function to execute; fill this in with a properly formatted "
-        "function call for the user to execute\n"
-        "Observation: the result of the function, provided by the user\n"
-        "Final Answer: the final answer to the original input question\n\n"
-        "The user will execute the function call for you and return the results as "
-        "an observation.  After forming a thought and action, remember to wait for an "
-        "observation from the user.\n\n"
-        "If you are not able to answer the question with one and only one function call "
-        "then say, 'I cannot construct a Final Answer for this task' and explain why.\n\n"
-        "Begin! Reminder to always use the exact characters `Final Answer` when responding."
-    )
-
-    system_message += format_message
-
-    messages = [
-        openai.Message('system', system_message)
-    ]
-
-    def run_once(user_input: str) -> list[openai.Message]:
-        """Engage an LLM ReACT agent to answer a question."""
-        input_msg = f'Question: {user_input}'
-        messages.append(openai.Message('user', input_msg))
-
-        function_call_counter = 0
-        for _ in range(max_llm_calls):
-            response = model(messages, functions=function_descriptions)
-            messages.append(response)
-
-            if "Final Answer" in response.content:
-                break
-
-            next_message, function_called = get_next_message(response, functions)
-            function_call_counter += function_called
-
-            messages.append(next_message)
-
-        return messages
 
     return run_once

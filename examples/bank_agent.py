@@ -12,6 +12,7 @@ import gradio as gr
 
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent
+from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
 
 # === Basic setup ===================================================
@@ -33,16 +34,6 @@ def format_message(message):
     text += message.content
     text += f'\n\n_<name={message.name}, function_call={message.function_call}>_\n'
     return text
-
-
-def summarize_interaction(messages: list[openai.Message]):
-    """Generate a transcription of an agent/LLM interaction."""
-    responses = []
-    for message in messages[1:]:
-        text = format_message(message)
-        responses.append(text)
-
-    return responses
 
 
 def main():
@@ -102,6 +93,24 @@ def main():
 
         question = chat_history[-1][0]
 
+        # Check the reasonableness of the question
+        response = check_question(
+            question,
+            schema_description,
+            model,
+            function_descriptions
+        )
+        chat_history.append([None, response])
+        
+        if "This is a reasonable question" in response:
+            yield 'Checked that the question is answerable', chat_history
+        else:
+            response = 'Final Answer: ' + response
+            chat_history[-1][1] = response
+            yield 'Could not answer question', chat_history
+            return
+            
+
         # Build the functions that the agent can use
         db_connection = sqlite3.connect(DATABASE)
         query_database, _ = tools.make_sqlite_query_tool(db_connection)
@@ -147,16 +156,15 @@ def main():
         
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question about the data')
-        status = gr.Textbox(
-            value='Status will appear here', label='Agent status', interactive=False
-        )
-        final_answer = gr.Textbox(value='', label='Answer')
-
         with gr.Row():
             with gr.Column():
                 ask_button = gr.Button('Ask')
             with gr.Column():
                 clear_button = gr.ClearButton()
+        status = gr.Textbox(
+            value='Status will appear here', label='Agent status', interactive=False
+        )
+        final_answer = gr.Textbox(value='', label='Answer', interactive=False)
 
         chatbot = gr.Chatbot(label='Chatbot message log')
 
@@ -212,7 +220,7 @@ def main():
         .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
-        clear_button.click(lambda: None, None, chatbot, queue=False)
+        clear_button.click(lambda: None, None, [chatbot, status, final_answer], queue=False)
 
     demo.queue()
     demo.launch()
