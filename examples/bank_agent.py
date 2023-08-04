@@ -87,6 +87,9 @@ def main():
     )
     system_message += schema_description
 
+    def new_question_wrapper():
+        return ''
+
     def agent_wrapper(question, status, chat_history):
 
         # Check the reasonableness of the question
@@ -207,15 +210,21 @@ def main():
         clear_button.add([question, chatbot])
 
         question.submit(
+            new_question_wrapper,
+            outputs=final_answer) \
+        .then(
             agent_wrapper,
-            inputs=[question, status, chatbot],
-            outputs=[status, chatbot]) \
+            [question, status, chatbot],
+            [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
         ask_button.click(
+            new_question_wrapper,
+            outputs=final_answer) \
+        .then(
             agent_wrapper,
-            inputs=[question, status, chatbot],
-            outputs=[status, chatbot]) \
+            [question, status, chatbot],
+            [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
         clear_button.click(lambda: None, None, [chatbot, status, final_answer], queue=False)
