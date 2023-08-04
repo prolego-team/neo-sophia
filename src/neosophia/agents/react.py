@@ -53,8 +53,8 @@ def make_react_agent(
         model: Callable,
         function_descriptions: list[dict],
         functions: dict[str, Callable],
-        max_llm_calls: int | None = 10,
-        simple_formatting: bool | None = True
+        max_llm_calls: int = 10,
+        simple_formatting: bool = True
     ) -> Callable:
     """Return a ReAct agent.
 
