@@ -20,7 +20,7 @@ opj = os.path.join
 
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
 TABLE_NAME = 'data'
-DEFAULT_QUESTION = 'Which customer has the most amount of money in checking and savings accounts combined?'
+DEFAULT_QUESTION = 'Which customer has the most money?'
 EXP_QUERY_TEMPLATE = json.dumps(
     {
         'explanation': '[explain what the query does]',
@@ -223,7 +223,11 @@ def main(csv_file: str):
                 schema_box = gr.Dataframe(value=schema)
 
         query_text_box = gr.Textbox(value=initial_query, label='Last Query')
-        explanation_text_box = gr.Textbox(value=initial_explanation, label='Explanation')
+        explanation_text_box = gr.Textbox(
+            value=initial_explanation, label='Explanation',
+            lines=5,
+            max_lines=20
+        )
         chatbot = gr.Chatbot()
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question about the data')
