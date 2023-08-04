@@ -27,6 +27,7 @@ log = logging.getLogger('agent')
 
 DATABASE = 'data/synthbank.db'
 DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
+MAX_LLM_CALLS_PER_INTERACTION = 10
 
 def format_message(message):
     """Convert a message into plain text"""
@@ -86,12 +87,7 @@ def main():
     )
     system_message += schema_description
 
-    def user_wrapper(question, chat_history):
-        return question, chat_history + [[question, None]]
-
-    def agent_wrapper(status, chat_history):
-
-        question = chat_history[-1][0]
+    def agent_wrapper(question, status, chat_history):
 
         # Check the reasonableness of the question
         response = check_question(
@@ -119,7 +115,13 @@ def main():
         }
 
         agent = make_react_agent(
-            system_message, model, function_descriptions, functions)
+            system_message,
+            model,
+            function_descriptions,
+            functions,
+            MAX_LLM_CALLS_PER_INTERACTION,
+            simple_formatting=True
+        )
 
         for message in agent(question):
             if message.role=='user':
@@ -205,19 +207,15 @@ def main():
         clear_button.add([question, chatbot])
 
         question.submit(
-            user_wrapper,
-            inputs=[question, chatbot],
-            outputs=[question, chatbot],
-            queue=False) \
-        .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
+            agent_wrapper,
+            inputs=[question, status, chatbot],
+            outputs=[status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
         ask_button.click(
-            user_wrapper,
-            inputs=[question, chatbot],
-            outputs=[question, chatbot],
-            queue=False) \
-        .then(agent_wrapper, [status, chatbot], [status, chatbot]) \
+            agent_wrapper,
+            inputs=[question, status, chatbot],
+            outputs=[status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
         clear_button.click(lambda: None, None, [chatbot, status, final_answer], queue=False)
