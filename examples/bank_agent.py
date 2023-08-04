@@ -100,7 +100,7 @@ def main():
             function_descriptions
         )
         chat_history.append([None, response])
-        
+
         if "This is a reasonable question" in response:
             yield 'Checked that the question is answerable', chat_history
         else:
@@ -108,7 +108,7 @@ def main():
             chat_history[-1][1] = response
             yield 'Could not answer question', chat_history
             return
-            
+
 
         # Build the functions that the agent can use
         db_connection = sqlite3.connect(DATABASE)
@@ -153,12 +153,12 @@ def main():
             response = response.split('\n')[0].strip()
         else:
             response = 'It appears the agent couldn\'t answer the questions.'
-            
+
         return response
 
     with gr.Blocks() as demo:
         gr.Markdown('# Chat With a Bank Database')
-        
+
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question about the data')
         with gr.Row():

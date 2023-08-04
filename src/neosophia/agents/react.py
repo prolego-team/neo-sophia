@@ -89,10 +89,10 @@ def make_react_agent(
             "Final Answer: the final answer to the original input question\n\n"
             "The user will execute the function calls for you and return the results as "
             "an observation.  After forming a thought and action, remember to wait for an "
-            "observation from the user.  Try to answer the question in as few steps as possible.\n\n"
+            "observation from the user.  Try to answer the question in as few steps as "
+            "possible.\n\n"
             "Begin! Reminder to always use the exact characters `Final Answer` when responding."
         )
-        
 
     system_message += format_message
 
