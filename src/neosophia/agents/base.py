@@ -1,5 +1,7 @@
 """
 """
+import os
+import json
 import readline
 
 from abc import ABCMeta, abstractmethod
@@ -14,6 +16,48 @@ from neosophia.db.pdfdb import PDFDB
 
 api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
 
+DESCRIPTIONS = {
+    '1406.2661.pdf': """We propose a new framework for estimating generative
+models via an adversarial process, in which we simultaneously train two models:
+a generative model G that captures the data distribution, and a discriminative
+model D that estimates the probability that a sample came from the training
+data rather than G. The training procedure for G is to maximize the probability
+of D making a mistake. This framework corresponds to a minimax two-player game.
+In the space of arbitrary functions G and D, a unique solution exists, with G
+recovering the training data distribution and D equal to 1 2 everywhere.  In
+the case where G and D are defined by multilayer perceptrons, the entire system
+can be trained with backpropagation.  There is no need for any Markov chains or
+unrolled approximate inference networks during either training or generation of
+samples. Experiments demonstrate the potential of the framework through
+qualitative and quantitative evaluation of the generated samples.""",
+    '1611.07004.pdf': """We investigate conditional adversarial networks as a
+general-purpose solution to image-to-image translation problems. These networks
+not only learn the mapping from input image to output image, but also learn a
+loss function to train this mapping. This makes it possible to apply the same
+generic approach to problems that traditionally would require very different
+loss formulations. We demonstrate that this approach is effective at
+synthesizing photos from label maps, reconstructing objects from edge maps, and
+colorizing images, among other tasks. Indeed, since the release of the pix2pix
+software associated with this paper, a large number of internet users (many of
+them artists) have posted their own experiments with our system, further
+demonstrating its wide applicability and ease of adoption without the need for
+parameter tweaking. As a community, we no longer hand-engineer our mapping
+functions, and this work suggests we can achieve reasonable results
+without hand-engineering our loss functions either.""",
+    '1704.00028.pdf': """Generative Adversarial Networks (GANs) are powerful
+generative models, but suffer from training instability. The recently
+proposedWasserstein GAN (WGAN) makes progress toward stable training of GANs,
+but sometimes can still generate only poor samples or fail to converge. We find
+that these problems are often due to the use of weight clipping in WGAN to
+enforce a Lipschitz constraint on the critic, which can lead to undesired
+behavior.  We propose an alternative to clipping weights: penalize the norm of
+gradient of the critic with respect to its input. Our proposed method performs
+better than standard WGAN and enables stable training of a wide variety of GAN
+architectures with almost no hyperparameter tuning, including 101-layer ResNets
+and language models with continuous generators.  We also achieve high quality
+generations on CIFAR-10 and LSUN bedrooms."""
+}
+
 NO_CONVERSATION_CONSTRAINT = (
     'Do not engage in conversation or provide '
     'an explanation. Simply provide an answer.')
@@ -23,9 +67,50 @@ DEFAULT_SYSTEM_PROMPT = """You are a Unified Natural Language Query chatbot
 gathering and interpreting data from multiple sources. The user will provide
 the task, and it is your job to come up with a plan in order to provide what is
 necessary given the available resources and constraints. Each step in your plan
-must be tied to an available action you can take to execute the step."""
+must be tied to an available action you can take to execute the step.
 
-"""Provide your output as outlined in the example below."""
+Provide your output as outlined in the example below.
+
+User Input:
+
+------------------------------------COMMANDS------------------------------------
+What is image-to-image translation?
+
+-------------------------------------TOOLS-------------------------------------
+name: find_pdf_by_keyword
+description: Searches the `pdf_collection` by keyword and returns any matches that were found in the PDF description
+parameter: name (str, required) - The collection name
+parameter: keyword (str, required) - The keyword to search for
+
+---------------------------------DATA RESOURCES---------------------------------
+Resource Name: ChromaDB Database Collections
+Resource Info: {
+    "pdf_collection": {
+        "name": "pdf_collection",
+        "metadata": "{'description': 'Collection of PDF files with each item containing a description of the full PDF file'}"
+    },
+    "page_collection": {
+        "name": "page_collection",
+        "metadata": "{'description': 'collection of individual pages from PDF files'}"
+    },
+    "section_collection": {
+        "name": "section_collection",
+        "metadata": "{'description': 'collection of sections of pages from PDF files'}"
+    }
+}
+
+-------------------------------------------------------------------------------
+
+UNLQ-GPT Output:
+
+Plan:
+    Step 1.
+    Action: Find relevant PDF objects by performing a keyword search on the descriptions provided for each object in the database.
+    Function: find_pdf_by_keyword
+    Parameter: keyword image-to-image
+
+    Step 2.
+"""
 
 """
 User input:
@@ -115,20 +200,31 @@ class Prompt:
 
     def generate_prompt(self):
         prompt = ''
-        til = 30 * '-'
+        total = 80
+
         if self.commands:
             commands = '\n'.join(self.commands)
+            til = '-' * int((total - len('COMMANDS')) / 2)
             prompt += f'{til}COMMANDS{til}\n{commands}\n\n'
+
         if self.tools:
-            resources = '\n'.join(self.tools)
-            prompt += f'{til}TOOLS{til}\n{resources}\n\n'
+            til = '-' * int((total - len('TOOLS')) / 2)
+            tools = '\n'.join(self.tools)
+            prompt += f'{til}TOOLS{til}\n{tools}\n\n'
+
         if self.data_resources:
-            resources = '\n'.join(self.data_resources)
-            prompt += f'{til}DATA RESOURCES{til}\n{resources}\n\n'
+            til = '-' * int((total - len('DATA RESOURCES')) / 2)
+            data_resources = '\n'.join(self.data_resources)
+            prompt += f'{til}DATA RESOURCES{til}\n{data_resources}\n\n'
+
         if self.constraints:
+            til = '-' * int((total - len('CONSTRAINTS')) / 2)
             constraints = '\n'.join(self.constraints)
             prompt += f'{til}CONSTRAINTS{til}\n{constraints}\n\n'
+
         if self.examples:
+            til = '-' * int((total - len('EXAMPLES')) / 2)
+            prompt += f'{til}EXAMPLES{til}\n'
             for idx, example in enumerate(self.examples):
                 prompt += f'EXAMPLE {idx + 1}:\n{example}\n'
 
@@ -145,18 +241,33 @@ class Agent:
         self.system_prompt = DEFAULT_SYSTEM_PROMPT
         self.openai_llm_model_name = 'gpt-4'
 
+        self.max_tokens = 8192
+
+        self.token_count = 0
+
         self.chat_history = [self.system_prompt]
 
     def execute(self, prompt):
+        """ """
         print('Thinking...')
+
+        if isinstance(prompt, Prompt):
+            prompt = prompt.generate_prompt()
+
+        #prompt = DEFAULT_SYSTEM_PROMPT + '\n' + prompt
+
+        print('PROMPT')
+        print(prompt)
+        print('-' * 80)
         return oaiapi.chat_completion(
             prompt=prompt,
             model=self.openai_llm_model_name)
 
     def answer_question(self, question, context, constraint):
+        """ """
         prompt = Prompt()
         prompt.add_command(question)
-        prompt.add_resource(context)
+        prompt.add_data_resource(context, '')
 
         if constraint is not None:
             prompt.add_constraint(constraint)
@@ -173,7 +284,8 @@ class Agent:
 
             prompt = Prompt()
 
-            user_input = input('> ')
+            #user_input = input('> ')
+            user_input = 'What is a GAN?'
 
             prompt.add_command(user_input)
 
@@ -184,7 +296,8 @@ class Agent:
             for name, info in self.resources.items():
                 prompt.add_data_resource(name, info)
 
-            print(prompt.generate_prompt())
+            out = self.execute(prompt)
+            print(out)
             exit()
 
     def build_str_from_tools(self):
@@ -213,7 +326,8 @@ class Agent:
 def build_find_pdf_by_keyword(client):
 
     description = dp.FunctionDesc(
-        description='Lists the IDs of a collection in a ChromaDB database',
+        description=(
+            'Searches the `pdf_collection` by keyword and returns any matches that were found in the PDF description'),
         params={
             'name': dp.ParamDesc(
                 description='The collection name',
@@ -230,25 +344,69 @@ def build_find_pdf_by_keyword(client):
 
     def find_pdf_by_keyword(name, keyword):
         matches = []
-        for pid in client.get_collection(name).get()['ids']:
-            if name.lower() in pid.lower():
-                matches.append(pid)
+        #for pid in client.get_collection(name).get()['ids']:
+        for metadata in client.get_collection(name).get()['metadatas']:
+            #if name.lower() in pid.lower():
+            if keyword.lower() in metadata['description'].lower():
+                #matches.append(pid)
+                matches.append(metadata['filename'])
         return ', '.join(matches)
 
     return find_pdf_by_keyword, description
 
 
-pdfdb = PDFDB('pdf_db', api_key)
+'''
+
+# Add PDFs from the directory to the database
+data_dir = 'data/gans'
+pdfdb = PDFDB('gandb', api_key)
+filenames = sorted(pdf_utils.find_pdfs_in_directory(data_dir))
+
+func, _ = build_find_pdf_by_keyword(pdfdb.client)
+
+out = func('pdf_collection', 'GAN')
+print(out)
+exit()
+
+query = 'What is a GAN?'
+
+filename = filenames[0]
+res = pdfdb.page_collection.query(
+    query_texts=[query],
+    where={'filename': filename},
+    n_results=4)
+
+print(res)
+exit()
+#for filename in filenames:
+#    description = DESCRIPTIONS[os.path.basename(filename)]
+#    pdfdb.add_pdf(filename, description)
 
 tools = {
     'find_pdf_by_keyword': build_find_pdf_by_keyword(pdfdb.client)
 }
 
+collection_info = {}
+for x in pdfdb.client.list_collections():
+    collection = pdfdb.client.get_collection(x.name)
+    collection_info[x.name] = {
+        'name': x.name,
+        'metadata': str(collection.metadata)
+    }
+
+
+collection_info_str = json.dumps(collection_info, indent=4, sort_keys=False)
+
 resources = {
-    'ChromaDB Database Collections': ', '.join(
-        [x.name for x in pdfdb.client.list_collections()])
+    'ChromaDB Database Collections': collection_info_str
 }
 
-agent = Agent(tools, resources)
-agent.chat()
+'''
+agent = Agent(tools={}, resources={})
+#agent.chat()
+
+question = 'How do I make a ham sandwich?'
+context = ''
+constraint = 'Answer in a sarcastic and insulting manner'
+print(agent.answer_question(question, context, constraint))
 

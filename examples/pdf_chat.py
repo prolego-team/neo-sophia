@@ -16,15 +16,17 @@ from neosophia.db.pdfdb import PDFDB
 
 @click.command()
 @click.option(
-    '--data_dir', '-f', help='Path to a directory containing PDFs',
+    '--data_dir', '-d', help='Path to a directory containing PDFs',
     default=f'{project.DATASETS_DIR_PATH}/Title-12')
-def main(data_dir):
+@click.option(
+    '--db_name', '-dbn', help='Name for the database', default='pdf_db')
+def main(data_dir, db_name):
     """ main """
 
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
 
     # Create database
-    pdfdb = PDFDB('pdf_db', api_key)
+    pdfdb = PDFDB(db_name, api_key)
 
     # Add PDFs from the directory to the database
     filenames = sorted(pdf_utils.find_pdfs_in_directory(data_dir))

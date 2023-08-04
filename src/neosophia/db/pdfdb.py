@@ -38,16 +38,25 @@ class PDFDB:
 
         self.pdf_collection = self.client.get_or_create_collection(
             name='pdf_collection',
+            metadata={
+                'description': 'Collection of PDF files with each item containing a description of the full PDF file'
+            },
             embedding_function=openai_ef
         )
 
         self.page_collection = self.client.get_or_create_collection(
             name='page_collection',
+            metadata={
+                'description': 'collection of individual pages from PDF files'
+            },
             embedding_function=openai_ef
         )
 
         self.section_collection = self.client.get_or_create_collection(
             name='section_collection',
+            metadata={
+                'description': 'collection of sections of pages from PDF files'
+            },
             embedding_function=openai_ef
         )
 
@@ -91,7 +100,7 @@ class PDFDB:
 
         return prompts
 
-    def add_pdf(self, filename):
+    def add_pdf(self, filename, description=None):
         """
         Adds a PDF if it doesn't exist in the database. If it does exist,
         update it
@@ -171,7 +180,8 @@ class PDFDB:
             documents='\n'.join(page_texts),
             embeddings=[pdf_embedding.tolist()],
             metadatas={
-                'filename': filename
+                'filename': filename,
+                'description': description
             }
         )
 
