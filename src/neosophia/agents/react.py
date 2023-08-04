@@ -10,7 +10,8 @@ from neosophia.llmtools import openaiapi as openai
 
 def get_next_message(
         response: openai.Message,
-        functions: list[dict]) -> tuple[openai.Message, bool]:
+        functions: list[dict],
+        enforce_action_calls: bool) -> tuple[openai.Message, bool]:
     """Get a response to a ReAct LLM call."""
 
     function_called = False
@@ -31,11 +32,17 @@ def get_next_message(
         )
 
         function_called = True
-    else:
+    elif ('Action:' in response.content) and enforce_action_calls:
         next_message = openai.Message(
             'user',
             ('You did not call a function as your "Action", or it was not in '
-                'the correct format.  Please try again.')
+             'the correct format.  Please try again.')
+        )
+    else:
+        next_message = openai.Message(
+            'user',
+            ('When you have the answer to my question, please say '
+             '"Final Answer:" and then write the final answer.')
         )
 
     return next_message, function_called
@@ -53,6 +60,10 @@ def make_react_agent(
 
     The agent will answer one question at a time given the tools presented via the
     function_descriptions and functions arguments.
+
+    The `simple_formatting` option causes the agent to be ReAct in sprit only.  Rather
+    than adhering to the strict ReAct formatting template, it will use a simpler
+    conversational style that seems to work better.
 
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
@@ -102,15 +113,17 @@ def make_react_agent(
             messages.append(response)
             yield messages[-1]
 
-            if ("Final Answer" in response.content) and (function_call_counter>0):
+            if "Final Answer" in response.content:
                 break
 
-            next_message, function_called = get_next_message(response, functions)
+            next_message, function_called = get_next_message(
+                response,
+                functions,
+                simple_formatting
+            )
             function_call_counter += function_called
 
             messages.append(next_message)
             yield messages[-1]
-
-        # return messages
 
     return run_once
