@@ -229,24 +229,14 @@ def build_find_pdf_by_keyword(client):
     )
 
     def find_pdf_by_keyword(name, keyword):
-        matches = []
-        for pid in client.get_collection(name).get()['ids']:
-            if name.lower() in pid.lower():
-                matches.append(pid)
-        return ', '.join(matches)
 
     return find_pdf_by_keyword, description
 
 
-pdfdb = PDFDB('pdf_db', api_key)
-
 tools = {
-    'find_pdf_by_keyword': build_find_pdf_by_keyword(pdfdb.client)
 }
 
 resources = {
-    'ChromaDB Database Collections': ', '.join(
-        [x.name for x in pdfdb.client.list_collections()])
 }
 
 agent = Agent(tools, resources)
