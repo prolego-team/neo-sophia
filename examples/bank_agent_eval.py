@@ -1,11 +1,13 @@
 """
 Test the bank agent with questions and answers.
 """
-
-from typing import Iterable, Optional
+import string
+from typing import Iterable, Optional, List
 import sqlite3
 import tqdm
 import time
+import re
+
 
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent
@@ -64,11 +66,11 @@ def main():
 
     qs_and_evals = [
         ('Who most recently opened a checking account?', lambda x: 'John Thompson' in x),
-        ('How many people have opened a savings account in the last year?', lambda x: '34' in x.split('\\s+')),
-        ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in x.split('\\s+')),
+        ('How many people have opened a savings account in the last year?', lambda x: '34' in words(x)),
+        ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
         (
             'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '77' in x) and (('0.3' in x.split('\\s+') or '30%' in x.split('\\s+')))
+            lambda x: ('Edith Nelson' in x or '77' in x) and (('0.3' in words(x) or '30%' in words(x)))
         )
     ]
 
@@ -110,7 +112,8 @@ def main():
         f.write(header)
         for (system_name, question, run_idx), info in results.items():
             answer = info['answer']
-            answer = answer.replace('\n', '%%%').replace('"', '``')
+            if answer is not None:
+                answer = answer.replace('\n', '%%%').replace('"', '``')
             line = [
                 f'"{system_name}"',
                 f'"{question}"',
@@ -143,18 +146,24 @@ def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
     """
     answer_message = None
     for message in messages:
-        print("MESSAGE")
-        print(message)
-        print('----')
+        # print("MESSAGE")
+        # print(message)
+        # print('----')
         if message.role == 'assistant':
             if 'Final Answer:' in message.content:
                 answer_message = message
                 break
-        print('continuing')
+        # print('continuing')
     if answer_message is not None:
         return answer_message.content
     else:
         return None
+
+
+def words(x_str: str) -> List[str]:
+    """split a string into words"""
+    res = re.split('\\s+', x_str)
+    return [x.strip(string.punctuation) for x in res]
 
 
 if __name__ == '__main__':
