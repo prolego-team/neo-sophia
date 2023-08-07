@@ -1,13 +1,14 @@
 """
 Test the bank agent with questions and answers.
 """
+
 import string
 from typing import Iterable, Optional, List
 import sqlite3
 import tqdm
 import time
 import re
-
+import random
 
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent
@@ -61,6 +62,7 @@ def main():
 
     def dummy(question: str) -> str:
         """Dummy for quickly testing things."""
+        time.sleep(random.random() * 3.0)
         return 'As an AI model, I\'m unable to answer the question.'
 
     systems = {
@@ -119,7 +121,7 @@ def main():
     results_agg = {}
     for key, infos in results_grouped.items():
         info_agg = {
-            'time': np.mean([x['time'] for x in infos]),
+            'time': round(np.mean([x['time'] for x in infos]), 3),
             'missing': sum([x['missing'] for x in infos]) / n_runs,
             'correct': np.mean([x['correct'] for x in infos]) / n_runs
         }
@@ -169,7 +171,6 @@ def main():
     print(f'wrote `{output_file_name}`')
 
 
-
 def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
     """
     Consume messages from an agent until you find 'Final Answer:'
@@ -186,6 +187,7 @@ def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
         # print(message)
         # print('----')
         if message.role == 'assistant':
+            # I think this logic is correct and shouldn't cause early stopping.
             if 'Final Answer:' in message.content:
                 answer_message = message
                 break
