@@ -17,12 +17,12 @@ Most companies are developing the following capabilties as part of their AI stra
 |-------------------------------|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
 | text classification            | Assigning categories to documents or document sections.                                                                      | [Episode 2](#episode-2---automated-document-processing)                |
 | information extraction         | Pulling out names, places, or specific sections from documents.                                                              | [Episode 2](#episode-2---automated-document-processing)                |
-| semantic search                | Finding information based on its meaning instead of keywords.                                                                | [Episode 1](#episode-1---embeddings-semantic-search-and-document-qa), [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)   |
+| semantic search                | Finding information based on its meaning instead of keywords.                                                                | [Episode 1](#episode-1---embeddings-semantic-search-and-document-qa)   |
 | information summarization      | Condense extensive documents into concise and essential highlights.                                                          |                                                                        |
 | information comparison         | Identifying similar documents or sections of documents.                                                                      |                                                                        |
 | document generation            | Creating precisely written content consistent with style and needs. Often includes a review step.                              | [Episode 2](#episode-2---automated-document-processing)                |
 | unified natural language query | Empowering anyone to get answers to questions about data and documents without SQL or tools.                                   | [Episode 3](#episode-3---intro-to-unified-natural-language-query), [Episode 4](#episode-4---unified-nlq-with-a-table-and-document), [Episode 5](#episode-5---unified-nlq-with-multiple-tables) |
-| routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |                                                                        |
+| routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |       [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)                                                                 |
 
 
 
@@ -55,9 +55,22 @@ Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
 
 # Episodes
 
-## Episode 5 - Unified NLQ with multiple tables
+## Episode 5 - Queries Across Multiple Databases
 
-## Episode 4 - Unified NLQ with a table and document
+## Episode 4 - Intro to LLM Agents, querying multiple tables
+In our second episode on Unified NLQ we introduce LLM Agents. Agents are necessary for the complex reasoning required for to run natural language queries across multiple tables.
+
+Videos (coming soon!)
+
+1. Checkout Episode 4, [Release vx.x.x]()
+````
+    git checkout tags/vx.x.x
+````
+2. Start the demo by running
+
+````
+    python  examples/bank_agent.py
+````
 
 ## Episode 3 - Intro to Unified Natural Language Query
 What will be the AI "killer app" in the enterprise? Our bet is Unified Natural Language Query (NQL). It gives executives and business leaders the ability to get insights from data by asking "natural" questions, similar to how you currently use ChatGPT. In this Episode we describe the business problem and show the extensible power of a simple example of SQL generation supplemented with the reasoning power of an LLM like GPT-4.
