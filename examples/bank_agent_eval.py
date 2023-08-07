@@ -55,14 +55,22 @@ def main():
         agent = make_react_agent(
             system_message, model, function_descriptions, functions,
             ba.MAX_LLM_CALLS_PER_INTERACTION, True)
-        return find_answer(agent(question))
+        try:
+            return find_answer(agent(question))
+        except Exception as e:
+            print('exception in `agent_simple`:', str(e))
+            return None
 
     def agent_react(question: str) -> Optional[str]:
         """answer a question with the react agent"""
         agent = make_react_agent(
             system_message, model, function_descriptions, functions,
             ba.MAX_LLM_CALLS_PER_INTERACTION, False)
-        return find_answer(agent(question))
+        try:
+            return find_answer(agent(question))
+        except Exception as e:
+            print('exception in `agent_react`:', str(e))
+            return None
 
     def dummy(_: str) -> str:
         """Dummy for quickly testing things."""
@@ -81,7 +89,7 @@ def main():
         ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
         (
             'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30' in words(x))
+            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
         )
     ]
 
@@ -126,8 +134,8 @@ def main():
     for key, infos in results_grouped.items():
         info_agg = {
             'time': round(np.mean([x['time'] for x in infos]), 3),
-            'missing': sum([x['missing'] for x in infos]) / n_runs,
-            'correct': np.mean([x['correct'] for x in infos]) / n_runs
+            'missing': round(np.mean([x['missing'] for x in infos]), 3),
+            'correct': round(np.mean([x['correct'] for x in infos]), 3)
         }
         results_agg[key] = info_agg
 
