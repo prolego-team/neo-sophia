@@ -19,6 +19,7 @@ from examples import project
 from neosophia.llmtools import openaiapi as oaiapi
 
 DATABASE = 'data/synthbank.db'
+DEBUG = True
 
 
 def main():
@@ -36,7 +37,10 @@ def main():
 
     db_connection = sqlite3.connect(DATABASE)
 
+    schema_description = ba.get_schema_description(db_connection)
+
     system_message = ba.get_system_message()
+    system_message += schema_description
     function_descriptions = ba.FUNCTION_DESCRIPTIONS
 
     query_database, _ = tools.make_sqlite_query_tool(db_connection)
@@ -60,7 +64,7 @@ def main():
             ba.MAX_LLM_CALLS_PER_INTERACTION, False)
         return find_answer(agent(question))
 
-    def dummy(question: str) -> str:
+    def dummy(_: str) -> str:
         """Dummy for quickly testing things."""
         time.sleep(random.random() * 3.0)
         return 'As an AI model, I\'m unable to answer the question.'
@@ -77,7 +81,7 @@ def main():
         ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
         (
             'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '100389' in x) and (('0.3' in words(x) or '30' in words(x)))
+            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30' in words(x))
         )
     ]
 
@@ -182,16 +186,20 @@ def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
     sure to begin my answer with 'Final Answer:'". LOLOLOL.
     """
     answer_message = None
+    if DEBUG:
+        print('-' * 50)
     for message in messages:
-        # print("MESSAGE")
-        # print(message)
-        # print('----')
+        if DEBUG:
+            print('MESSAGE:')
+            print(message.role)
+            print(message.name)
+            print(message.content)
+            print('~~~')
         if message.role == 'assistant':
             # I think this logic is correct and shouldn't cause early stopping.
             if 'Final Answer:' in message.content:
                 answer_message = message
                 break
-        # print('continuing')
     if answer_message is not None:
         return answer_message.content
     else:
