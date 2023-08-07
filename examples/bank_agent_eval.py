@@ -59,19 +59,24 @@ def main():
             ba.MAX_LLM_CALLS_PER_INTERACTION, False)
         return find_answer(agent(question))
 
+    def dummy(question: str) -> str:
+        """Dummy for quickly testing things."""
+        return 'As an AI model, I\'m unable to answer the question.'
+
     systems = {
-        'agent (simple)': agent_simple,
+        'dummy': dummy,
+        # 'agent (simple)': agent_simple,
         # 'agent (react)': agent_react)
     }
 
     qs_and_evals = [
         ('Who most recently opened a checking account?', lambda x: 'John Thompson' in x),
         ('How many people have opened a savings account in the last year?', lambda x: '34' in words(x)),
-        ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
-        (
-            'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '77' in x) and (('0.3' in words(x) or '30%' in words(x)))
-        )
+        # ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
+        # (
+        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+        #     lambda x: ('Edith Nelson' in x or '77' in x) and (('0.3' in words(x) or '30%' in words(x)))
+        # )
     ]
 
     results = {}
@@ -103,11 +108,27 @@ def main():
 
                 results[(system_name, question, run_idx)] = info
 
-    # save results as CSV
+    db_connection.close()
+
+    import numpy as np
+
+    results_grouped = {}
+    for (system_name, question, run_idx), info in results.items():
+        runs = results_grouped.setdefault((system_name, question), [])
+        runs.append(info)
+    results_agg = {}
+    for key, infos in results_grouped.items():
+        info_agg = {
+            'time': np.mean([x['time'] for x in infos]),
+            'missing': sum([x['missing'] for x in infos]) / n_runs,
+            'correct': np.mean([x['correct'] for x in infos]) / n_runs
+        }
+        results_agg[key] = info_agg
+
+    # save results CSVs
 
     output_file_name = 'eval.csv'
     header = 'system,question,run,time,missing,correct,answer\n'
-
     with open(output_file_name, 'w') as f:
         f.write(header)
         for (system_name, question, run_idx), info in results.items():
@@ -129,9 +150,24 @@ def main():
 
     print(f'wrote `{output_file_name}`')
 
-    db_connection.close()
+    output_file_name = 'eval_agg.csv'
+    header = 'system,question,time,missing,correct\n'
+    with open(output_file_name, 'w') as f:
+        f.write(header)
+        for (system_name, question), info in results_agg.items():
+            line = [
+                f'"{system_name}"',
+                f'"{question}"',
+                info['time'],
+                info['missing'],
+                info['correct']
+            ]
+            line = [str(x) for x in line]
+            line = ','.join(line) + '\n'
+            f.write(line)
 
-    # TODO: do some aggregation of results across runs
+    print(f'wrote `{output_file_name}`')
+
 
 
 def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
