@@ -1,11 +1,22 @@
-Name,Date_of_Birth,Address,Checking_Account,Savings_Account,ROTH_IRA
-John Doe,1970-01-01,"123 Main St, New York, NY 10001",3500.55,15000.75,27000.00
-Jane Smith,1975-02-12,"456 Oak Rd, San Francisco, CA 94101",2000.50,14000.00,30000.00
-Bob Johnson,1980-03-03,"789 Pine Ave, Austin, TX 78701",2500.65,13000.25,25000.50
-Alice Davis,1985-04-04,"321 Elm Blvd, Seattle, WA 98101",3000.40,16000.70,32000.00
-Charlie Miller,1990-05-05,"654 Spruce Way, Miami, FL 33101",4000.85,12000.90,20000.75
-Emily Jackson,1995-06-06,"987 Ash Dr, Chicago, IL 60601",1000.30,15000.80,22000.25
-Oscar White,1965-07-07,"147 Cedar Ln, Phoenix, AZ 85001",5000.20,18000.60,35000.00
-Lucy Harris,1970-08-08,"258 Birch Pkwy, San Diego, CA 92101",4500.70,17000.40,33000.50
-William Clark,1975-09-09,"369 Walnut St, Dallas, TX 75201",6000.60,15000.30,24000.75
-Evelyn Lewis,1980-10-10,"741 Hickory Ave, Philadelphia, PA 19101",7000.80,14000.20,26000.00
+Name,Date_of_Birth,Address,Marital_Status,Checking_Open_Date,Savings_Open_Date,Checking_Account,Savings_Account,ROTH_IRA,Mortgage_Loan,Credit_Score,Notes
+John Doe,1970-01-01,"123 Main St, New York, NY 10001",Married,2023-06-05,2023-06-05,3500.55,15000.75,0,500000,720,"Has 2 children (5, 7), two cars, owns 3 credit cards."
+Tom Adams,1960-11-11,"512 Maple St, Boston, MA 02101",Married,2023-05-05,2023-06-06,4500.30,17000.55,0,350000,715,"Has a business loan for a startup, recently refinanced car."
+Jane Smith,1975-02-12,"456 Oak Rd, San Francisco, CA 94101",Single,2023-03-12,2023-03-12,2000.50,14000.00,62744,0,680,"Has 1 child (3), leases a car, owns 2 credit cards."
+Susan Lee,1972-12-12,"223 Pine Rd, Denver, CO 80201",Single,2023-09-09,2023-12-12,5000.45,19000.60,45123,800000,730,"Invested in mutual funds, inquiring about estate planning."
+Bob Johnson,1980-03-03,"789 Pine Ave, Austin, TX 78701",Married,2023-01-02,2023-09-03,2500.65,13000.25,0,125000,710,"Has 3 children (4, 6, 9), owns a car, has 4 credit cards."
+James Wilson,1987-01-01,"333 Birch Dr, Atlanta, GA 30301",Single,2023-03-03,2023-04-04,3200.55,15000.70,0,280000,670,"Interested in student loan refinancing, opened a new CD."
+Alice Davis,1985-04-04,"321 Elm Blvd, Seattle, WA 98101",Single,2023-05-05,2023-07-04,3000.40,16000.70,25000,400000,750,"Has no children, doesn't own a car, has 1 credit card."
+Maria Rodriguez,1965-02-02,"444 Cedar Ln, Nashville, TN 37201",Married,2023-11-11,2023-12-12,4000.40,16000.50,0,1000000,720,"Recently retired, looking into annuities and life insurance."
+Charlie Miller,1990-05-05,"654 Spruce Way, Miami, FL 33101",Single,2023-06-06,2023-06-06,4000.85,12000.90,34523,325000,695,"Has no children, has a car, owns 2 credit cards."
+Peter Harris,1976-03-03,"555 Oak Ave, Las Vegas, NV 89101",Single,2023-05-05,2023-06-06,2300.30,13000.40,0,450000,690,"Applying for a small business loan, uses budgeting software."
+Emily Jackson,1995-06-06,"987 Ash Dr, Chicago, IL 60601",Single,2023-03-03,2023-10-10,1000.30,15000.80,20034,,660,"Has no children, does not own a home or car, has 5 credit cards."
+Nina Patel,1982-04-04,"666 Spruce Way, Tampa, FL 33601",Married,2023-07-07,2023-07-07,3500.50,18000.60,0,600000,710,"Has an education savings plan for children, seeking mortgage pre-approval."
+Oscar White,1965-07-07,"147 Cedar Ln, Phoenix, AZ 85001",Married,2023-02-12,2023-04-15,5000.20,18000.60,11234,700000,730,"Has 4 children (10, 12, 14, 16), owns a car, has 3 credit cards."
+Kevin Chen,1991-05-05,"777 Ash Blvd, Portland, OR 97201",Single,2023-02-02,2023-10-10,1000.20,12000.30,0,,655,"Exploring auto loans, enrolled in a first-time homebuyer program."
+Lucy Harris,1970-08-08,"258 Birch Pkwy, San Diego, CA 92101",Single,2023-01-10,2023-11-11,4500.70,17000.40,0,150000,700,"Has 2 children (8, 11), leases her car, uses 4 credit cards."
+Olivia Taylor,1960-06-06,"888 Elm St, New Orleans, LA 70101",Married,2023-05-05,2023-05-05,5500.60,20000.70,0,700000,725,"Interested in travel rewards credit cards, set up a 529 plan."
+George Clark,1972-09-09,"852 Pine St, Los Angeles, CA 90001",Married,2023-03-05,2023-10-10,3500.65,16000.80,0,1300000,725,"Has 5 children (2, 5, 7, 9, 12), owns two cars, has 6 credit cards."
+Ethan Johnson,1988-07-07,"999 Walnut Rd, Kansas City, MO 64101",Single,2023-08-08,2023-10-10,2000.40,14000.50,0,300000,700,"Inquiring about investment properties, has a HSA account."
+Sophie Turner,1985-10-10,"963 Oak Rd, Atlanta, GA 30301",Single,2023-04-04,2023-05-05,4000.70,18000.90,0,1400000,740,"Has no children, owns a car, uses 2 credit cards."
+Michael Thompson,1980-09-09,"444 Birch Dr, Dallas, TX 75201",Single,2023-09-09,2023-09-09,2500.50,14000.40,37000.00,150000,700,"Wants a boat loan, refinanced his mortgage, has 2 credit cards."
+Mary Brown,1967-11-11,"333 Spruce Blvd, Cleveland, OH 44101",Single,2023-07-07,2023-11-11,4500.40,20000.90,,1100000,720,"Looking for information on long-term care insurance, enrolled in Medicare."

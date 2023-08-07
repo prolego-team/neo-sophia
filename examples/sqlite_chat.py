@@ -20,7 +20,7 @@ opj = os.path.join
 
 OPENAI_LLM_MODEL_NAME = 'gpt-4'
 TABLE_NAME = 'data'
-DEFAULT_QUESTION = 'Which customer has the most amount of money in checking and savings accounts combined?'
+DEFAULT_QUESTION = 'Which customer has the most money?'
 EXP_QUERY_TEMPLATE = json.dumps(
     {
         'explanation': '[explain what the query does]',
