@@ -67,18 +67,18 @@ def main():
 
     systems = {
         'dummy': dummy,
-        # 'agent (simple)': agent_simple,
+        'agent (simple)': agent_simple,
         # 'agent (react)': agent_react)
     }
 
     qs_and_evals = [
         ('Who most recently opened a checking account?', lambda x: 'John Thompson' in x),
         ('How many people have opened a savings account in the last year?', lambda x: '34' in words(x)),
-        # ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
-        # (
-        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-        #     lambda x: ('Edith Nelson' in x or '77' in x) and (('0.3' in words(x) or '30%' in words(x)))
-        # )
+        ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
+        (
+            'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+            lambda x: ('Edith Nelson' in x or '100389' in x) and (('0.3' in words(x) or '30' in words(x)))
+        )
     ]
 
     results = {}
@@ -201,7 +201,7 @@ def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
 def words(x_str: str) -> List[str]:
     """split a string into words"""
     res = re.split('\\s+', x_str)
-    return [x.strip(string.punctuation) for x in res]
+    return [x.strip('.,;?-') for x in res]
 
 
 if __name__ == '__main__':
