@@ -62,8 +62,10 @@ def dispatch_prompt(
         functions_str +
         'Your answer should be in this form:\n\n' +
         'FUNCTION: [function_name]\n' +
-        'PARAMETER: [parameter name 0] [parameter value 0]\n' +
-        'PARAMETER: [parameter name 1] [parameter value 1]\n' +
+        # 'PARAMETER: [parameter name 0] [parameter value 0]\n' +
+        # 'PARAMETER: [parameter name 1] [parameter value 1]\n' +
+        'PARAMETER: [name] [value]\n' +
+        'PARAMETER: [name] [value]\n' +
         '...\n\n' +
         'Begin!\n'
     )

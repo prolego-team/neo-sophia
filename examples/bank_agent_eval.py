@@ -12,14 +12,30 @@ import pandas as pd
 import tqdm
 
 from neosophia.llmtools import openaiapi as openai, tools
-from neosophia.agents.react import make_react_agent
+from neosophia.agents import react
+from neosophia.agents import simplelocal
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.llmtools import dispatch as dp
 
 from examples import bank_agent as ba
 from examples import project
 
 DATABASE = 'data/synthbank.db'
 DEBUG = True
+
+
+FUNCTION_DESCS = {
+    'query_database': dp.FunctionDesc(
+        description='Query the bank sqlite database.',
+        params={
+            'sqlite_query': dp.ParamDesc(
+                description='A sqlite query to run against the bank databse.',
+                typ=str,
+                required=True
+            )
+        }
+    )
+}
 
 
 def main():
@@ -41,7 +57,6 @@ def main():
 
     system_message = ba.get_system_message()
     system_message += schema_description
-    function_descriptions = ba.FUNCTION_DESCRIPTIONS
 
     query_database, _ = tools.make_sqlite_query_tool(db_connection)
     functions = {
@@ -54,15 +69,38 @@ def main():
 
     def agent_simple(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the simple agent"""
-        agent = make_react_agent(
-            system_message, model, function_descriptions, functions,
+        agent = react.make_react_agent(
+            system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
             ba.MAX_LLM_CALLS_PER_INTERACTION, True)
         return find_answer(agent(question))
 
     def agent_react(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the react agent"""
-        agent = make_react_agent(
-            system_message, model, function_descriptions, functions,
+        agent = react.make_react_agent(
+            system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
+            ba.MAX_LLM_CALLS_PER_INTERACTION, False)
+        return find_answer(agent(question))
+
+    import os
+    import llama_cpp
+
+    model_path = os.path.join(
+        '/Users/ben/Prolego/code/llama.cpp',
+        'llama-2-13b-chat.ggmlv3.q4_0.bin'
+    )
+
+    llama_model = llama_cpp.Llama(
+        model_path=model_path,
+        n_gpu_layers=10000,
+        n_ctx=simplelocal.MAX_TOKENS
+    )
+
+    llama_model_wrapped = simplelocal.build_llama_wrapper(llama_model)
+
+    def agent_simple_llama2(question: str) -> Tuple[Optional[str], int]:
+        """answer a question with the react agent"""
+        agent = simplelocal.make_simple_agent(
+            system_message, llama_model_wrapped, FUNCTION_DESCS, functions,
             ba.MAX_LLM_CALLS_PER_INTERACTION, False)
         return find_answer(agent(question))
 
@@ -74,24 +112,28 @@ def main():
 
     systems = {
         # 'dummy': dummy,
-        'agent (simple)': agent_simple,
-        'agent (react)': agent_react
+        # 'simple': agent_simple,
+        # 'react': agent_react
+        'simple (llama2-13b-chat)': agent_simple_llama2
     }
 
     qs_and_evals = [
-        (
-            'Who most recently opened a checking account?',
-            lambda x: 'John Thompson' in x),
+        # (
+        #     'Who most recently opened a checking account?',
+        #     lambda x: 'John Thompson' in x
+        # ),
         (
             'How many people have opened a savings account in the last year?',
-            lambda x: '34' in words(x)),
-        (
-            'How many products does the person who most recently opened a mortgage have?',
-            lambda x: '2' in words(x)),
-        (
-            'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
-        )
+            lambda x: '34' in words(x)
+        ),
+        # (
+        #     'How many products does the person who most recently opened a mortgage have?',
+        #     lambda x: '2' in words(x)
+        #  ),
+        # (
+        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+        #     lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
+        # )
     ]
 
     results = {}

@@ -33,11 +33,15 @@ def make_simple_agent(
         ) -> Callable:
     """"""
 
-    system_message += FORMAT_MESSAGE
+    # system_message += '\n\n' + FORMAT_MESSAGE
 
     messages = [
-        openai.Message('system', system_message)
+        openai.Message('user', system_message)
     ]
+
+    print('SYSTEM MESSAGE:')
+    print(system_message)
+    print()
 
     def run_once(user_input: str) -> Generator:
         """Engage an LLM ReACT agent to answer a question."""
@@ -99,14 +103,18 @@ def build_llama_wrapper(
                 max_tokens=MAX_TOKENS
             )
 
-            response = result['choices'][0]['text']
+            response = result['choices'][0]['message']['content']
+            print('RESPONSE:')
+            print(response)
+            print('-' * 50)
 
             if 'FUNCTION:' in response:
                 function_call = dp.parse_dispatch_response(response, functions)
                 # OpenAI format
             else:
                 function_call = None
-        except:
+        except Exception as e:
+            print(str(e))
             response = None
             function_call = None
 
