@@ -58,7 +58,6 @@ def main():
             ba.MAX_LLM_CALLS_PER_INTERACTION, True)
         return find_answer(agent(question))
 
-
     def agent_react(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the react agent"""
         agent = make_react_agent(
@@ -73,9 +72,9 @@ def main():
         return 'As an AI model, I\'m unable to answer the question.', 1
 
     systems = {
-        'dummy': dummy,
+        # 'dummy': dummy,
         'agent (simple)': agent_simple,
-        # 'agent (react)': agent_react
+        'agent (react)': agent_react
     }
 
     qs_and_evals = [
@@ -156,8 +155,10 @@ def main():
 
     df = pd.read_csv(output_file_name)
 
-    df_system_question = df.groupby(['system', 'question']).agg(func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
-    df_system = df.groupby(['system']).agg(func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
+    df_system_question = df.groupby(['system', 'question']).agg(
+        func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
+    df_system = df.groupby(['system']).agg(
+        func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
 
     df_system_question.to_csv(f'{output_file_prefix}_system_question.csv', float_format='{:.3f}'.format)
     df_system.to_csv(f'{output_file_prefix}_system.csv', float_format='{:.3f}'.format)
