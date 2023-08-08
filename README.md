@@ -62,9 +62,9 @@ In our second episode on Unified NLQ we introduce LLM Agents. Agents are necessa
 
 Videos (coming soon!)
 
-1. Checkout Episode 4, [Release vx.x.x]()
+1. Checkout Episode 4, [Release v0.4.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.4.0)
 ````
-    git checkout tags/vx.x.x
+    git checkout tags/v0.4.0
 ````
 2. Start the demo by running
 
