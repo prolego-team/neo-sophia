@@ -49,7 +49,8 @@ def main():
     }
 
     # Systems to evaluate. These take a question as input and return
-    # an answer or None (for an uncaught or if the system
+    # an answer or None (for an uncaught error or if the system can't
+    # answer the question) as well as a count of API / LLM interactions
 
     def agent_simple(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the simple agent"""
