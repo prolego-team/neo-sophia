@@ -2,21 +2,21 @@
 Test the bank agent with questions and answers.
 """
 
-import string
-from typing import Iterable, Optional, List
+from typing import Iterable, Optional, List, Tuple
 import sqlite3
-import tqdm
 import time
 import re
 import random
 
+import pandas as pd
+import tqdm
+
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent
+from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import bank_agent as ba
-
 from examples import project
-from neosophia.llmtools import openaiapi as oaiapi
 
 DATABASE = 'data/synthbank.db'
 DEBUG = True
@@ -48,45 +48,46 @@ def main():
         'query_database': query_database
     }
 
-    # TODO: additional system functions to evaluate
+    # Systems to evaluate. These take a question as input and return
+    # an answer or None (for an uncaught or if the system
 
-    def agent_simple(question: str) -> Optional[str]:
+    def agent_simple(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the simple agent"""
         agent = make_react_agent(
             system_message, model, function_descriptions, functions,
             ba.MAX_LLM_CALLS_PER_INTERACTION, True)
-        try:
-            return find_answer(agent(question))
-        except Exception as e:
-            print('exception in `agent_simple`:', str(e))
-            return None
+        return find_answer(agent(question))
 
-    def agent_react(question: str) -> Optional[str]:
+
+    def agent_react(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the react agent"""
         agent = make_react_agent(
             system_message, model, function_descriptions, functions,
             ba.MAX_LLM_CALLS_PER_INTERACTION, False)
-        try:
-            return find_answer(agent(question))
-        except Exception as e:
-            print('exception in `agent_react`:', str(e))
-            return None
+        return find_answer(agent(question))
 
-    def dummy(_: str) -> str:
-        """Dummy for quickly testing things."""
-        time.sleep(random.random() * 3.0)
-        return 'As an AI model, I\'m unable to answer the question.'
+    def dummy(_: str) -> Tuple[Optional[str], int]:
+        """Dummy system for quickly testing things."""
+        # time.sleep(random.random() * 3.0)
+        time.sleep(random.random() * 0.1)
+        return 'As an AI model, I\'m unable to answer the question.', 1
 
     systems = {
         'dummy': dummy,
         'agent (simple)': agent_simple,
-        # 'agent (react)': agent_react)
+        # 'agent (react)': agent_react
     }
 
     qs_and_evals = [
-        ('Who most recently opened a checking account?', lambda x: 'John Thompson' in x),
-        ('How many people have opened a savings account in the last year?', lambda x: '34' in words(x)),
-        ('How many products does the person who most recently opened a mortgage have?', lambda x: '2' in words(x)),
+        (
+            'Who most recently opened a checking account?',
+            lambda x: 'John Thompson' in x),
+        (
+            'How many people have opened a savings account in the last year?',
+            lambda x: '34' in words(x)),
+        (
+            'How many products does the person who most recently opened a mortgage have?',
+            lambda x: '2' in words(x)),
         (
             'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
             lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
@@ -101,15 +102,17 @@ def main():
 
                 # use the system to answer the question
                 start_time = time.time()
-                answer = system(question)
+                answer, call_count = system(question)
                 print('ANSWER:')
                 print(answer)
+                print(call_count)
                 end_time = time.time()
                 total_time = end_time - start_time
 
                 info = {
                     'time': round(total_time, 3),
-                    'answer': answer
+                    'answer': answer,
+                    'calls': call_count
                 }
 
                 # evaluation
@@ -124,25 +127,9 @@ def main():
 
     db_connection.close()
 
-    import numpy as np
-
-    results_grouped = {}
-    for (system_name, question, run_idx), info in results.items():
-        runs = results_grouped.setdefault((system_name, question), [])
-        runs.append(info)
-    results_agg = {}
-    for key, infos in results_grouped.items():
-        info_agg = {
-            'time': round(np.mean([x['time'] for x in infos]), 3),
-            'missing': round(np.mean([x['missing'] for x in infos]), 3),
-            'correct': round(np.mean([x['correct'] for x in infos]), 3)
-        }
-        results_agg[key] = info_agg
-
-    # save results CSVs
-
-    output_file_name = 'eval.csv'
-    header = 'system,question,run,time,missing,correct,answer\n'
+    output_file_prefix = 'eval'
+    output_file_name = f'{output_file_prefix}.csv'
+    header = 'system,question,run,calls,time,missing,correct,answer\n'
     with open(output_file_name, 'w') as f:
         f.write(header)
         for (system_name, question, run_idx), info in results.items():
@@ -153,6 +140,7 @@ def main():
                 f'"{system_name}"',
                 f'"{question}"',
                 run_idx,
+                info['calls'],
                 info['time'],
                 info['missing'],
                 info['correct'],
@@ -164,26 +152,20 @@ def main():
 
     print(f'wrote `{output_file_name}`')
 
-    output_file_name = 'eval_agg.csv'
-    header = 'system,question,time,missing,correct\n'
-    with open(output_file_name, 'w') as f:
-        f.write(header)
-        for (system_name, question), info in results_agg.items():
-            line = [
-                f'"{system_name}"',
-                f'"{question}"',
-                info['time'],
-                info['missing'],
-                info['correct']
-            ]
-            line = [str(x) for x in line]
-            line = ','.join(line) + '\n'
-            f.write(line)
+    # read csv back in with pandas to aggregate
 
-    print(f'wrote `{output_file_name}`')
+    df = pd.read_csv(output_file_name)
+
+    df_system_question = df.groupby(['system', 'question']).agg(func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
+    df_system = df.groupby(['system']).agg(func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
+
+    df_system_question.to_csv(f'{output_file_prefix}_system_question.csv', float_format='{:.3f}'.format)
+    df_system.to_csv(f'{output_file_prefix}_system.csv', float_format='{:.3f}'.format)
+
+    print('wrote aggregate CSVs')
 
 
-def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
+def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]:
     """
     Consume messages from an agent until you find 'Final Answer:'
     from the assistant.
@@ -196,26 +178,36 @@ def find_answer(messages: Iterable[openai.Message]) -> Optional[str]:
     answer_message = None
     if DEBUG:
         print('-' * 50)
-    for message in messages:
-        if DEBUG:
-            print('MESSAGE:')
-            print(message.role)
-            print(message.name)
-            print(message.content)
-            print('~~~')
-        if message.role == 'assistant':
-            # I think this logic is correct and shouldn't cause early stopping.
-            if 'Final Answer:' in message.content:
-                answer_message = message
-                break
+
+    call_count = 0
+
+    try:
+        for message in messages:
+            if DEBUG:
+                print('MESSAGE:')
+                print(message.role)
+                print(message.name)
+                print(message.content)
+                print('~~~')
+            if message.role == 'user' or message.role == 'function':
+                call_count += 1
+            if message.role == 'assistant':
+                # I think this logic is correct and shouldn't cause early stopping.
+                if 'Final Answer:' in message.content:
+                    answer_message = message
+                    break
+    except Exception as e:
+        print('error while reading messages:', str(e))
+        return None, call_count
+
     if answer_message is not None:
-        return answer_message.content
+        return answer_message.content, call_count
     else:
-        return None
+        return None, call_count
 
 
 def words(x_str: str) -> List[str]:
-    """split a string into words"""
+    """Split a string into words and strip basic punctuation from the ends."""
     res = re.split('\\s+', x_str)
     return [x.strip('.,;?-') for x in res]
 
