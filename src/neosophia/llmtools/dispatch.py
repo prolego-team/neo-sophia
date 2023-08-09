@@ -60,12 +60,13 @@ def dispatch_prompt(
         'QUESTION: ' + question + '\n\n' +
         'FUNCTION DESCRIPTIONS:' + '\n\n' +
         functions_str +
-        'Your answer should be in this form:\n\n' +
+        # 'Your answer should be in this form:\n\n' +
+        'Answer in this form:\n\n' +
         'FUNCTION: [function_name]\n' +
         # 'PARAMETER: [parameter name 0] [parameter value 0]\n' +
         # 'PARAMETER: [parameter name 1] [parameter value 1]\n' +
-        'PARAMETER: [name] [value]\n' +
-        'PARAMETER: [name] [value]\n' +
+        'PARAMETER: name_0 value_ 0\n' +
+        'PARAMETER: name_1 value_1\n' +
         '...\n\n' +
         'Begin!\n'
     )

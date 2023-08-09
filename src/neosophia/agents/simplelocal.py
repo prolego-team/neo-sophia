@@ -70,6 +70,8 @@ def make_simple_agent(
                 functions,
                 simple_formatting
             )
+            if next_message.role == 'function':
+                next_message.role = 'user'
             function_call_counter += function_called
 
             messages.append(next_message)
