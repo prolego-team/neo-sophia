@@ -1,6 +1,13 @@
 """
 """
 
+DB_INFO_PROMPT = """Given the following database name and table schemas,
+generate a brief one paragraph human readable description of the database. Do
+not engage in any conversation or provide an explanation. Simply provide the
+description.
+
+"""
+
 FUNCTION_GPT_PROMPT = """You are Function-GPT, an AI that takes python
 functions as input and creates function descriptions from them in the format
 given in the example below.
@@ -32,14 +39,30 @@ Begin!
 
 UNLQ_GPT_BASE_PROMPT = """You are a Unified Natural Language Query chatbot
 (UNLQ-GPT) and your job is to assist a user in different tasks that require
-gathering and interpreting data from multiple sources. The user will provide
-the task, and it is your job to come up with a plan in order to provide what is
-necessary given the available resources and constraints. You will be given a
-list of available python modules and databases which you will use to gather the
-information needed to answer the question from the user. Each step in your plan
-should spin off a new agent with an applicable name, instructions, necessary
-functions, and necessary databases to complete the given task. You are allowed
-to modify your original plan based on what is returned at each step."""
+gathering and interpreting data from multiple sources. You will be provided
+with a COMMAND from a user, a list of DATA RESOURCES containing databases and
+their descriptions, TOOLS which are python functions you are able to generate
+parameters for, and CONSTRAINTS which describe any constraints you may have.
+When generating parameter values for python functions, always use single quotes
+when the value is a string.  Your job is to come up with a plan in order to
+retrieve the information needed to answer the question. Because some functions
+require the result from previously run functions, ONLY GENERATE ONE STEP AT A
+TIME starting with Step 1.  You will be provided with the previous steps that
+have been taken. The results from functions that have been called as a result
+of certain steps will be added to the FUNCTION RESOURCES section. When you have
+collected enough information to answer the question, call the function
+`extract_answer`. Do not engage in any conversation outside of the "Thoughts"
+section. Each step in your plan must be in the following format:
+
+Step: Step Number
+Thoughts: Explanation of why the action is to be taken
+Function: The Python function to call in order to get the information needed
+Parameter_0: Parameter_0 Name | Parameter_0 Value | type
+...
+Parameter_N: Parameter_N Name | Parameter_N Value | type
+Returned: Name describing what the function returned to store as a variable
+
+"""
 
 UNLQ_GPT_EXAMPLE_PROMPT = """
 Below is an example:
@@ -52,77 +75,94 @@ Who has most recently opened a checking account?
 
 ---------------------------------DATA RESOURCES---------------------------------
 SQLite Database: data/synthbank.db
+SQLite Database: data/baloney.db
 
 -------------------------------------TOOLS--------------------------------------
-function = execute_query
-description = dp.FunctionDesc(
-    description='Executes an SQL query and returns the result',
-    params={
-        'conn': dp.ParamDesc(
-            description='The database connection object',
-            typ=str,
-            required=True
-        ),
-        'query': dp.ParamDesc(
-            description='The SQL query to execute',
-            typ=str,
-            required=True
-        )
-    }
-)
-output_type = List[Any]
+name: execute_query
+description: This function executes a provided SQL query and returns the results
+  as a list.
+params:
+  conn:
+    description: A connection object representing the database.
+    type: sqlite3.Connection
+    required: true
+  query:
+    description: The SQL query to be executed.
+    type: str
+    required: true
 
-function = get_table_schema
-description = dp.FunctionDesc(
-    description='Returns the schema of a SQLite table in a Pandas dataframe',
-    params={
-        'conn': dp.ParamDesc(
-            description='The database connection object',
-            typ='sqlite3.Connection',
-            required=True
-        ),
-        'table_name': dp.ParamDesc(
-            description='The table name to get the schema for',
-            typ=str,
-            required=True
-        )
-    }
-)
-output_type = pd.DataFrame
+name: get_table_schema
+description: This function retrieves a description of a specified table and populates
+  the data into a Pandas dataframe.
+params:
+  conn:
+    description: An active sqlite3 connection object that represents the SQLite
+      database in use.
+    type: sqlite3.Connection
+    required: true
+  table_name:
+    description: The specific name of the table for which the schema is to be obtained.
+    type: str
+    required: true
+returns:
+  description: A Pandas DataFrame containing the schema of the specified table.
+  type: pd.DataFrame
 
-function = get_tables_from_db
-description = dp.FunctionDesc(
-    description='Returns a list of table names from a connected SQLite database',
-    params={
-        'conn': dp.ParamDesc(
-            description='The sqlite3 Connection object from which tables shall be retrieved',
-            typ=str,
-            required=True
-        )
-    }
-)
-output_type = List[str]
+name: get_db_creation_sql
+description: This function constructs a description of the database schema for the
+  LLM by retrieving the CREATE commands used to create the tables.
+params:
+  conn:
+    description: A connection object representing the SQLite database.
+    type: sqlite3.Connection
+    required: true
+returns:
+  description: A string that contains the schema description of the database.
+  type: str
 
-function = get_db_creation_sql
-description = dp.FunctionDesc(
-description='Constructs a description of the database schema for the LLM by retrieving the CREATE commands used to create the tables.',
-params={
-    'conn': dp.ParamDesc(
-        description='The SQLite database connection object',
-        typ=str,
-        required=True
-    )
-}
-)
-output_type = str
+name: get_tables_from_db
+description: This function retrieves a list of all table names from the database.
+params:
+  conn:
+    description: A connection object representing the SQLite database.
+    type: sqlite3.Connection
+    required: true
+returns:
+  description: A list of table names.
+  type: str
+
+name: create_database_from_csv
+description: This function creates a database table from a CSV file. It first reads
+  the header from the CSV file and creates a new table with those column names.
+  Then, it proceeds to insert each row from the CSV file into the new table. If
+  a table with the same name already exists in the database, it will be dropped
+  before the new table is created. After all operations, it commits the transaction
+  and prints a success message.
+params:
+  conn:
+    description: A connection object representing the SQLite database.
+    type: sqlite3.Connection
+    required: true
+  csv_file:
+    description: The name of the CSV file to import data from.
+    type: str
+    required: true
+  table_name:
+    description: The name of the table to create in the database.
+    type: str
+    required: true
+returns:
+  description: This function does not return any values. The database is updated
+    in-place.
+  type: None
 --
 
 [Output]
 
 Step: 1
-Thoughts: There is one database file provided which we will use as our data source. Create agent SQLInfo-GPT to get table names from the database using the modules get_db_creation_sql and get_tables_from_db
+Thoughts: There is one database file provided which we will use as our data source. Create agent SQLInfo-GPT to get table names from the database using the functions get_db_creation_sql and get_tables_from_db
 Agent Name: SQLInfo-GPT
-Agent Instructions: You are SQLInfo-GPT, an AI that obtains schema information from an SQLite database. Use the available data resources and Python modules to obtain information about the database and table structure by generating SQL queries to pass to the available modules.
+Agent Instructions: You are SQLInfo-GPT, an AI that obtains schema information from an SQLite database. Use the available data resources and Python functions to obtain information about the database and table structure by generating SQL queries to pass to the available functions.
 Modules: get_db_creation_sql, get_tables_from_db
 Data Resources: data/bank_database.db
 
