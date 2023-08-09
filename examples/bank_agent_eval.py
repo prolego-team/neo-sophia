@@ -75,7 +75,7 @@ def main():
     systems = {
         # 'dummy': dummy,
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=True),
+        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
         'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
