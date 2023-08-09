@@ -33,7 +33,7 @@ def make_simple_agent(
         ) -> Callable:
     """"""
 
-    # system_message += '\n\n' + FORMAT_MESSAGE
+    system_message += '\n\n' + FORMAT_MESSAGE
 
     messages = [
         openai.Message('user', system_message)
@@ -80,6 +80,9 @@ def make_simple_agent(
     return run_once
 
 
+import json
+
+
 def build_llama_wrapper(
         llama_model: llama_cpp.Llama
         ) -> Callable:
@@ -95,17 +98,34 @@ def build_llama_wrapper(
         # TODO: we may have to do a custom prompt
 
         try:
-            result = llama_model.create_chat_completion(
-                messages=[
-                    llama_cpp.ChatCompletionMessage(role=x.role, content=x.content)
-                    for x in messages
-                ],
+            # result = llama_model.create_chat_completion(
+            #     messages=[
+            #         llama_cpp.ChatCompletionMessage(role=x.role, content=x.content)
+            #         for x in messages
+            #     ],
+            #     temperature=0.7,
+            #     repeat_penalty=1.1,
+            #     max_tokens=MAX_TOKENS
+            # )
+            # response = result['choices'][0]['message']['content']
+
+            messages_text = []
+            for message in messages:
+                if message.role == 'user':
+                    messages_text.append(f'[INST]{message.content}[/INST]')
+                else:
+                    messages_text.append(message.content)
+            prompt = '\n\n'.join(messages_text)
+
+            output = llama_model(
+                prompt=prompt,
                 temperature=0.7,
                 repeat_penalty=1.1,
-                max_tokens=MAX_TOKENS
+                max_tokens=MAX_TOKENS,
+                # TODO: stop
             )
+            response = output['choices'][0]['text']
 
-            response = result['choices'][0]['message']['content']
             print('RESPONSE:')
             print(response)
             print('-' * 50)
@@ -123,7 +143,7 @@ def build_llama_wrapper(
         if function_call is not None:
             function_call = {
                 'name': function_call[0],
-                'arguments': function_call[1]
+                'arguments': json.dumps(function_call[1])
             }
 
         # construct a response message
