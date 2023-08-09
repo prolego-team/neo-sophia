@@ -40,7 +40,6 @@ def main():
 
     system_message = ba.get_system_message()
     system_message += schema_description
-    function_descriptions = ba.FUNCTION_DESCRIPTIONS
 
     query_database, _ = tools.make_sqlite_query_tool(db_connection)
     functions = {
@@ -59,7 +58,7 @@ def main():
         def call(question: str) -> Tuple[Optional[str], int]:
             """answer a question with the simple agent"""
             agent = react.make_react_agent(
-                system_message, model, function_descriptions, functions,
+                system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
                 ba.MAX_LLM_CALLS_PER_INTERACTION,
                 simple_formatting=simple)
             return find_answer(agent(question))
