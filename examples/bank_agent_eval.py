@@ -58,7 +58,7 @@ def main():
 
         def call(question: str) -> Tuple[Optional[str], int]:
             """answer a question with the simple agent"""
-            agent = react.make_act_agent(
+            agent = react.make_react_agent(
                 system_message, model, function_descriptions, functions,
                 ba.MAX_LLM_CALLS_PER_INTERACTION,
                 simple_formatting=simple)
