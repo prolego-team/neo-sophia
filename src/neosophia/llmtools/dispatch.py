@@ -114,8 +114,10 @@ def parse_dispatch_response(
             print('\t', value)
             if isinstance(value, str):
                 # There is probably a better way to do this
-                value = value.strip('\'')
-                value = value.strip('"')
+                if value.startswith('\'') and value.endswith('\''):
+                    value = value[1:-1]
+                if value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
             res[pname] = value
         except Exception as e:
             print(f'Error parsing parameter `{pname}={value}')
