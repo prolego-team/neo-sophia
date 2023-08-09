@@ -2,7 +2,7 @@
 Test the bank agent with questions and answers.
 """
 
-from typing import Iterable, Optional, List, Tuple
+from typing import Iterable, Optional, List, Tuple, Callable
 import sqlite3
 import time
 import re
@@ -33,7 +33,6 @@ def main():
     oaiapi.set_api_key(api_key)
 
     # build stuff
-    model = openai.start_chat('gpt-4-0613')
 
     db_connection = sqlite3.connect(DATABASE)
 
@@ -52,19 +51,20 @@ def main():
     # an answer or None (for an uncaught error or if the system can't
     # answer the question) as well as a count of API / LLM interactions
 
-    def agent_simple(question: str) -> Tuple[Optional[str], int]:
-        """answer a question with the simple agent"""
-        agent = make_react_agent(
-            system_message, model, function_descriptions, functions,
-            ba.MAX_LLM_CALLS_PER_INTERACTION, True)
-        return find_answer(agent(question))
+    def build_agent(model_name: str, simple: bool) -> Callable:
+        """build an agent"""
 
-    def agent_react(question: str) -> Tuple[Optional[str], int]:
-        """answer a question with the react agent"""
-        agent = make_react_agent(
-            system_message, model, function_descriptions, functions,
-            ba.MAX_LLM_CALLS_PER_INTERACTION, False)
-        return find_answer(agent(question))
+        model = openai.start_chat(model_name)
+
+        def agent(question: str) -> Tuple[Optional[str], int]:
+            """answer a question with the simple agent"""
+            agent = make_react_agent(
+                system_message, model, function_descriptions, functions,
+                ba.MAX_LLM_CALLS_PER_INTERACTION,
+                simple_formatting=simple)
+            return find_answer(agent(question))
+
+        return agent
 
     def dummy(_: str) -> Tuple[Optional[str], int]:
         """Dummy system for quickly testing things."""
@@ -74,20 +74,24 @@ def main():
 
     systems = {
         # 'dummy': dummy,
-        'agent (simple)': agent_simple,
-        'agent (react)': agent_react
+        'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
+        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=True),
+        'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
     qs_and_evals = [
         (
             'Who most recently opened a checking account?',
-            lambda x: 'John Thompson' in x),
+            lambda x: 'John Thompson' in x
+        ),
         (
             'How many people have opened a savings account in the last year?',
-            lambda x: '34' in words(x)),
+            lambda x: '34' in words(x)
+        ),
         (
             'How many products does the person who most recently opened a mortgage have?',
-            lambda x: '2' in words(x)),
+            lambda x: '2' in words(x)
+        ),
         (
             'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
             lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
