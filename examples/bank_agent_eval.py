@@ -28,7 +28,7 @@ FUNCTION_DESCS = {
     'query_database': dp.FunctionDesc(
         description='Query the bank sqlite database.',
         params={
-            'sqlite_query': dp.ParamDesc(
+            'query': dp.ParamDesc(
                 description='A sqlite query to run against the bank databse.',
                 typ=str,
                 required=True
@@ -119,10 +119,10 @@ def main():
     }
 
     qs_and_evals = [
-        (
-            'Who most recently opened a checking account?',
-            lambda x: 'John Thompson' in x
-        ),
+        # (
+        #     'Who most recently opened a checking account?',
+        #     lambda x: 'John Thompson' in x
+        # ),
         # (
         #     'How many people have opened a savings account in the last year?',
         #     lambda x: '34' in words(x)
@@ -131,10 +131,10 @@ def main():
         #     'How many products does the person who most recently opened a mortgage have?',
         #     lambda x: '2' in words(x)
         # ),
-        # (
-        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-        #     lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
-        # )
+        (
+            'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
+        )
     ]
 
     results = {}

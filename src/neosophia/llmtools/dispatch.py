@@ -10,6 +10,9 @@ from dataclasses import dataclass
 from neosophia.llmtools import openaiapi as oaiapi
 
 
+PARAM_SEP = '='
+
+
 @dataclass
 class ParamDesc:
     """Parameter description."""
@@ -63,10 +66,10 @@ def dispatch_prompt(
         'Your answer should be in this form:\n\n' +
         # 'Answer in this form:\n\n' +
         'FUNCTION: [function_name]\n' +
-        'PARAMETER: [parameter name 0] [parameter value 0]\n' +
-        'PARAMETER: [parameter name 1] [parameter value 1]\n' +
-        # 'PARAMETER: name_0 value_ 0\n' +
-        # 'PARAMETER: name_1 value_1\n' +
+        # 'PARAMETER: [parameter name 0] [parameter value 0]\n' +
+        # 'PARAMETER: [parameter name 1] [parameter value 1]\n' +
+        f'PARAMETER: [name_0]{PARAM_SEP}[value_0]\n' +
+        f'PARAMETER: [name_1]{PARAM_SEP}[value_1]\n' +
         '...\n\n' +
         'Begin!\n'
     )
@@ -92,9 +95,15 @@ def parse_dispatch_response(
         elif line.startswith(param_prefix):
             line = line.removeprefix(param_prefix).strip()
             # word at start of line is parameter name
-            words = line.split()
-            pname = words[0]
-            value = line.removeprefix(pname).strip()
+
+            # words = line.split()
+            # pname = words[0]
+            # value = line.removeprefix(pname).strip()
+
+            words = line.split(PARAM_SEP)
+            pname = words[0].strip()
+            value = PARAM_SEP.join(words[1:]).strip()
+
             params[pname] = value
 
     res = {}

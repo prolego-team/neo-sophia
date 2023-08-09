@@ -3,6 +3,7 @@ Simple agent with function calling designed for use with a local LLM.
 """
 
 from typing import List, Callable, Generator
+import json
 
 import llama_cpp
 
@@ -31,7 +32,7 @@ def make_simple_agent(
         max_llm_calls: int,
         simple_formatting: bool
         ) -> Callable:
-    """"""
+    """Simple agent using a local LLM based on Justin's simple agent."""
 
     system_message += '\n\n' + FORMAT_MESSAGE
 
@@ -62,8 +63,13 @@ def make_simple_agent(
             messages.append(response)
             yield messages[-1]
 
-            if "Final Answer" in response.content:
+            # llama2 tends to capitalize "Final Answer:", maybe due to
+            # capitals in dispatch prompt?
+            if 'final answer' in response.content.lower():
                 break
+
+            # if "Final Answer" in response.content:
+            #     break
 
             next_message, function_called = react.get_next_message(
                 response,
@@ -78,9 +84,6 @@ def make_simple_agent(
             yield messages[-1]
 
     return run_once
-
-
-import json
 
 
 def build_llama_wrapper(
