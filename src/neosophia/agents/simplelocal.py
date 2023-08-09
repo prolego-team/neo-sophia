@@ -37,7 +37,7 @@ def make_simple_agent(
     system_message += '\n\n' + FORMAT_MESSAGE
 
     messages = [
-        openai.Message('user', system_message)
+        openai.Message('system ', system_message)
     ]
 
     print('SYSTEM MESSAGE:')
@@ -76,8 +76,6 @@ def make_simple_agent(
                 functions,
                 simple_formatting
             )
-            if next_message.role == 'function':
-                next_message.role = 'user'
             function_call_counter += function_called
 
             messages.append(next_message)
@@ -112,13 +110,7 @@ def build_llama_wrapper(
             # )
             # response = result['choices'][0]['message']['content']
 
-            messages_text = []
-            for message in messages:
-                if message.role == 'user':
-                    messages_text.append(f'[INST]{message.content}[/INST]')
-                else:
-                    messages_text.append(message.content)
-            prompt = '\n\n'.join(messages_text)
+            prompt = messages_to_llama2_prompt(messages)
 
             output = llama_model(
                 prompt=prompt,
@@ -158,3 +150,17 @@ def build_llama_wrapper(
         )
 
     return run
+
+
+def messages_to_llama2_prompt(messages: List[openai.Message]) -> str:
+    """
+    Convert a list of messages representin a chat conversation
+    to a llama2 prompt.
+    """
+    messages_text = []
+    for message in messages:
+        if message.role != 'assistant':
+            messages_text.append(f'[INST]{message.content}[/INST]')
+        else:
+            messages_text.append(message.content)
+    return '\n\n'.join(messages_text)
