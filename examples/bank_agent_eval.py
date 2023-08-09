@@ -12,7 +12,7 @@ import pandas as pd
 import tqdm
 
 from neosophia.llmtools import openaiapi as openai, tools
-from neosophia.agents.react import make_react_agent
+from neosophia.agents import react
 from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import bank_agent as ba
@@ -58,7 +58,7 @@ def main():
 
         def call(question: str) -> Tuple[Optional[str], int]:
             """answer a question with the simple agent"""
-            agent = make_react_agent(
+            agent = react.make_act_agent(
                 system_message, model, function_descriptions, functions,
                 ba.MAX_LLM_CALLS_PER_INTERACTION,
                 simple_formatting=simple)
