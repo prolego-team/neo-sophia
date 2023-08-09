@@ -56,7 +56,7 @@ def main():
 
         model = openai.start_chat(model_name)
 
-        def agent(question: str) -> Tuple[Optional[str], int]:
+        def call(question: str) -> Tuple[Optional[str], int]:
             """answer a question with the simple agent"""
             agent = make_react_agent(
                 system_message, model, function_descriptions, functions,
@@ -64,7 +64,7 @@ def main():
                 simple_formatting=simple)
             return find_answer(agent(question))
 
-        return agent
+        return call
 
     def dummy(_: str) -> Tuple[Optional[str], int]:
         """Dummy system for quickly testing things."""
@@ -75,7 +75,7 @@ def main():
     systems = {
         # 'dummy': dummy,
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
+        'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
         'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
@@ -191,9 +191,10 @@ def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]
         for message in messages:
             if DEBUG:
                 print('MESSAGE:')
-                print(message.role)
-                print(message.name)
-                print(message.content)
+                print('Role:', message.role)
+                print('Name:', message.name)
+                print('Content:', message.content)
+                print('Function Call:', message.function_call)
                 print('~~~')
             if message.role == 'user' or message.role == 'function':
                 call_count += 1
