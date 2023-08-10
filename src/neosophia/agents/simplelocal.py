@@ -173,11 +173,15 @@ def messages_to_llama2_prompt(messages: List[openai.Message]) -> str:
     Convert a list of messages representin a chat conversation
     to a llama2 prompt.
     """
+
+    # Reference on how it's officially done:
+    # https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L212
+
     messages_text = []
     for message in messages:
         if message.role != 'assistant':
             if message.role == 'system':  # system
-                messages_text.append(f'<<SYS>>\n{message.content}<</SYS>>')
+                messages_text.append(f'<<SYS>>\n{message.content}\n<</SYS>>')
             else:  # user
                 messages_text.append(f'[INST]{message.content}[/INST]')
         else:  # assistant and function

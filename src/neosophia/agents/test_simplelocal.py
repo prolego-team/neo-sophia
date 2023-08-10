@@ -19,7 +19,7 @@ def test_messages_to_llama2_prompt():
     assert (
         res ==
         (
-            '[INST]You are a chat model.[/INST]\n\n' +
+            '<<SYS>>\nYou are a chat model.\n<</SYS>>\n\n' +
             '[INST]Hello[/INST]\n\n' +
             'world'
         )
