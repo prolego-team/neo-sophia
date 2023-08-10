@@ -18,6 +18,7 @@ from neosophia.agents import react
 from neosophia.agents import simplelocal
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.llmtools import dispatch as dp
+from neosophia.db import sqlite_utils
 
 from examples import bank_agent as ba
 from examples import project
@@ -76,8 +77,6 @@ def main():
     functions = {
         'query_database': query_database
     }
-
-    from neosophia.db import sqlite_utils
 
     def get_table_schema(name: str) -> str:
         return sqlite_utils.get_table_schema(db_connection, name).to_string()
