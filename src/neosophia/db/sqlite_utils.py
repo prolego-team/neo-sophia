@@ -14,6 +14,7 @@ def get_conn(db_file: str) -> sqlite3.Connection:
 def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
     """ Executes an SQL query """
     cursor = conn.cursor()
+    print(f'QUERY:|{query}|')
     return cursor.execute(query).fetchall()
 
 

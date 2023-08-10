@@ -39,13 +39,44 @@ def build_function_dict_from_modules(
     return function_dict
 
 
-
 def convert_function_str_to_yaml(function_str: str) -> str:
     """
     Convert a given function string to YAML format using a GPT-4 model.
     """
     prompt = FUNCTION_GPT_PROMPT + '\n' + function_str
     return oaiapi.chat_completion(prompt=prompt, model='gpt-4')
+
+
+def parse_response(text):
+    """
+    Parse the provided text into a dictionary.
+
+    Args:
+        text (str): The text to be parsed.
+
+    Returns:
+        dict: A dictionary representation of the parsed text.
+    """
+
+    # Split the text into lines
+    lines = text.split("\n")
+
+    parsed_dict = {}
+    for line in lines:
+
+        # Split the line based on ": " to separate the key and the value
+        parts = line.split(": ", 1)
+        if len(parts) == 2:
+            key, value = parts
+
+            # Check if there are multiple '|' in the value
+            if '|' in value:
+                value_parts = value.split(' | ')
+                parsed_dict[key] = value_parts
+            else:
+                parsed_dict[key] = value
+
+    return parsed_dict
 
 
 def get_database_description(db_file: str) -> str:
@@ -149,3 +180,6 @@ def process_for_yaml(name: str, description: str, width=80) -> str:
     yaml_output = f'- name: {name}\n  description: {wrapped_description}'
     return yaml_output
 
+
+def get_yaml_from_dict(data, name):
+    return yaml.dump(data[name], default_flow_style=False, sort_keys=False)
