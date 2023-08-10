@@ -7,7 +7,9 @@ import sqlite3
 import time
 import re
 import random
+import os
 
+import llama_cpp
 import pandas as pd
 import tqdm
 
@@ -66,9 +68,6 @@ def main():
     # an answer or None (for an uncaught error or if the system can't
     # answer the question) as well as a count of API / LLM interactions
 
-    import os
-    import llama_cpp
-
     model_path = os.path.join(
         '/Users/ben/Prolego/code/llama.cpp',
         'llama-2-13b-chat.ggmlv3.q4_0.bin'
@@ -77,10 +76,10 @@ def main():
     llama_model = llama_cpp.Llama(
         model_path=model_path,
         n_gpu_layers=10000,
-        n_ctx=simplelocal.MAX_TOKENS
+        n_ctx=simplelocal.LLAMA2_MAX_TOKENS
     )
 
-    llama_model_wrapped = simplelocal.build_llama_wrapper(llama_model)
+    llama_model_wrapped = simplelocal.build_llama2_wrapper(llama_model)
 
     def agent_simple_llama2(question: str) -> Tuple[Optional[str], int]:
         """answer a question with the react agent"""
@@ -123,18 +122,18 @@ def main():
         #     'Who most recently opened a checking account?',
         #     lambda x: 'John Thompson' in x
         # ),
-        # (
-        #     'How many people have opened a savings account in the last year?',
-        #     lambda x: '34' in words(x)
-        # ),
+        (
+            'How many people have opened a savings account in the last year?',
+            lambda x: '34' in words(x)
+        ),
         # (
         #     'How many products does the person who most recently opened a mortgage have?',
         #     lambda x: '2' in words(x)
         # ),
-        (
-            'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
-        )
+        # (
+        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+        #     lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
+        # )
     ]
 
     results = {}

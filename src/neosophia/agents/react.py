@@ -10,7 +10,7 @@ from neosophia.llmtools import openaiapi as openai
 
 def get_next_message(
         response: openai.Message,
-        functions: dict[Callable],
+        functions: dict[str, Callable],
         enforce_action_calls: bool) -> tuple[openai.Message, bool]:
     """Get a response to a ReAct LLM call."""
 

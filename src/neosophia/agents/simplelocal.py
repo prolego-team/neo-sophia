@@ -12,15 +12,17 @@ from neosophia.llmtools import openaiapi as openai
 from neosophia.agents import react
 
 
-MAX_TOKENS = 4096
+LLAMA2_MAX_TOKENS = 4096
 
 
 FORMAT_MESSAGE = (
     "When the user asks a question, think about what to do before responding. "
-    "Share your thoughts with the user so they understand what you are doing. "
+    # "Share your thoughts with the user so they understand what you are doing. "
+    "Briefly share your thoughts, but do not engage in conversation. "
     "You can use a function call to get additional information from the user. "
+    "The user will run the function and give you the answer with an \"Observation:\" prefix. Do not run functions yourself. "
     "When you have the final answer say, \"Final Answer: \" followed by the "
-    "resposne to the user's question."
+    "response to the user's question."
 )
 
 
@@ -32,10 +34,14 @@ def make_simple_agent(
         max_llm_calls: int,
         simple_formatting: bool
         ) -> Callable:
-    """Simple agent using a local LLM based on Justin's simple agent."""
+    """Simple agent using a local LLM based on Justin's react agent simple mode."""
+
+    # I'm following Justin's agent code here.
+    # One improvement would be to move this
+    # message initialization stuff inside `run_once` and then
+    # `run_once` could be reused.
 
     system_message += '\n\n' + FORMAT_MESSAGE
-
     messages = [
         openai.Message('system ', system_message)
     ]
@@ -63,13 +69,11 @@ def make_simple_agent(
             messages.append(response)
             yield messages[-1]
 
-            # llama2 tends to capitalize "Final Answer:", maybe due to
-            # capitals in dispatch prompt?
+            # llama2 tends to capitalize "Final Answer", maybe due to
+            # capitals in dispatch prompt? So we'll do the check
+            # in lowercase
             if 'final answer' in response.content.lower():
                 break
-
-            # if "Final Answer" in response.content:
-            #     break
 
             next_message, function_called = react.get_next_message(
                 response,
@@ -84,11 +88,13 @@ def make_simple_agent(
     return run_once
 
 
-def build_llama_wrapper(
+def build_llama2_wrapper(
         llama_model: llama_cpp.Llama
         ) -> Callable:
-
-    # https://github.com/abetlen/llama-cpp-python/blob/main/llama_cpp/llama.py
+    """
+    Wrap a llama_cpp model to take messages and function descriptions as input
+    and return a message.
+    """
 
     def run(
             messages: List[openai.Message],
@@ -96,30 +102,31 @@ def build_llama_wrapper(
             ) -> openai.Message:
         """do it"""
 
-        # TODO: we may have to do a custom prompt
-
         try:
-            # result = llama_model.create_chat_completion(
-            #     messages=[
-            #         llama_cpp.ChatCompletionMessage(role=x.role, content=x.content)
-            #         for x in messages
-            #     ],
-            #     temperature=0.7,
-            #     repeat_penalty=1.1,
-            #     max_tokens=MAX_TOKENS
-            # )
-            # response = result['choices'][0]['message']['content']
-
-            prompt = messages_to_llama2_prompt(messages)
-
-            output = llama_model(
-                prompt=prompt,
-                temperature=0.7,
-                repeat_penalty=1.1,
-                max_tokens=MAX_TOKENS,
-                # TODO: stop
-            )
-            response = output['choices'][0]['text']
+            if False:
+                # use the chat completion interface, doesn't work well
+                # I believe the llama2 chat models need [INST] [/INST] tokens
+                # https://github.com/abetlen/llama-cpp-python/blob/main/llama_cpp/llama.py
+                result = llama_model.create_chat_completion(
+                    messages=[
+                        llama_cpp.ChatCompletionMessage(role=x.role, content=x.content)
+                        for x in messages
+                    ],
+                    temperature=0.7,
+                    repeat_penalty=1.1,
+                    max_tokens=LLAMA2_MAX_TOKENS
+                )
+                response = result['choices'][0]['message']['content']
+            else:
+                # build the prompt manually
+                prompt = messages_to_llama2_prompt(messages)
+                output = llama_model(
+                    prompt=prompt,
+                    temperature=0.7,
+                    repeat_penalty=1.1,
+                    max_tokens=LLAMA2_MAX_TOKENS,
+                )
+                response = output['choices'][0]['text']
 
             print('RESPONSE:')
             print(response)
@@ -127,14 +134,16 @@ def build_llama_wrapper(
 
             if 'FUNCTION:' in response:
                 function_call = dp.parse_dispatch_response(response, functions)
-                # OpenAI format
             else:
                 function_call = None
+
         except Exception as e:
             print(str(e))
             response = None
+
             function_call = None
 
+        # build the OpenAI function call result format
         if function_call is not None:
             function_call = {
                 'name': function_call[0],
