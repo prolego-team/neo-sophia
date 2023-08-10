@@ -112,8 +112,10 @@ def build_llama2_wrapper(
         try:
             if False:
                 # use the chat completion interface, doesn't work well
-                # I believe the llama2 chat models need [INST] [/INST] tokens
+                # I believe the llama2 chat models need special formatting
                 # https://github.com/abetlen/llama-cpp-python/blob/main/llama_cpp/llama.py
+                # vs.
+                # https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L212
                 result = llama_model.create_chat_completion(
                     messages=[
                         llama_cpp.ChatCompletionMessage(role=x.role, content=x.content)
