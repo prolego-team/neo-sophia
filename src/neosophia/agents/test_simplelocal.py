@@ -14,13 +14,17 @@ def test_messages_to_llama2_prompt():
         oai.Message(role='system', content='You are a chat model.'),
         oai.Message(role='user', content='Hello'),
         oai.Message(role='assistant', content='world'),
+        oai.Message(role='user', content='What now?'),
     ])
+
+    print(res)
 
     assert (
         res ==
         (
-            '<<SYS>>\nYou are a chat model.\n<</SYS>>\n\n' +
-            '[INST]Hello[/INST]\n\n' +
-            'world'
+            '[INST] <<SYS>>\nYou are a chat model.\n<</SYS>>\n\n' +
+            'Hello [/INST]\n\n' +
+            'world\n\n' +
+            '[INST] What now? [/INST]'
         )
     )

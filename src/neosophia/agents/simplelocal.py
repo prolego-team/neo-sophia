@@ -50,7 +50,7 @@ def make_simple_agent(
 
     system_message += '\n\n' + FORMAT_MESSAGE
     messages = [
-        openai.Message('system ', system_message)
+        openai.Message('system', system_message)
     ]
 
     print('SYSTEM MESSAGE:')
@@ -145,9 +145,8 @@ def build_llama2_wrapper(
                 function_call = None
 
         except Exception as e:
-            print(str(e))
+            print('Exception:', str(e))
             response = None
-
             function_call = None
 
         # build the OpenAI function call result format
@@ -176,14 +175,25 @@ def messages_to_llama2_prompt(messages: List[openai.Message]) -> str:
 
     # Reference on how it's officially done:
     # https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L212
+    # What I've implemented isn't quite the same, there's some
+    # additional special tokenization stuff going on in the original method.
+    # But this should be close.
 
-    messages_text = []
-    for message in messages:
+    # assumes the first messages are system and user
+    assert len(messages) > 1, 'not enough messages'
+    assert messages[0].role == 'system', 'wrong role for first message'
+    assert messages[1].role == 'user', 'wrong role for second message'
+
+    # special case for putting sys tags inside INST
+    messages_text = [
+        f'[INST] <<SYS>>\n{messages[0].content}\n<</SYS>>\n\n{messages[1].content} [/INST]'
+    ]
+
+    for message in messages[2:]:
+        content = message.content.strip()
         if message.role != 'assistant':
-            if message.role == 'system':  # system
-                messages_text.append(f'<<SYS>>\n{message.content}\n<</SYS>>')
-            else:  # user
-                messages_text.append(f'[INST]{message.content}[/INST]')
-        else:  # assistant and function
-            messages_text.append(message.content)
-    return '\n\n'.join(messages_text)
+            content = f'[INST] {content} [/INST]'
+        messages_text.append(content)
+    res = '\n\n'.join(messages_text)
+
+    return res
