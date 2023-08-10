@@ -20,9 +20,16 @@ FORMAT_MESSAGE = (
     # "Share your thoughts with the user so they understand what you are doing. "
     "Briefly share your thoughts, but do not engage in conversation. "
     "You can use a function call to get additional information from the user. "
-    "The user will run the function and give you the answer with an \"Observation:\" prefix. Do not run functions yourself. "
+    "The user will run the function and give you the answer with an \"Observation:\" prefix. "
+    "Do not run functions yourself. "
     "When you have the final answer say, \"Final Answer: \" followed by the "
     "response to the user's question."
+)
+
+CUSTOM_DISPATCH_PROMPT_PREFIX = (
+    'Find information to help answer the question by choosing a single function ' +
+    'and generating parameters for the function based on the function descriptions below. ' +
+    'Do not ask the user questions.'
 )
 
 
@@ -53,7 +60,7 @@ def make_simple_agent(
     def run_once(user_input: str) -> Generator:
         """Engage an LLM ReACT agent to answer a question."""
 
-        # input_msg = f'Question: {user_input}'
+        dp.DISPATCH_PROMPT_PREFIX = CUSTOM_DISPATCH_PROMPT_PREFIX
         input_msg = dp.dispatch_prompt(
             question=user_input,
             functions=function_descriptions
@@ -169,7 +176,10 @@ def messages_to_llama2_prompt(messages: List[openai.Message]) -> str:
     messages_text = []
     for message in messages:
         if message.role != 'assistant':
-            messages_text.append(f'[INST]{message.content}[/INST]')
-        else:
+            if message.role == 'system':  # system
+                messages_text.append(f'<<SYS>>\n{message.content}<</SYS>>')
+            else:  # user
+                messages_text.append(f'[INST]{message.content}[/INST]')
+        else:  # assistant and function
             messages_text.append(message.content)
     return '\n\n'.join(messages_text)

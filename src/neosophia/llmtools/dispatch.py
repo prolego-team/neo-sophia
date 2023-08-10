@@ -12,6 +12,12 @@ from neosophia.llmtools import openaiapi as oaiapi
 
 PARAM_SEP = '='
 
+DISPATCH_PROMPT_PREFIX = (
+    'Answer the question by choosing a single function and generating parameters for the function ' +
+    'based on the function descriptions below. If none of the functions can be used to answer the question, ' +
+    'answer None.'
+)
+
 
 @dataclass
 class ParamDesc:
@@ -57,14 +63,11 @@ def dispatch_prompt(
         )
 
     return (
-        'Answer the question by choosing a single function and generating parameters for the function ' +
-        'based on the function descriptions below. If none of the functions can be used to answer the question, '
-        'answer None.\n\n' +
+        DISPATCH_PROMPT_PREFIX + '\n\n' +
         'QUESTION: ' + question + '\n\n' +
         'FUNCTION DESCRIPTIONS:' + '\n\n' +
         functions_str +
         'Your answer should be in this form:\n\n' +
-        # 'Answer in this form:\n\n' +
         'FUNCTION: [function_name]\n' +
         # 'PARAMETER: [parameter name 0] [parameter value 0]\n' +
         # 'PARAMETER: [parameter name 1] [parameter value 1]\n' +
