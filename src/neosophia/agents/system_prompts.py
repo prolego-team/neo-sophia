@@ -1,6 +1,10 @@
 """
 """
 
+NO_CONVERSATION_CONSTRAINT = (
+    'Do not engage in conversation or provide '
+    'an explanation. Simply provide an answer.')
+
 DB_INFO_PROMPT = """Given the following database name and table schemas,
 generate a brief one paragraph human readable description of the database. Do
 not engage in any conversation or provide an explanation. Simply provide the

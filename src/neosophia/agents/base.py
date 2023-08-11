@@ -1,34 +1,30 @@
-"""
-"""
+""" Agent base class """
 import os
 import types
-import pickle
-import sqlite3
 import readline
 
-from abc import ABCMeta, abstractmethod
 from typing import Dict, List
 
 import yaml
-import click
 
-import neosophia.db.chroma as chroma
 import neosophia.agents.utils as autils
 
-from neosophia.db import sqlite_utils as sql_utils
-from neosophia.llmtools import dispatch as dp, openaiapi as oaiapi
+from neosophia.llmtools import openaiapi as oaiapi
 
 opj = os.path.join
 
 TABLE_NAME = 'data'
 
-NO_CONVERSATION_CONSTRAINT = (
-    'Do not engage in conversation or provide '
-    'an explanation. Simply provide an answer.')
+TOKEN_LIMIT = {
+    'gpt-4': 8192
+}
 
 
 class Prompt:
-
+    """
+    Represents a structured prompt that aids in constructing interactive
+    conversations with the model.
+    """
     def __init__(self):
 
         self.base_prompt = []
@@ -107,13 +103,23 @@ class Prompt:
 
 
 class Agent:
-
-    def __init__(self, name, system_prompt, modules, resources, model='gpt-4'):
+    """
+    Represents an agent that interacts with the user with structured prompts to
+    converse with the model.
+    """
+    def __init__(
+            self,
+            name: str,
+            system_prompt: str,
+            modules: List[types.ModuleType],
+            resources: List[str],
+            model: str = 'gpt-4'):
+        """
+        Initializes an Agent object
         """
 
-        """
-
-        self.openai_llm_model_name = model
+        self.model_name = model
+        self.token_limit = TOKEN_LIMIT[model]
 
         self.system_prompt = system_prompt
         self.modules = modules
@@ -171,28 +177,38 @@ class Agent:
         autils.write_dict_to_yaml(self.tools, 'functions', self.tools_file)
 
     def chat(self):
+        """ Function to give a command to interact with the LLM """
+
+        def get_command(prompt):
+            print('\nAsk a question')
+            user_input = ''
+            while user_input == '':
+                user_input = input('> ')
+            prompt.add_command(user_input)
+            return user_input
 
         while True:
 
             prompt = Prompt()
-
             prompt.add_base_prompt(self.system_prompt)
 
-            print('\nAsk a question')
-            #user_input = input('> ')
-            user_input = 'What is the name of the customer with the oldest checking account?'
-            prompt.add_command(user_input)
+            user_input = get_command(prompt)
 
+            # Add resources to prompt
             for name, resource in self.resources.items():
                 prompt.add_resource(name, yaml.dump(resource, sort_keys=False))
 
-            for func_name, func_description in self.tools.items():
+            # Add tools to prompt
+            for func_description in self.tools.values():
                 prompt.add_tool(yaml.dump(func_description, sort_keys=False))
 
             prompt_str = prompt.generate_prompt()
 
+            # Dictionary containing the variable name:value from returned
+            # function calls
             self.function_resources = {}
             while True:
+
                 print(prompt_str)
                 response = self.execute(prompt_str)
                 print(response)
@@ -200,11 +216,16 @@ class Agent:
                 parsed_response = autils.parse_response(response)
                 function, args = self.extract_params(parsed_response)
 
+                if function is None:
+                    user_input = get_command(prompt)
+                    prompt_str = prompt.generate_prompt()
+                    continue
+
+                # The LLM has enough information to answer the question
                 if function == self.function_calls['extract_answer']:
                     answer = self.extract_answer(
                         user_input, self.function_resources)
                     break
-
                 else:
                     called = False
                     num_tries = 0
@@ -214,6 +235,8 @@ class Agent:
                             called = True
                         except Exception as e:
                             num_tries += 1
+
+                            # Add the error into the prompt so it can fix it
                             prompt_str += f'\nERROR\n{e}'
                             print('ERROR:', str(e))
                             response = self.execute(prompt_str)
@@ -226,23 +249,37 @@ class Agent:
                         print('\nReached max number of function call tries\n')
                         exit()
 
+                    # Variable name from function call
                     return_name = response.split(
                         'Returned:')[1].replace(' ', '').rstrip().strip()
 
+                    # Add variable to function resources
                     self.function_resources[return_name] = res
 
                     prompt.add_function_resources(return_name, str(res))
                     prompt.add_completed_step(response)
-
                     prompt_str = prompt.generate_prompt()
+
+                    # Get an approximate token count without needing to encode
+                    num_tokens = len(prompt_str.replace(' ', '')) / 4
+
+                    n = 1
+                    # Truncate prompt if it's too long - probably a better way
+                    # to do this to keep relevant information
+                    while num_tokens > self.token_limit:
+                        prompt_str = prompt_str[n:]
+                        n += 1
+                        num_tokens = autils.count_tokens(
+                            prompt_str, self.model_name)
 
                     input('\nPress enter to continue...')
 
-            print('Done')
             print(answer)
-            exit()
+            print(80 * '-')
 
-    def extract_params(self, parsed_data):
+    def extract_params(self, parsed_data: Dict):
+        """ Extract parameters from LLM response """
+
         func_key = 'Function'
         param_prefix = 'Parameter_'
 
@@ -251,7 +288,8 @@ class Agent:
 
         function = None
         if func_key in parsed_data:
-            function = self.function_calls[parsed_data[func_key]]
+            if parsed_data[func_key] in self.function_calls:
+                function = self.function_calls[parsed_data[func_key]]
 
         for key, value in parsed_data.items():
             if key.startswith(param_prefix):
@@ -262,8 +300,12 @@ class Agent:
                     param_value = self.function_resources[param_value]
 
                 param_type = value[2].replace(' ', '')
-                if param_type == 'str':
+
+                # Stripping out quotes differently when it's a query
+                if param_type == 'str' and param_name != 'query':
                     param_value = str(param_value.replace("'", ""))
+                    param_value = str(param_value.replace('"', ""))
+                if param_type == 'str' and param_name == 'query':
                     param_value = str(param_value.replace('"', ""))
 
                 params.append(param_name.replace(' ', ''))
@@ -281,5 +323,5 @@ class Agent:
     def execute(self, prompt):
         print('Thinking...')
         return oaiapi.chat_completion(
-            prompt=prompt, model=self.openai_llm_model_name)
+            prompt=prompt, model=self.model_name)
 
