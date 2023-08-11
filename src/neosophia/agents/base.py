@@ -67,7 +67,7 @@ class Prompt:
         self.constraints.append(constraint)
 
     def add_completed_step(self, step):
-        self.steps.append(step)
+        self.steps.append(step + '\n')
 
     def generate_prompt(self, tot=80):
         prompt = ''
@@ -179,7 +179,8 @@ class Agent:
             prompt.add_base_prompt(self.system_prompt)
 
             print('\nAsk a question')
-            user_input = input('> ')
+            #user_input = input('> ')
+            user_input = 'What is the name of the customer with the oldest checking account?'
             prompt.add_command(user_input)
 
             for name, resource in self.resources.items():
@@ -213,8 +214,7 @@ class Agent:
                             called = True
                         except Exception as e:
                             num_tries += 1
-                            prompt_str += '\nERROR\n'
-                            prompt_str += str(e)
+                            prompt_str += f'\nERROR\n{e}'
                             print('ERROR:', str(e))
                             response = self.execute(prompt_str)
                             print(response)
@@ -227,7 +227,7 @@ class Agent:
                         exit()
 
                     return_name = response.split(
-                        'Returned:')[1].replace(' ', '')
+                        'Returned:')[1].replace(' ', '').rstrip().strip()
 
                     self.function_resources[return_name] = res
 
@@ -240,6 +240,7 @@ class Agent:
 
             print('Done')
             print(answer)
+            exit()
 
     def extract_params(self, parsed_data):
         func_key = 'Function'
@@ -259,8 +260,6 @@ class Agent:
 
                 if param_value in self.function_resources:
                     param_value = self.function_resources[param_value]
-                else:
-                    print(f'PARAM |{param_value}| NOT IN FUNCTIONS')
 
                 param_type = value[2].replace(' ', '')
                 if param_type == 'str':
