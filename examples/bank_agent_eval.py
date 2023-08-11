@@ -65,6 +65,29 @@ def main():
 
         return call
 
+    def patch_agent(agent, apply_patch, undo_patch) -> Callable:
+        def call(quesetion: str) -> Tuple[Optional[str], int]:
+            apply_patch()
+            res = agent(question)
+            undo_patch()
+            return res
+        return call
+
+    def patch_format_message_simple(msg: str):
+        react.FORMAT_MESSAGE_SIMPLE_BACKUP = react.FORMAT_MESSAGE_SIMPLE
+        react.FORMAT_MESSAGE_SIMPLE = msg
+
+    def undo_patch_format_message_simple():
+        react.FORMAT_MESSAGE_SIMPLE = react.FORMAT_MESSAGE_SIMPLE_BACKUP
+
+    format_message_patched = (
+        "When the user asks a question, think about what to do before responding. "
+        "Briefly share your thoughts, but do not engage in conversation. "
+        "You can use a function call to get additional information from the user. "
+        "When you have the final answer say, \"Final Answer: \" followed by the "
+        "response to the user's question."
+    )
+
     def dummy(_: str) -> Tuple[Optional[str], int]:
         """Dummy system for quickly testing things."""
         # time.sleep(random.random() * 3.0)
@@ -74,8 +97,13 @@ def main():
     systems = {
         # 'dummy': dummy,
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
-        'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
+        'agent (simple, patched)': patch_agent(
+            build_agent(model_name='gpt-4-0613', simple=True),
+            lambda: patch_format_message_simple(format_message_patched),
+            undo_patch_format_message_simple
+        ),
+        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
+        # 'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
     qs_and_evals = [
