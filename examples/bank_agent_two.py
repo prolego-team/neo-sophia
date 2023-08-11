@@ -126,9 +126,13 @@ def main():
     def agent_wrapper(question, status, chat_history):
 
         # Check the reasonableness of the question
+        additional_check = (
+            '\n\nQuestions should only pertain to an individual customer.  '
+            'Questions that may generate long query responses should not be asked.'
+        )
         response = check_question(
             question,
-            schema_description,
+            schema_description + additional_check,
             model,
             FUNCTION_DESCRIPTIONS
         )
@@ -237,10 +241,11 @@ def main():
             "dollar amounts and are mutually exclusive.\n\n"
             "## Example questions:\n"
             "Here are a few questions you could ask:\n"
+            "- What are the last ten checking account transactions for Constance Faust?\n"
+            "- Besides a rent or mortgage payment does Constance Faust have any checking withdrawals exceeding $400?\n"
             "- Who most recently opened a checking account and how many deposits have they made since opening the account?\n"
             "- What is the name of the customer who made the largest deposit to a savings account in the last six months?\n"
             "- How many accounts had single deposits exceeding $50000 in the month of June, 2023?  What were the names of the customers holding these accounts?\n"
-            "- How many of the checking accounts opened in the month of June, 2023, had single deposits exceeding $4000 in that month?\n"
             "## Interacting with the Chatbot:\n"
             'When the Chatbot thinks it has your answer it will respond with "Final Answer:".\n\n'
             "Sometimes the Chatbot will struggle to get the right answer.  It is programmed "
