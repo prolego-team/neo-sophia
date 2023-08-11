@@ -27,7 +27,7 @@ log = logging.getLogger('agent')
 
 CUSTOMER_DATABASE = 'data/synthbank.db'
 TRANSACTION_DATABASE = 'data/transactions.db'
-DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
+DEFAULT_QUESTION = 'Besides a rent or mortgage payment does Constance Faust have any checking withdrawals exceeding $400?'
 MAX_LLM_CALLS_PER_INTERACTION = 10
 
 FUNCTION_DESCRIPTIONS = dispatch.convert_function_descs({
