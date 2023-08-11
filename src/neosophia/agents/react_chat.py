@@ -40,7 +40,6 @@ def make_react_agent(
         function_descriptions: list[dict],
         functions: dict[str, Callable],
         max_llm_calls: int = 10,
-        extra_context: str | None = None,
     ) -> Callable:
     """Return a ReAct agent.
 
@@ -55,7 +54,7 @@ def make_react_agent(
         "Share your thoughts with the user so they understand what you are doing. "
         "You can use a function call to get additional information from the user. "
         "When you have the final answer say, \"Final Answer: \" followed by the "
-        "response to the user's question."
+        "resposne to the user's question."
     )
 
     system_message += format_message
@@ -63,12 +62,6 @@ def make_react_agent(
     messages = [
         openai.Message('system', system_message)
     ]
-
-    if extra_context:
-        messages.append(openai.Message(
-            'user',
-            'Additional information that may be useful:\n\n'+extra_context
-        ))
 
     def run_once(user_input: str) -> Generator:
         """Engage an LLM ReACT agent to answer a question."""
