@@ -206,7 +206,7 @@ class Agent:
 
             # Dictionary containing the variable name:value from returned
             # function calls
-            self.function_resources = {}
+            function_resources = {}
             while True:
 
                 print(prompt_str)
@@ -214,7 +214,8 @@ class Agent:
                 print(response)
 
                 parsed_response = autils.parse_response(response)
-                function, args = self.extract_params(parsed_response)
+                function, args = self.extract_params(
+                    parsed_response, function_resources)
 
                 if function is None:
                     user_input = get_command(prompt)
@@ -224,7 +225,7 @@ class Agent:
                 # The LLM has enough information to answer the question
                 if function == self.function_calls['extract_answer']:
                     answer = self.extract_answer(
-                        user_input, self.function_resources)
+                        user_input, function_resources)
                     break
                 else:
                     called = False
@@ -243,7 +244,7 @@ class Agent:
                             print(response)
                             parsed_response = autils.parse_response(response)
                             function, args = self.extract_params(
-                                parsed_response)
+                                parsed_response, function_resources)
 
                     if not called:
                         print('\nReached max number of function call tries\n')
@@ -254,7 +255,7 @@ class Agent:
                         'Returned:')[1].replace(' ', '').rstrip().strip()
 
                     # Add variable to function resources
-                    self.function_resources[return_name] = res
+                    function_resources[return_name] = res
 
                     prompt.add_function_resources(return_name, str(res))
                     prompt.add_completed_step(response)
@@ -277,7 +278,7 @@ class Agent:
             print(answer)
             print(80 * '-')
 
-    def extract_params(self, parsed_data: Dict):
+    def extract_params(self, parsed_data: Dict, function_resources: Dict):
         """ Extract parameters from LLM response """
 
         func_key = 'Function'
@@ -296,16 +297,14 @@ class Agent:
                 param_name = value[0]
                 param_value = value[1]
 
-                if param_value in self.function_resources:
-                    param_value = self.function_resources[param_value]
+                if param_value in function_resources:
+                    param_value = function_resources[param_value]
 
                 param_type = value[2].replace(' ', '')
 
                 # Stripping out quotes differently when it's a query
                 if param_type == 'str' and param_name != 'query':
                     param_value = str(param_value.replace("'", ""))
-                    param_value = str(param_value.replace('"', ""))
-                if param_type == 'str' and param_name == 'query':
                     param_value = str(param_value.replace('"', ""))
 
                 params.append(param_name.replace(' ', ''))
