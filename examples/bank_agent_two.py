@@ -27,7 +27,7 @@ log = logging.getLogger('agent')
 
 CUSTOMER_DATABASE = 'data/synthbank.db'
 TRANSACTION_DATABASE = 'data/transactions.db'
-DEFAULT_QUESTION = 'Besides a rent or mortgage payment does Constance Faust have any checking withdrawals exceeding $400?'
+DEFAULT_QUESTION = 'How many accounts does this customer have with the bank?'
 MAX_LLM_CALLS_PER_INTERACTION = 10
 
 FUNCTION_DESCRIPTIONS = dispatch.convert_function_descs({
@@ -53,8 +53,11 @@ def get_system_message() -> str:
     """Get the system message."""
     return (
         "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
-        "against the bank's databse to collect information for the user.  Answer the user's "
-        "questions as best as you can.  Only use the functions you have been provided with.\n\n"
+        "against the bank's databse to collect information for the user.\n\n "
+        "Answer the user's questions as best as you can.  Only use the functions you have been "
+        "provided with.\n\n"
+        "Before running a query check to see if you already have part or all of the answer from "
+        "your interaction history!\n\n"
         f"Today's date is {datetime.today()}."
     )
 
@@ -95,6 +98,12 @@ def format_message(message):
     return text
 
 
+def concat_chat_history(chat_history: list[tuple[str,str]]) -> str:
+    """Stringify a chat history."""
+    message_list = [msg[0] if msg[0] else msg[1] for msg in chat_history]
+    return '\n\n'.join(message_list)
+
+
 def main():
     """Setup and run gradio app."""
 
@@ -113,6 +122,10 @@ def main():
         customer_db_connection, transaction_db_connections
     )
 
+    cursor = customer_db_connection.cursor()
+    customer_list = cursor.execute('SELECT DISTINCT name FROM customers;').fetchall()
+    customer_list = [name[0] for name in customer_list]
+
     customer_db_connection.close()
     transaction_db_connections.close()
 
@@ -123,12 +136,11 @@ def main():
     def new_question_wrapper():
         return ''
 
-    def agent_wrapper(question, status, chat_history):
+    def agent_wrapper(customer_name, question, status, chat_history):
 
         # Check the reasonableness of the question
         additional_check = (
-            '\n\nQuestions should only pertain to an individual customer.  '
-            'Questions that may generate long query responses should not be asked.'
+            f'\n\nQuestions should only pertain to the customer {customer_name}.'
         )
         response = check_question(
             question,
@@ -162,14 +174,27 @@ def main():
             'query_database': query_database
         }
 
+        print(len(chat_history))
+        if len(chat_history)>1:
+            extra_context = 'Here is a summary of our conversation so far:\n\n'
+            extra_context += concat_chat_history(chat_history[1:])
+        else:
+            extra_context = None
+
         agent = make_react_agent(
             system_message,
             model,
             FUNCTION_DESCRIPTIONS,
             functions,
             MAX_LLM_CALLS_PER_INTERACTION,
+            extra_context
         )
 
+        question_context = (
+            f'The following question is about {customer_name}.  '
+            'Only answer questions about this customer.\n'
+        )
+        question = question_context + question
         for message in agent(question):
             if message.role=='user':
                 status = 'User agent asked a question or provided feedback to the LLM.  Awaiting LLM response...'
@@ -202,10 +227,11 @@ def main():
         return response
 
     with gr.Blocks() as demo:
-        gr.Markdown('# Chat With a Bank Database')
+        gr.Markdown('# Chat About a Bank Customer')
 
+        customer_name = gr.Dropdown(customer_list, label='Customer name')
         question = gr.Textbox(
-            value=DEFAULT_QUESTION, label='Ask a question about the data')
+            value=DEFAULT_QUESTION, label='Ask a question about this customer')
         with gr.Row():
             with gr.Column():
                 ask_button = gr.Button('Ask')
@@ -241,11 +267,10 @@ def main():
             "dollar amounts and are mutually exclusive.\n\n"
             "## Example questions:\n"
             "Here are a few questions you could ask:\n"
-            "- What are the last ten checking account transactions for Constance Faust?\n"
-            "- Besides a rent or mortgage payment does Constance Faust have any checking withdrawals exceeding $400?\n"
-            "- Who most recently opened a checking account and how many deposits have they made since opening the account?\n"
-            "- What is the name of the customer who made the largest deposit to a savings account in the last six months?\n"
-            "- How many accounts had single deposits exceeding $50000 in the month of June, 2023?  What were the names of the customers holding these accounts?\n"
+            "- How many accounts does this customer have?\n"
+            "- List this customer's accounts?\n"
+            "- What were this customers last 10 checking account transactions?\n"
+            "- What was this customer's largest transaction?\n"
             "## Interacting with the Chatbot:\n"
             'When the Chatbot thinks it has your answer it will respond with "Final Answer:".\n\n'
             "Sometimes the Chatbot will struggle to get the right answer.  It is programmed "
@@ -264,7 +289,7 @@ def main():
             outputs=final_answer) \
         .then(
             agent_wrapper,
-            [question, status, chatbot],
+            [customer_name, question, status, chatbot],
             [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
@@ -273,7 +298,7 @@ def main():
             outputs=final_answer) \
         .then(
             agent_wrapper,
-            [question, status, chatbot],
+            [customer_name, question, status, chatbot],
             [status, chatbot]) \
         .then(answer_wrapper, chatbot, final_answer)
 
