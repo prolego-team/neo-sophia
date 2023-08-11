@@ -10,18 +10,11 @@ from neosophia.llmtools import openaiapi as openai
 
 def get_next_message(
         response: openai.Message,
-        functions: list[dict]) -> tuple[openai.Message, bool]:
+        functions: dict[str, Callable]) -> tuple[openai.Message, bool]:
     """Get a response to a ReAct LLM call."""
 
     function_called = False
-    if 'Observation:' in response.content:
-        next_message = openai.Message(
-            'user',
-            ('Your response contained an observation from a function call, but '
-                'function calls should only be executed by the user.  Please do '
-                'not make up responses to function calls!')
-        )
-    elif response.function_call is not None:
+    if response.function_call is not None:
         name = response.function_call['name']
         arguments = json.loads(response.function_call['arguments'])
         results = functions[name](**arguments)
@@ -31,12 +24,6 @@ def get_next_message(
         )
 
         function_called = True
-    elif 'Action:' in response.content:
-        next_message = openai.Message(
-            'user',
-            ('You did not call a function as your "Action", or it was not in '
-             'the correct format.  Please try again.')
-        )
     else:
         next_message = openai.Message(
             'user',
@@ -63,21 +50,13 @@ def make_react_agent(
     """
 
     format_message = (
-        "ALWAYS use the following format:\n\n"
-        "Question: the input question you have to answer\n"
-        "Thought: you should always think about what to do\n"
-        "Action: the function to execute; fill this in with a properly formatted "
-        "function call for the user to execute\n"
-        "Observation: the result of the function, provided by the user\n"
-        "... (this Thought/Action/Observation can repeat N times)\n"
-        "Thought: I now know the final answer\n"
-        "Final Answer: the final answer to the original input question\n\n"
-        "The user will execute the function calls for you and return the results as "
-        "an observation.  After forming a thought and action, remember to wait for an "
-        "observation from the user.  Try to answer the question in as few steps as "
-        "possible.\n\n"
-        "Begin! Reminder to always use the exact characters `Final Answer` when responding."
+        "When the user asks a question, think about what to do before responding. "
+        "Share your thoughts with the user so they understand what you are doing. "
+        "You can use a function call to get additional information from the user. "
+        "When you have the final answer say, \"Final Answer: \" followed by the "
+        "resposne to the user's question."
     )
+
     system_message += format_message
 
     messages = [
