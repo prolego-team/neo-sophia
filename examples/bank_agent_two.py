@@ -10,8 +10,8 @@ from datetime import datetime
 
 import gradio as gr
 
-from neosophia.llmtools import openaiapi as openai, tools
-from neosophia.agents.react import make_react_agent
+from neosophia.llmtools import openaiapi as openai, tools, dispatch
+from neosophia.agents.react_chat import make_react_agent
 from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
 
@@ -29,6 +29,63 @@ CUSTOMER_DATABASE = 'data/synthbank.db'
 TRANSACTION_DATABASE = 'data/transactions.db'
 DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
 MAX_LLM_CALLS_PER_INTERACTION = 10
+
+FUNCTION_DESCRIPTIONS = dispatch.convert_function_descs({
+    'query_database': dispatch.FunctionDesc(
+        description='Query the bank sqlite database.',
+        params={
+            'database': dispatch.ParamDesc(
+                description='The databse in which to run the query.',
+                typ=str,
+                required=True
+            ),
+            'query': dispatch.ParamDesc(
+                description='A sqlite query to run against the bank databse.',
+                typ=str,
+                required=True
+            )
+        }
+    )
+})
+
+
+def get_system_message() -> str:
+    """Get the system message."""
+    return (
+        "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
+        "against the bank's databse to collect information for the user.  Answer the user's "
+        "questions as best as you can.  Only use the functions you have been provided with.\n\n"
+        f"Today's date is {datetime.today()}."
+    )
+
+
+def get_schema_description(customer_db_connection, transaction_db_connection) -> str:
+    """
+    Construct a description of the DB schema for the LLM by retrieving the
+    CREATE commands used to create the tables.
+    """
+    schema_description = (
+        "There are two databases:\n"
+        "1. `customer_database` contains information on customers and the products they hold. "
+        "Each customer has one or more products at the bank.  Each product has a globally unique "
+        "account number.  Each customer has a globally unique guid identifier.  The customer guids "
+        "and the product account numbers are related in the 'products' database table.\n"
+    )
+    schema_description += "The bank has the following products:\n"
+    schema_description += '"Standard credit card", "FlexSave Savings Account", "Standard mortgage", "PrestigeSave Premium Savings Account", "PremierAccess Checking Account", "Standard auto loan", "EasyAccess Checking Account"\n'
+    schema_description += "The customer database tables were created using the following commands.\n"
+    schema_description += get_db_creation_sql(customer_db_connection)
+    schema_description += (
+        "\n\n"
+        "2. `transaction_database` contains all transactions for all accounts.  The accounts are "
+        "identified by account numbers that can be looked up in the `customer_database`. A "
+        "transaction consists of a date, description, withdrawal amount and deposit amount.\n"
+        "The transaction database table was created using the following command.\n"
+    )
+    schema_description += get_db_creation_sql(transaction_db_connection)
+
+    return schema_description
+
 
 def format_message(message):
     """Convert a message into plain text"""
@@ -52,58 +109,15 @@ def main():
     customer_db_connection = sqlite3.connect(CUSTOMER_DATABASE)
     transaction_db_connections = sqlite3.connect(TRANSACTION_DATABASE)
 
-    function_descriptions = [
-        {
-            'name': 'query_database',
-            'description': 'Query the bank sqlite database.',
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'database': {
-                        'type': 'string',
-                        'description': 'The databse in which to run the query.'
-                    },
-                    'query': {
-                        'type': 'string',
-                        'description': 'A sqlite query to run against the bank databse.'
-                    },
-                },
-                'required': ['sqlite_query']
-            }
-        }
-    ]
+    schema_description = get_schema_description(
+        customer_db_connection, transaction_db_connections
+    )
 
-    # Construct a description of the DB schema for the LLM by retrieving the
-    # CREATE commands used to create the tables.
-    schema_description = (
-        "There are two databases:\n"
-        "1. `customer_database` contains information on customers and the products they hold. "
-        "Each customer has one or more products at the bank.  Each product has a globally unique "
-        "account number.  Each customer has a globally unique guid identifier.  The customer guids "
-        "and the product account numbers are related in the 'products' database table.\n"
-    )
-    schema_description += "The bank has the following products:\n"
-    schema_description += '"Standard credit card", "FlexSave Savings Account", "Standard mortgage", "PrestigeSave Premium Savings Account", "PremierAccess Checking Account", "Standard auto loan", "EasyAccess Checking Account"\n'
-    schema_description += "The customer database tables were created using the following commands.\n"
-    schema_description += get_db_creation_sql(customer_db_connection)
-    schema_description += (
-        "\n\n"
-        "2. `transaction_database` contains all transactions for all accounts.  The accounts are "
-        "identified by account numbers that can be looked up in the `customer_database`. A "
-        "transaction consists of a date, description, withdrawal amount and deposit amount.\n"
-        "The transaction database table was created using the following command.\n"
-    )
-    schema_description += get_db_creation_sql(transaction_db_connections)
     customer_db_connection.close()
     transaction_db_connections.close()
 
     # Setup the agent
-    system_message = (
-        "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
-        "against the bank's databases to collect information for the user.  Answer the user's "
-        "questions as best as you can.  Only use the functions you have been provided with.\n\n"
-        f"Today's date is {datetime.today()}."
-    )
+    system_message = get_system_message()
     system_message += schema_description
 
     def new_question_wrapper():
@@ -116,7 +130,7 @@ def main():
             question,
             schema_description,
             model,
-            function_descriptions
+            FUNCTION_DESCRIPTIONS
         )
         chat_history.append([None, response])
 
@@ -147,10 +161,9 @@ def main():
         agent = make_react_agent(
             system_message,
             model,
-            function_descriptions,
+            FUNCTION_DESCRIPTIONS,
             functions,
             MAX_LLM_CALLS_PER_INTERACTION,
-            simple_formatting=True
         )
 
         for message in agent(question):
