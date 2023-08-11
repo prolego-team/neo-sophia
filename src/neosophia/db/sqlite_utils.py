@@ -15,6 +15,9 @@ def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
     """ Executes an SQL query """
     cursor = conn.cursor()
     print(f'QUERY:|{query}|')
+    if query[0] == "'" or query[0] == '"':
+        query = query[1:-1]
+    print(f'QUERY:|{query}|')
     return cursor.execute(query).fetchall()
 
 
