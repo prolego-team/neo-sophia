@@ -1,5 +1,4 @@
-"""
-"""
+""" General utilities used by the Agent class """
 import os
 import re
 import ast
