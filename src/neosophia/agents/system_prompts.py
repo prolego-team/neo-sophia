@@ -1,5 +1,11 @@
-"""
-"""
+""" Collection of prompts used by the system """
+
+ANSWER_QUESTION_PROMPT = """Answer the question given the following data. Format your answer such that the data is in a human readable format.\n\n"""
+
+FIX_QUERY_PROMPT = """Given the function resources available and the query
+given below, modify the query such that the values in the function resources
+are part of the query instead of the variable. Write the new query in the spot
+below.\n\n"""
 
 NO_CONVERSATION_CONSTRAINT = (
     'Do not engage in conversation or provide '
