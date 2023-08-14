@@ -1,5 +1,6 @@
 """ Agent base class """
 import os
+import re
 import types
 import readline
 
@@ -10,6 +11,8 @@ import yaml
 import neosophia.agents.utils as autils
 
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
+                                             FIX_QUERY_PROMPT)
 
 opj = os.path.join
 
@@ -273,7 +276,7 @@ class Agent:
                         num_tokens = autils.count_tokens(
                             prompt_str, self.model_name)
 
-                    input('\nPress enter to continue...')
+                    #input('\nPress enter to continue...')
 
             print(answer)
             print(80 * '-')
@@ -307,16 +310,48 @@ class Agent:
                     param_value = str(param_value.replace("'", ""))
                     param_value = str(param_value.replace('"', ""))
 
+                if param_type == 'str' and param_name == 'query' and '+' in param_value:
+                    param_value = self.replace_variables_in_query(
+                        param_value, function_resources)
+
                 params.append(param_name.replace(' ', ''))
                 values.append(param_value)
 
         args = dict(zip(params, values))
         return function, args
 
+    def replace_variables_in_query(self, query, function_resources):
+        """
+        Replace variables in the query string with their corresponding values
+        from the function_resources dictionary.
+        """
+
+        # Regular expression pattern to identify potential variable names
+        pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b'
+
+        # Not sure yet how this works for queries with multiple variables
+        # needing replacement
+        for match in re.finditer(pattern, query):
+            word = match.group()
+            if word in function_resources:
+                prompt = Prompt()
+                prompt.add_base_prompt(FIX_QUERY_PROMPT)
+                for key, val in function_resources.items():
+                    prompt.add_function_resources(key, val)
+
+                prompt_str = prompt.generate_prompt()
+                prompt_str += '\nOriginal Query: ' + query + '\n\n'
+                prompt_str += 'Modified Query:'
+                query = self.execute(prompt_str)
+
+        return query
+
     def extract_answer(self, question, data):
-        prompt = 'Answer the question given the following data\n'
+        prompt = ANSWER_QUESTION_PROMPT
         prompt += f'Question: {question}'
         prompt += f'Data: {data}'
+        print('prompt')
+        print('\n===========================================\n')
         return self.execute(prompt)
 
     def execute(self, prompt):
