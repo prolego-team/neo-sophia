@@ -26,7 +26,7 @@ def main():
     """main program"""
 
     # configuration
-    n_runs = 3
+    n_runs = 5
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -103,7 +103,7 @@ def main():
             undo_patch_format_message_simple
         ),
         # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
-        # 'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
+        'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
     qs_and_evals = [
