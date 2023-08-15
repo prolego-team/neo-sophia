@@ -39,14 +39,15 @@ def get_db_creation_sql(conn: sqlite3.Connection) -> str:
     return schema_description
 
 
-def get_tables_from_db(conn: sqlite3.Connection) -> str:
+def get_tables_from_db(conn: sqlite3.Connection) -> List[str]:
     """ Get a list of table names from the database """
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     return [x[0] for x in cursor.fetchall()]
 
 
-def create_database_from_csv(conn: sqlite3.Connection, csv_file: str, table_name: str) -> None:
+def create_database_from_csv(
+        conn: sqlite3.Connection, csv_file: str, table_name: str) -> None:
     """Create database table from a CSV file."""
 
     # Connect to the SQLite database

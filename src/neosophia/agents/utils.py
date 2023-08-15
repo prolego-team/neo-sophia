@@ -105,17 +105,17 @@ def count_tokens(prompt: str, model: str) -> int:
     return len(encoding.encode(prompt))
 
 
-def setup_and_load_yaml(workspace, filename, key):
+def setup_and_load_yaml(workspace_dir, filename, key):
     """
     Helper function to set up workspace, create a file if it doesn't exist,
     and load data from a YAML file.
     """
 
     # Create a workspace if it doesn't exist
-    os.makedirs(workspace, exist_ok=True)
+    os.makedirs(workspace_dir, exist_ok=True)
 
     # Create a file if it doesn't exist
-    file_path = os.path.join(workspace, filename)
+    file_path = os.path.join(workspace_dir, filename)
     if not os.path.exists(file_path):
         with open(file_path, 'w') as f:
             pass
@@ -130,8 +130,6 @@ def setup_and_load_yaml(workspace, filename, key):
     else:
         return {item['name']: item for item in data[key]}, file_path
 
-    return data, file_path
-
 
 def write_dict_to_yaml(
         functions_dict: Dict, keyword: str, filename: str) -> None:
@@ -142,7 +140,7 @@ def write_dict_to_yaml(
     # Transform the dictionary into the desired format
     data_list = [details for name, details in functions_dict.items()]
 
-    # Wrap the list in a dictionary with the key 'functions'
+    # Wrap the list in a dictionary with the keyword
     data = {keyword: data_list}
 
     # Write the data to the YAML file
@@ -179,6 +177,3 @@ def process_for_yaml(name: str, description: str, width=80) -> str:
     yaml_output = f'- name: {name}\n  description: {wrapped_description}'
     return yaml_output
 
-
-def get_yaml_from_dict(data, name):
-    return yaml.dump(data[name], default_flow_style=False, sort_keys=False)

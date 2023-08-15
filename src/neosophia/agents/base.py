@@ -16,8 +16,6 @@ from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
 
 opj = os.path.join
 
-TABLE_NAME = 'data'
-
 TOKEN_LIMIT = {
     'gpt-4': 8192
 }
@@ -182,6 +180,9 @@ class Agent:
     def chat(self):
         """ Function to give a command to interact with the LLM """
 
+        # Track the number of LLM calls throughout the interaction
+        self.llm_calls = 0
+
         def get_command(prompt):
             print('\nAsk a question')
             user_input = ''
@@ -212,7 +213,7 @@ class Agent:
             function_resources = {}
             while True:
 
-                print(prompt_str)
+                #print(prompt_str)
                 response = self.execute(prompt_str)
                 print(response)
 
@@ -255,7 +256,7 @@ class Agent:
 
                     # Variable name from function call
                     return_name = response.split(
-                        'Returned:')[1].replace(' ', '').rstrip().strip()
+                        'Returned:')[1].replace(' ', '').rstrip()
 
                     # Add variable to function resources
                     function_resources[return_name] = res
@@ -276,7 +277,13 @@ class Agent:
                         num_tokens = autils.count_tokens(
                             prompt_str, self.model_name)
 
-                    #input('\nPress enter to continue...')
+                nct1 = f'| Number of LLM Calls: {self.llm_calls} |'
+                nct2 = '+' + (len(nct1) - 2) * '-' + '+'
+                print('\n')
+                print(nct2)
+                print(nct1)
+                print(nct2)
+                print('\n')
 
             print(answer)
             print(80 * '-')
@@ -287,14 +294,13 @@ class Agent:
         func_key = 'Function'
         param_prefix = 'Parameter_'
 
-        params = []
-        values = []
-
         function = None
         if func_key in parsed_data:
             if parsed_data[func_key] in self.function_calls:
                 function = self.function_calls[parsed_data[func_key]]
 
+        # Create a dictionary of arguments to be passed to teh function
+        args = {}
         for key, value in parsed_data.items():
             if key.startswith(param_prefix):
                 param_name = value[0]
@@ -314,10 +320,9 @@ class Agent:
                     param_value = self.replace_variables_in_query(
                         param_value, function_resources)
 
-                params.append(param_name.replace(' ', ''))
-                values.append(param_value)
+                # Add param name and its value to the dictionary
+                args[param_name.replace(' ', '')] = param_value
 
-        args = dict(zip(params, values))
         return function, args
 
     def replace_variables_in_query(self, query, function_resources):
@@ -355,6 +360,7 @@ class Agent:
         return self.execute(prompt)
 
     def execute(self, prompt):
+        self.llm_calls += 1
         print('Thinking...')
         return oaiapi.chat_completion(
             prompt=prompt, model=self.model_name)
