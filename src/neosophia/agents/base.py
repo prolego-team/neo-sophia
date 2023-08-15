@@ -119,6 +119,9 @@ class Agent:
         Initializes an Agent object
         """
 
+        # Track the number of LLM calls throughout the interaction
+        self.llm_calls = 0
+
         self.model_name = model
         self.token_limit = TOKEN_LIMIT[model]
 
@@ -213,7 +216,7 @@ class Agent:
             function_resources = {}
             while True:
 
-                #print(prompt_str)
+                print(prompt_str)
                 response = self.execute(prompt_str)
                 print(response)
 
