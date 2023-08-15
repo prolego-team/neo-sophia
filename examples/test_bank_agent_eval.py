@@ -10,7 +10,6 @@ from neosophia.llmtools import openaiapi as oai
 from examples import bank_agent_eval as bae
 
 
-
 def test_eval_systems():
     """test eval_systems"""
 
