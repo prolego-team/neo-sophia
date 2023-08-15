@@ -220,7 +220,7 @@ def main():
             response = 'It appears the agent couldn\'t answer the questions.'
         elif 'Final Answer:' in final_message:
             response = final_message.split('Final Answer:')[1].strip()
-            response = response.split('\n')[0].strip()
+            response = response.split('_<name')[0].strip()
         else:
             response = 'It appears the agent couldn\'t answer the questions.'
 
