@@ -2,11 +2,10 @@
 Test the bank agent with questions and answers.
 """
 
-from typing import Iterable, Optional, List, Tuple, Callable
+from typing import Iterable, Optional, List, Tuple, Callable, Dict
 import sqlite3
 import time
 import re
-import random
 
 import pandas as pd
 import tqdm
@@ -17,6 +16,7 @@ from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import bank_agent as ba
 from examples import project
+
 
 DATABASE = 'data/synthbank.db'
 DEBUG = True
@@ -65,8 +65,12 @@ def main():
 
         return call
 
-    def patch_agent(agent, apply_patch, undo_patch) -> Callable:
-        def call(quesetion: str) -> Tuple[Optional[str], int]:
+    def patch_agent(
+            agent: Callable,
+            apply_patch: Callable,
+            undo_patch: Callable) -> Callable:
+        """make a new agent by patching"""
+        def call(question: str) -> Tuple[Optional[str], int]:
             apply_patch()
             res = agent(question)
             undo_patch()
@@ -88,14 +92,7 @@ def main():
         "response to the user's question."
     )
 
-    def dummy(_: str) -> Tuple[Optional[str], int]:
-        """Dummy system for quickly testing things."""
-        # time.sleep(random.random() * 3.0)
-        time.sleep(random.random() * 0.1)
-        return 'As an AI model, I\'m unable to answer the question.', 1
-
     systems = {
-        # 'dummy': dummy,
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
         'agent (simple, patched)': patch_agent(
             build_agent(model_name='gpt-4-0613', simple=True),
@@ -125,36 +122,7 @@ def main():
         )
     ]
 
-    results = {}
-
-    for question, eval_func in tqdm.tqdm(qs_and_evals):
-        for system_name, system in systems.items():
-            for run_idx in range(n_runs):
-
-                # use the system to answer the question
-                start_time = time.time()
-                answer, call_count = system(question)
-                print('ANSWER:')
-                print(answer)
-                print(call_count)
-                end_time = time.time()
-                total_time = end_time - start_time
-
-                info = {
-                    'time': round(total_time, 3),
-                    'answer': answer,
-                    'calls': call_count
-                }
-
-                # evaluation
-                if answer is not None:
-                    info['missing'] = False
-                    info['correct'] = eval_func(answer)
-                else:
-                    info['missing'] = True
-                    info['correct'] = False
-
-                results[(system_name, question, run_idx)] = info
+    results = eval_systems(systems, qs_and_evals, n_runs)
 
     db_connection.close()
 
@@ -196,6 +164,48 @@ def main():
     df_system.to_csv(f'{output_file_prefix}_system.csv', float_format='{:.3f}'.format)
 
     print('wrote aggregate CSVs')
+
+
+def eval_systems(
+        systems: Dict[str, Callable],
+        qs_and_evals: List[Tuple[str, Callable]],
+        n_runs: int
+        ) -> Dict[Tuple[str, str, int], Dict]:
+    """
+    Evaluate the systems (functions that return an answer and # of LLM calls)
+    using a list of pairs of question and evaluation function.
+    """
+    results = {}
+
+    for question, eval_func in tqdm.tqdm(qs_and_evals):
+        for system_name, system in systems.items():
+            for run_idx in range(n_runs):
+                # use the system to answer the question
+                start_time = time.time()
+                answer, call_count = system(question)
+                print('ANSWER:')
+                print(answer)
+                print(call_count)
+                end_time = time.time()
+                total_time = end_time - start_time
+
+                info = {
+                    'time': round(total_time, 3),
+                    'answer': answer,
+                    'calls': call_count
+                }
+
+                # evaluation
+                if answer is not None:
+                    info['missing'] = False
+                    info['correct'] = eval_func(answer)
+                else:
+                    info['missing'] = True
+                    info['correct'] = False
+
+                results[(system_name, question, run_idx)] = info
+
+    return results
 
 
 def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]:
