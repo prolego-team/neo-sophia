@@ -233,7 +233,7 @@ def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]
                 print('Content:', message.content)
                 print('Function Call:', message.function_call)
                 print('~~~')
-            if message.role == 'user' or message.role == 'function':
+            if message.role == 'system' or message.role == 'user' or message.role == 'function':
                 call_count += 1
             if message.role == 'assistant':
                 # I think this logic is correct and shouldn't cause early stopping.

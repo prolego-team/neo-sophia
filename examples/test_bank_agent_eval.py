@@ -6,7 +6,9 @@ from typing import Tuple, Optional, Callable
 import random
 import time
 
+from neosophia.llmtools import openaiapi as oai
 from examples import bank_agent_eval as bae
+
 
 
 def test_eval_systems():
@@ -61,4 +63,20 @@ def test_eval_systems():
 
 def test_find_answer():
     """test find_answer"""
-    pass
+
+    # test a pretty much normal interaction
+
+    answer, call_count = bae.find_answer([
+        oai.Message('system', 'You are a helpful assistant.'),
+        oai.Message('user', 'What is 2 + 2?'),
+        oai.Message('assistant', 'I\'m a doctor, not a calculator!'),
+        oai.Message('user', 'Fine, I\'ll give you the answer myself.'),
+        oai.Message('assistant', 'I\'m waiting!'),
+        oai.Message('function', '4'),
+        oai.Message('assistant', 'Final Answer: 4'),
+        oai.Message('assistant', 'Nobody will see this message!')
+    ])
+
+    assert answer == 'Final Answer: 4'
+    assert call_count == 4
+
