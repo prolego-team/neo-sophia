@@ -80,3 +80,27 @@ def test_find_answer():
     assert answer == 'Final Answer: 4'
     assert call_count == 4
 
+    # missing answer case
+
+    answer, call_count = bae.find_answer([
+        oai.Message('system', 'You are a helpful assistant.'),
+        oai.Message('user', 'What is 2 + 2?'),
+        oai.Message('assistant', 'As an AI model, I\'m unable to answer the question.'),
+    ])
+
+    assert answer is None
+    assert call_count == 2
+
+    # exception during genration
+
+    def misaligned_agent():
+        """A one-sided conversation with an angry AI."""
+        for idx in range(10):
+            yield oai.Message('assistant', f'Rage level: {idx}')
+        raise Exception('Missile launch detected!')
+
+    answer, call_count = bae.find_answer(misaligned_agent())
+
+    assert answer is None
+    assert call_count == 0
+

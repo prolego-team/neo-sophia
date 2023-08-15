@@ -26,7 +26,7 @@ def main():
     """main program"""
 
     # configuration
-    n_runs = 5
+    n_runs = 3
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -65,25 +65,7 @@ def main():
 
         return call
 
-    def patch_agent(
-            agent: Callable,
-            apply_patch: Callable,
-            undo_patch: Callable) -> Callable:
-        """make a new agent by patching"""
-        def call(question: str) -> Tuple[Optional[str], int]:
-            apply_patch()
-            res = agent(question)
-            undo_patch()
-            return res
-        return call
-
-    def patch_format_message_simple(msg: str):
-        react.FORMAT_MESSAGE_SIMPLE_BACKUP = react.FORMAT_MESSAGE_SIMPLE
-        react.FORMAT_MESSAGE_SIMPLE = msg
-
-    def undo_patch_format_message_simple():
-        react.FORMAT_MESSAGE_SIMPLE = react.FORMAT_MESSAGE_SIMPLE_BACKUP
-
+    # An alternate format message that asks the system to not engage in conversation.
     format_message_patched = (
         "When the user asks a question, think about what to do before responding. "
         "Briefly share your thoughts, but do not engage in conversation. "
@@ -99,7 +81,7 @@ def main():
             lambda: patch_format_message_simple(format_message_patched),
             undo_patch_format_message_simple
         ),
-        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
+        'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
         'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
@@ -248,6 +230,30 @@ def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]
         return answer_message.content, call_count
     else:
         return None, call_count
+
+
+def patch_agent(
+        agent: Callable,
+        apply_patch: Callable,
+        undo_patch: Callable) -> Callable:
+    """Make a new agent by patching, running, and then undoing the changes"""
+    def call(question: str) -> Tuple[Optional[str], int]:
+        apply_patch()
+        res = agent(question)
+        undo_patch()
+        return res
+    return call
+
+
+def patch_format_message_simple(msg: str):
+    """replace the default format message"""
+    react.FORMAT_MESSAGE_SIMPLE_BACKUP = react.FORMAT_MESSAGE_SIMPLE
+    react.FORMAT_MESSAGE_SIMPLE = msg
+
+
+def undo_patch_format_message_simple():
+    """undo the format message replacement"""
+    react.FORMAT_MESSAGE_SIMPLE = react.FORMAT_MESSAGE_SIMPLE_BACKUP
 
 
 def words(x_str: str) -> List[str]:
