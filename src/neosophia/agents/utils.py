@@ -13,8 +13,54 @@ import astunparse
 
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.agents.prompt import Prompt
 from neosophia.agents.system_prompts import (DB_INFO_PROMPT,
-                                             FUNCTION_GPT_PROMPT)
+                                             FUNCTION_GPT_PROMPT,
+                                             NO_CONVERSATION_CONSTRAINT)
+
+BASE_PROMPT = """You are an agent that generates SQL queries to gather data in
+order to answer the given question. You have the schema of the database you are
+operating on. Generate a query in the following format.
+
+Database Name: Database to generate a query for
+Query: The SQL query to run
+
+If the database is not relevant to the question being asked, return your answer
+in this format instead:
+
+Database Name: None
+Query: None
+"""
+
+def answer_question_from_databases(
+        question: str, resources: Dict):
+    """
+    Function that when given a list of database connections, extracts relevant
+    information in order to answer the question that was asked.
+    """
+
+    connections = {}
+    db_schemas = {}
+    for db_file in resources.keys():
+        conn = sql_utils.get_conn(db_file)
+        connections[db_file] = conn
+        schema = sql_utils.get_db_creation_sql(conn)
+        db_schemas[db_file] = schema
+
+    for db_file, conn in connections.items():
+        prompt = Prompt()
+        prompt.add_base_prompt(BASE_PROMPT)
+        prompt.add_resource(db_file, db_schemas[db_file])
+        prompt.add_command(question)
+        prompt.add_constraint(NO_CONVERSATION_CONSTRAINT)
+
+        print(prompt.generate_prompt())
+        print('\n==========================\n')
+
+        response = oaiapi.chat_completion(
+            prompt=prompt.generate_prompt(), model='gpt-4')
+        print('response')
+        print(response)
 
 
 def build_function_dict_from_modules(

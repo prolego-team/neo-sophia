@@ -12,8 +12,12 @@ def main():
 
     oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
 
-    modules = [sql_utils]
-    resources = ['data/synthbank.db', 'data/transactions.db']
+    modules = []
+    resources = [
+        'data/cats_and_dogs.db',
+        'data/synthbank.db',
+        'data/transactions.db'
+    ]
 
     system_prompt = UNLQ_GPT_BASE_PROMPT
     agent = Agent('MyAgent', system_prompt, modules, resources)
