@@ -76,32 +76,33 @@ def main():
 
     systems = {
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        'agent (simple, patched)': patch_agent(
-            build_agent(model_name='gpt-4-0613', simple=True),
-            lambda: patch_format_message_simple(format_message_patched),
-            undo_patch_format_message_simple
-        ),
-        'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
+        # 'agent (simple, patched)': patch_agent(
+        #     build_agent(model_name='gpt-4-0613', simple=True),
+        #     lambda: patch_format_message_simple(format_message_patched),
+        #     undo_patch_format_message_simple
+        # ),
+        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
         'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
     }
 
     qs_and_evals = [
+        # (
+        #     'Who most recently opened a checking account?',
+        #     lambda x: 'John Thompson' in x
+        # ),
         (
-            'Who most recently opened a checking account?',
-            lambda x: 'John Thompson' in x
+            # 'How many people have opened a savings account in the last year?',
+            'How many people have opened a savings account between 2022-08-01 and 2023-08-01?',
+            lambda x: '32' in words(x)
         ),
-        (
-            'How many people have opened a savings account in the last year?',
-            lambda x: '34' in words(x)
-        ),
-        (
-            'How many products does the person who most recently opened a mortgage have?',
-            lambda x: '2' in words(x)
-        ),
-        (
-            'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-            lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
-        )
+        # (
+        #     'How many products does the person who most recently opened a mortgage have?',
+        #     lambda x: '2' in words(x)
+        # ),
+        # (
+        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+        #     lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
+        # )
     ]
 
     results = eval_systems(systems, qs_and_evals, n_runs)
