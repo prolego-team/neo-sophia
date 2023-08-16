@@ -1,5 +1,5 @@
-"""
-"""
+""" Class for generating a structured prompt """
+
 class Prompt:
     """
     Represents a structured prompt that aids in constructing interactive

@@ -1,6 +1,7 @@
 """ Agent base class """
 import os
 import re
+import sys
 import types
 import readline
 
@@ -121,6 +122,8 @@ class Agent:
             user_input = ''
             while user_input == '':
                 user_input = input('> ')
+            if user_input == 'exit':
+                sys.exit(1)
             prompt.add_command(user_input)
             return user_input
 
