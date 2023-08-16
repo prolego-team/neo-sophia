@@ -24,10 +24,9 @@ Most companies are developing the following capabilties as part of their AI stra
 | unified natural language query | Empowering anyone to get answers to questions about data and documents without SQL or tools.                                   | [Episode 3](#episode-3---intro-to-unified-natural-language-query), [Episode 4](#episode-4---unified-nlq-with-a-table-and-document), [Episode 5](#episode-5---unified-nlq-with-multiple-tables) |
 | routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |       [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)                                                                 |
 
-
-
-
 ## Quickstart installation
+Remember, this is demo code! Don't attempt to use it for production without first redesigning it. 
+
 First install the neo-sophia code on your local machine before proceeding to the examples from the Episodes below.
 
 ### Install the base neo-sophia code
@@ -55,12 +54,28 @@ Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
 
 # Episodes
 
-## Episode 5 - Queries Across Multiple Databases
+## Episode 6 - Evaluation techniques
+
+## Episode 5 - Queries Across Multiple Data Sources
+Every practical problem you encounter will require accessing large datasets such as multiple databases. In doing so you will encounter the limits of the LLM's context window. In this example we explain this limitation and a simple approach for overcoming it.
+
+Video: coming soon!
+
+1. Checkout Episode 5, [Release v0.X.0]()
+````
+    git checkout tags/v0.X.0
+````
+2. Start the demo by running
+
+````
+    python  examples/bank_agent_two.py
+````
+
 
 ## Episode 4 - Intro to LLM Agents, querying multiple tables
 In our second episode on Unified NLQ we introduce LLM Agents. Agents are necessary for the complex reasoning required for to run natural language queries across multiple tables.
 
-Videos (coming soon!)
+Video: [Supercharge Your Data Anlaytics with LLM Agents](https://www.youtube.com/watch?v=XV4IBaZqbps)
 
 1. Checkout Episode 4, [Release v0.4.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.4.0)
 ````
@@ -75,9 +90,8 @@ Videos (coming soon!)
 ## Episode 3 - Intro to Unified Natural Language Query
 What will be the AI "killer app" in the enterprise? Our bet is Unified Natural Language Query (NQL). It gives executives and business leaders the ability to get insights from data by asking "natural" questions, similar to how you currently use ChatGPT. In this Episode we describe the business problem and show the extensible power of a simple example of SQL generation supplemented with the reasoning power of an LLM like GPT-4.
 
-Videos (coming soon!)
-- [Unified Natural Language Query is the enerprise AI "killer app"]
-- [SQL generation and interpretation with LLMs]
+Video
+- [Unified Natural Language Query is the enerprise AI "killer app"](https://www.youtube.com/watch?v=zuLxXDdEVEE) 
 
 1. Checkout Episode 3, [Release v0.3.2](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.2)
 
@@ -93,9 +107,9 @@ Videos (coming soon!)
 ## Episode 2 - Automated document processing
 Every company has businesses processes that require ingesting and processing a stream of text documents. Most of this processing requires tedious human effort to find, edit, review, summarize, score, etc. chunks of text from larger documents. In this Episode we demonstrate a generalized approach for solving many of these problems using LLMs. The example takes a set of SEC 10-Q company filings and replaces the "Basis of Presentation" section with different text based on an editable templates.
 
-Videos (coming soon!)
-- [Your AI strategy “quick win” - automated document processing]
-- [Audomated document processing - technical walkthrough]
+Videos
+- [Your AI strategy “quick win” - automated document processing](https://www.youtube.com/watch?v=Ba1yc5Sh9UE)
+- [Audomated document processing - technical walkthrough](https://www.youtube.com/watch?v=_9gBQ4nDZUw)
 
 ### Running the Episode 2 application
 
