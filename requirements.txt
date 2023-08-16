@@ -1,3 +1,4 @@
+astunparse==1.6.3
 attrs==22.2.0
 build==0.10.0
 click==8.1.3
