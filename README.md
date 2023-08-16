@@ -69,7 +69,7 @@ Videos (coming soon!)
 2. Start the demo by running
 
 ````
-    python  examples/bank_agent.py
+    python -m examples.bank_agent
 ````
 
 ## Episode 3 - Intro to Unified Natural Language Query
