@@ -16,6 +16,8 @@ from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
 from examples import project
 
+from examples import project
+
 # === Basic setup ===================================================
 logging.basicConfig(
     stream=sys.stdout,
@@ -30,6 +32,49 @@ DATABASE = 'data/synthbank.db'
 DEFAULT_QUESTION = 'Who has most recently opened a checking account?'
 MAX_LLM_CALLS_PER_INTERACTION = 10
 
+FUNCTION_DESCRIPTIONS = [
+    {
+        'name': 'query_database',
+        'description': 'Query the bank sqlite database.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'query': {
+                    'type': 'string',
+                    'description': 'A sqlite query to run against the bank databse.'
+                },
+            },
+            'required': ['sqlite_query']
+        }
+    }
+]
+
+
+def get_system_message() -> str:
+    """Get the system message."""
+    return (
+        "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
+        "against the bank's databse to collect information for the user.  Answer the user's "
+        "questions as best as you can.  Only use the functions you have been provided with.\n\n"
+        f"Today's date is {datetime.today()}."
+    )
+
+
+def get_schema_description(db_connection) -> str:
+    """
+    Construct a description of the DB schema for the LLM by retrieving the
+    CREATE commands used to create the tables.
+    """
+    schema_description = (
+        "Each customer has one or more products at the bank.  Each product has a globally unique "
+        "account number.  Each customer has a globally unique guid identifier.  The customer guids "
+        "and the product account numbers are related in the 'products' database table.\n\n"
+        "The bank's database tables were created using the following commands.\n"
+    )
+    schema_description += get_db_creation_sql(db_connection)
+    return schema_description
+
+
 def format_message(message):
     """Convert a message into plain text"""
     text = f'{message.role.capitalize()}:\n'
@@ -42,7 +87,9 @@ def main():
     """Setup and run gradio app."""
 
     # Setup
-    openai.set_api_key(openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH))
+    # openai.set_api_key(os.getenv('OPENAI_API_KEY'))
+    api_key = openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    openai.set_api_key(api_key)
 
     # Get a model
     model = openai.start_chat('gpt-4-0613')
@@ -51,41 +98,11 @@ def main():
     log.debug('Getting the DB information.')
     db_connection = sqlite3.connect(DATABASE)
 
-    function_descriptions = [
-        {
-            'name': 'query_database',
-            'description': 'Query the bank sqlite database.',
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'query': {
-                        'type': 'string',
-                        'description': 'A sqlite query to run against the bank databse.'
-                    },
-                },
-                'required': ['sqlite_query']
-            }
-        }
-    ]
-
-    # Construct a description of the DB schema for the LLM by retrieving the
-    # CREATE commands used to create the tables.
-    schema_description = (
-        "Each customer has one or more products at the bank.  Each product has a globally unique "
-        "account number.  Each customer has a globally unique guid identifier.  The customer guids "
-        "and the product account numbers are related in the 'products' database table.\n\n"
-        "The bank's database tables were created using the following commands.\n"
-    )
-    schema_description += get_db_creation_sql(db_connection)
+    schema_description = get_schema_description(db_connection)
     db_connection.close()
 
     # Setup the agent
-    system_message = (
-        "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
-        "against the bank's databse to collect information for the user.  Answer the user's "
-        "questions as best as you can.  Only use the functions you have been provided with.\n\n"
-        f"Today's date is {datetime.today()}."
-    )
+    system_message = get_system_message()
     system_message += schema_description
 
     def new_question_wrapper():
@@ -98,7 +115,7 @@ def main():
             question,
             schema_description,
             model,
-            function_descriptions
+            FUNCTION_DESCRIPTIONS
         )
         chat_history.append([None, response])
 
@@ -113,6 +130,7 @@ def main():
 
         # Build the functions that the agent can use
         db_connection = sqlite3.connect(DATABASE)
+
         query_database, _ = tools.make_sqlite_query_tool(db_connection)
         functions = {
             'query_database': query_database
@@ -121,7 +139,7 @@ def main():
         agent = make_react_agent(
             system_message,
             model,
-            function_descriptions,
+            FUNCTION_DESCRIPTIONS,
             functions,
             MAX_LLM_CALLS_PER_INTERACTION,
             simple_formatting=True

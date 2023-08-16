@@ -24,10 +24,9 @@ Most companies are developing the following capabilties as part of their AI stra
 | unified natural language query | Empowering anyone to get answers to questions about data and documents without SQL or tools.                                   | [Episode 3](#episode-3---intro-to-unified-natural-language-query), [Episode 4](#episode-4---unified-nlq-with-a-table-and-document), [Episode 5](#episode-5---unified-nlq-with-multiple-tables) |
 | routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |       [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)                                                                 |
 
-
-
-
 ## Quickstart installation
+Remember, this is demo code! Don't attempt to use it for production without first redesigning it. 
+
 First install the neo-sophia code on your local machine before proceeding to the examples from the Episodes below.
 
 ### Install the base neo-sophia code
@@ -55,12 +54,28 @@ Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
 
 # Episodes
 
-## Episode 5 - Queries Across Multiple Databases
+## Episode 6 - Evaluation techniques
+
+## Episode 5 - Queries Across Multiple Data Sources
+Every practical problem you encounter will require accessing large datasets such as multiple databases. In doing so you will encounter the limits of the LLM's context window. In this example we explain this limitation and a simple approach for overcoming it.
+
+Video: coming soon!
+
+1. Checkout Episode 5, [Release v0.X.0]()
+````
+    git checkout tags/v0.X.0
+````
+2. Start the demo by running
+
+````
+    python  examples/bank_agent_two.py
+````
+
 
 ## Episode 4 - Intro to LLM Agents, querying multiple tables
 In our second episode on Unified NLQ we introduce LLM Agents. Agents are necessary for the complex reasoning required for to run natural language queries across multiple tables.
 
-Videos (coming soon!)
+Video: [Supercharge Your Data Anlaytics with LLM Agents](https://www.youtube.com/watch?v=XV4IBaZqbps)
 
 1. Checkout Episode 4, [Release v0.4.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.4.0)
 ````
