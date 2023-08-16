@@ -25,7 +25,7 @@ Most companies are developing the following capabilties as part of their AI stra
 | routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |       [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)                                                                 |
 
 ## Quickstart installation
-Remeber, this is demo code! Don't attempt to use it for production without first redesigning it. 
+Remember, this is demo code! Don't attempt to use it for production without first redesigning it. 
 
 First install the neo-sophia code on your local machine before proceeding to the examples from the Episodes below.
 
