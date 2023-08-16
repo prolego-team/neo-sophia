@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 import fitz
 import click
 import requests
+import tqdm
 
 import examples.project as project
 
