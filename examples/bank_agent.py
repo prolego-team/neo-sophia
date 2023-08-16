@@ -14,6 +14,7 @@ from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react import make_react_agent
 from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
+from examples import project
 
 from examples import project
 
