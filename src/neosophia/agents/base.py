@@ -1,6 +1,7 @@
 """ Agent base class """
 import os
 import re
+import sys
 import types
 import readline
 
@@ -11,6 +12,7 @@ import yaml
 import neosophia.agents.utils as autils
 
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.agents.prompt import Prompt
 from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
                                              FIX_QUERY_PROMPT)
 
@@ -109,6 +111,8 @@ class Agent:
             user_input = ''
             while user_input == '':
                 user_input = input('> ')
+            if user_input == 'exit':
+                sys.exit(1)
             prompt.add_command(user_input)
             return user_input
 
