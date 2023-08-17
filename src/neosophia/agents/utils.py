@@ -9,6 +9,7 @@ from typing import Callable, Dict, List, Tuple
 
 import yaml
 import tiktoken
+
 import astunparse
 
 from neosophia.db import sqlite_utils as sql_utils
@@ -32,8 +33,7 @@ Database Name: None
 Query: None
 """
 
-def answer_question_from_databases(
-        question: str, resources: Dict):
+def answer_question_from_databases(question: str, resources: Dict):
     """
     Function that when given a list of database connections, extracts relevant
     information in order to answer the question that was asked.

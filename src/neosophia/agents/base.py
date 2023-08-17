@@ -34,6 +34,7 @@ class Agent:
             system_prompt: str,
             modules: List[types.ModuleType],
             resources: List[str],
+            tools_,
             model: str = 'gpt-4'):
         """
         Initializes an Agent object
@@ -87,17 +88,6 @@ class Agent:
         # every interaction
         self.function_calls['extract_answer'] = self.extract_answer
 
-        self.function_calls['answer_question_from_databases'] = lambda question: autils.answer_question_from_databases(question, self.resources)
-
-        self.tools['answer_question_from_databases'] = {}
-        self.tools['answer_question_from_databases']['name'] = 'answer_question_from_databases'
-        self.tools['answer_question_from_databases']['description'] = 'This function gathers data from multiple databases that are relevant to a user question.'
-        self.tools['answer_question_from_databases']['params'] = {}
-        self.tools['answer_question_from_databases']['params']['question'] = {}
-        self.tools['answer_question_from_databases']['params']['question']['description'] = 'The question the user is asking'
-        self.tools['answer_question_from_databases']['params']['question']['type'] = 'str'
-        self.tools['answer_question_from_databases']['params']['question']['required'] = True
-
         # Convert functions list to yaml format and save in tools.yaml
         for func_name, (_, func_str) in self.function_dict.items():
 
@@ -108,8 +98,15 @@ class Agent:
                     func_str)
                 self.tools[func_name] = yaml.safe_load(function_yaml)[0]
 
+        for func_name, (func_call, func_desc) in tools_.items():
+            self.function_calls[func_name] = func_call
+            self.tools[func_name] = func_desc
+
         # Save function descriptions to yaml file
         autils.write_dict_to_yaml(self.tools, 'functions', self.tools_file)
+
+    #def answer_question_from_databases(self, question: str):
+    #    pass
 
     def chat(self):
         """ Function to give a command to interact with the LLM """
@@ -158,6 +155,7 @@ class Agent:
                     parsed_response, function_resources)
 
                 if function is None:
+                    response = self.execute(prompt_str)
                     user_input = get_command(prompt)
                     prompt_str = prompt.generate_prompt()
                     continue
@@ -197,7 +195,7 @@ class Agent:
                     # Add variable to function resources
                     function_resources[return_name] = res
 
-                    prompt.add_function_resources(return_name, str(res))
+                    prompt.add_function_resources(return_name, res)
                     prompt.add_completed_step(response)
                     prompt_str = prompt.generate_prompt()
 
@@ -220,7 +218,7 @@ class Agent:
                 print(nct1)
                 print(nct2)
                 print('\n')
-                input('Press enter to continue...\n')
+                #input('Press enter to continue...\n')
 
             print(answer)
             print(80 * '-')
@@ -243,15 +241,14 @@ class Agent:
                 param_name = value[0]
                 param_value = value[1]
 
+                if param_name != 'query':
+                    param_value = str(param_value.replace("'", ""))
+                    param_value = str(param_value.replace('"', ""))
+
                 if param_value in function_resources:
                     param_value = function_resources[param_value]
 
                 param_type = value[2].replace(' ', '')
-
-                # Stripping out quotes differently when it's a query
-                if param_type == 'str' and param_name != 'query':
-                    param_value = str(param_value.replace("'", ""))
-                    param_value = str(param_value.replace('"', ""))
 
                 if param_type == 'str' and param_name == 'query' and '+' in param_value:
                     param_value = self.replace_variables_in_query(
@@ -293,6 +290,7 @@ class Agent:
         prompt += f'Question: {question}'
         prompt += f'Data: {data}'
         print('prompt')
+        print(prompt)
         print('\n===========================================\n')
         return self.execute(prompt)
 

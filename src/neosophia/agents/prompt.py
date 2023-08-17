@@ -1,4 +1,6 @@
 """ Class for generating a structured prompt """
+import pandas as pd
+
 
 class Prompt:
     """
@@ -28,6 +30,12 @@ class Prompt:
 
     def add_function_resources(self, name, value):
         prompt = f'Name: {name}\n'
+        if isinstance(value, pd.DataFrame):
+            cols = value.columns
+            value = '<pd.Dataframe object>\n'
+            value += f'Columns: {cols}'
+        else:
+            value = str(value)
         prompt += f'Value: {value}\n'
         self.function_resources.append(prompt)
 
