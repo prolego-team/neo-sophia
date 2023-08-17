@@ -26,7 +26,7 @@ def main():
     """main program"""
 
     # configuration
-    n_runs = 3
+    n_runs = 10
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -91,8 +91,8 @@ def main():
             lambda x: 'John Thompson' in x
         ),
         (
-            'How many people have opened a savings account in the last year?',
-            lambda x: '34' in words(x)
+            'How many unique people opened a savings account between 2022-08-01 and 2023-08-01?',
+            lambda x: '32' in words(x)
         ),
         (
             'How many products does the person who most recently opened a mortgage have?',
