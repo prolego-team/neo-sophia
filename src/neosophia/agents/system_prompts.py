@@ -73,5 +73,16 @@ Parameter_0: Parameter_0 Name | Parameter_0 Value | type
 Parameter_N: Parameter_N Name | Parameter_N Value | type
 Returned: Name describing what the function returned to store as a variable
 
+If a function is to be called that doesn't have any arguments, your step must
+be in the following format:
+
+Step: Step Number
+Thoughts: Explanation of why the action is to be taken
+Resource: The resource name to use in this step
+Function: The Python function to call in order to get the information needed
+Returned: Name describing what the function returned to store as a variable
+
+Finally, if the user enters in a command indicating they are done and want to
+quit the program, call the function `system_exit()` without any paramaters.
 """
 

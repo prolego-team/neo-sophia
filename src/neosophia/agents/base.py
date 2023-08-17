@@ -86,6 +86,7 @@ class Agent:
         # Manually add the `extract_answer` function that's used at the end of
         # every interaction
         self.function_calls['extract_answer'] = self.extract_answer
+        self.function_calls['system_exit'] = sys.exit
 
         # Convert functions list to yaml format and save in tools.yaml
         for func_name, (_, func_str) in self.function_dict.items():
