@@ -241,6 +241,11 @@ class Agent:
 
                 param_type = value[2].replace(' ', '')
 
+                # Stripping out quotes differently when it's a query
+                if param_type == 'str' and param_name != 'query':
+                    param_value = str(param_value.replace("'", ""))
+                    param_value = str(param_value.replace('"', ""))
+
                 if param_type == 'str' and param_name == 'query' and '+' in param_value:
                     param_value = self.replace_variables_in_query(
                         param_value, function_resources)
