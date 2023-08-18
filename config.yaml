@@ -1,0 +1,16 @@
+Agent:
+  name: MyAgent
+  workspace_dir:
+  resources_filename: resources.yaml
+
+SQLite:
+  - name: SynthBank
+    path: data/synthbank.db
+    description:
+  - name: Cats
+    path: data/cats.db
+    description:
+
+ChromaDB:
+
+Directory:
