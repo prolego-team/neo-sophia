@@ -2,7 +2,6 @@
 Example of using an LLM to chat with a database.
 """
 
-import os
 import sys
 import logging
 import sqlite3
