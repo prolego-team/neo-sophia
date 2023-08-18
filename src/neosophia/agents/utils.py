@@ -107,30 +107,26 @@ def count_tokens(prompt: str, model: str) -> int:
     return len(encoding.encode(prompt))
 
 
-def setup_and_load_yaml(workspace_dir, filename, key):
+def setup_and_load_yaml(filepath, key):
     """
     Helper function to set up workspace, create a file if it doesn't exist,
     and load data from a YAML file.
     """
 
-    # Create a workspace if it doesn't exist
-    os.makedirs(workspace_dir, exist_ok=True)
-
     # Create a file if it doesn't exist
-    file_path = os.path.join(workspace_dir, filename)
-    if not os.path.exists(file_path):
-        with open(file_path, 'w') as f:
+    if not os.path.exists(filepath):
+        with open(filepath, 'w') as f:
             pass
 
     # Load data from the file
-    with open(file_path, 'r') as f:
+    with open(filepath, 'r') as f:
         data = yaml.safe_load(f)
 
     # Process the loaded data
     if data is None:
-        return {}, file_path
+        return {}
     else:
-        return {item['name']: item for item in data[key]}, file_path
+        return {item['name']: item for item in data[key]}
 
 
 def write_dict_to_yaml(
