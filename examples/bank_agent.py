@@ -11,9 +11,11 @@ from datetime import datetime
 import gradio as gr
 
 from neosophia.llmtools import openaiapi as openai, tools
-from neosophia.agents.react import make_react_agent
+from neosophia.agents.react_chat import make_react_agent
 from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
+
+from examples import project
 
 # === Basic setup ===================================================
 logging.basicConfig(
@@ -41,7 +43,8 @@ def main():
     """Setup and run gradio app."""
 
     # Setup
-    openai.set_api_key(os.getenv('OPENAI_API_KEY'))
+    key = openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    openai.set_api_key(key)
 
     # Get a model
     model = openai.start_chat('gpt-4-0613')
@@ -123,7 +126,6 @@ def main():
             function_descriptions,
             functions,
             MAX_LLM_CALLS_PER_INTERACTION,
-            simple_formatting=True
         )
 
         for message in agent(question):

@@ -15,6 +15,8 @@ from neosophia.agents.react_chat import make_react_agent
 from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
 
+from examples import project
+
 # === Basic setup ===================================================
 logging.basicConfig(
     stream=sys.stdout,
@@ -25,8 +27,8 @@ logging.getLogger('agent').setLevel(logging.DEBUG)
 log = logging.getLogger('agent')
 # ===================================================================
 
-CUSTOMER_DATABASE = 'data/synthbank.db'
-TRANSACTION_DATABASE = 'data/transactions.db'
+CUSTOMER_DATABASE = os.path.join(project.DATASETS_DIR_PATH, 'synthbank.db')
+TRANSACTION_DATABASE = os.path.join(project.DATASETS_DIR_PATH, 'transactions.db')
 DEFAULT_QUESTION = 'How many accounts does this customer have with the bank?'
 MAX_LLM_CALLS_PER_INTERACTION = 10
 
@@ -108,7 +110,8 @@ def main():
     """Setup and run gradio app."""
 
     # Setup
-    openai.set_api_key(os.getenv('OPENAI_API_KEY'))
+    key = openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    openai.set_api_key(key)
 
     # Get a model
     model = openai.start_chat('gpt-4-0613')
@@ -116,10 +119,10 @@ def main():
     # Connect to the DB and get the table names
     log.debug('Getting the DB information.')
     customer_db_connection = sqlite3.connect(CUSTOMER_DATABASE)
-    transaction_db_connections = sqlite3.connect(TRANSACTION_DATABASE)
+    transaction_db_connection = sqlite3.connect(TRANSACTION_DATABASE)
 
     schema_description = get_schema_description(
-        customer_db_connection, transaction_db_connections
+        customer_db_connection, transaction_db_connection
     )
 
     cursor = customer_db_connection.cursor()
@@ -127,7 +130,7 @@ def main():
     customer_list = [name[0] for name in customer_list]
 
     customer_db_connection.close()
-    transaction_db_connections.close()
+    transaction_db_connection.close()
 
     # Setup the agent
     system_message = get_system_message()
@@ -174,7 +177,6 @@ def main():
             'query_database': query_database
         }
 
-        print(len(chat_history))
         if len(chat_history)>1:
             extra_context = 'Here is a summary of our conversation so far:\n\n'
             extra_context += concat_chat_history(chat_history[1:])
