@@ -1,5 +1,6 @@
 """ Example script to interact with the Agent class """
 import os
+import importlib
 
 from abc import ABC, abstractmethod
 from typing import Any
@@ -38,9 +39,7 @@ class Variable:
 
 
 def create_workspace_dir(config):
-    """ """
-
-    # Create a workspace for the Agent
+    """ Create a workspace for the Agent """
     workspace_dir = config['Agent']['workspace_dir']
     if workspace_dir is None:
         workspace_dir = opj('.agents', config['Agent']['name'])
@@ -116,18 +115,27 @@ def main():
         resources_filepath, 'resources')
 
     resources = setup_resources(
-        config, workspace_dir, resources_filepath, workspace_resources)
+        config['Resources'], workspace_dir,
+        resources_filepath, workspace_resources)
 
+    # Connect to any SQLite databases
+    for db_info in config['Resources']['SQLite']:
+        conn = sql_utils.get_conn(db_info['path'])
+        name = db_info['name']
+        var_name = name + '_conn'
+
+        variable = Variable(
+            name=var_name,
+            value=conn,
+            display_name=conn,
+            description=f'Connection to {name} database')
+
+        variables[var_name] = variable
+    print(resources)
     exit()
 
-    conn = resource.connect(path)
-    variables[name + '_conn'] = Variable(
-        name + '_conn', conn, str(conn),
-        f'Connection to the {name} database')
-    print(variables)
-
     system_prompt = UNLQ_GPT_BASE_PROMPT
-    agent = Agent('MyAgent', system_prompt, modules, resources, tools_dict)
+    agent = Agent('MyAgent', system_prompt, tools, resources, variables)
     agent.chat()
 
 

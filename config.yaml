@@ -2,15 +2,25 @@ Agent:
   name: MyAgent
   workspace_dir:
   resources_filename: resources.yaml
+  tools_filename: tools.yaml
 
-SQLite:
+Resources:
+  SQLite:
   - name: SynthBank
     path: data/synthbank.db
-    description:
+    description: # Description here will override LLM generated description
   - name: Cats
     path: data/cats.db
-    description:
+    description: # Description here will override LLM generated description
 
-ChromaDB:
+  ChromaDB:
 
-Directory:
+  Directory:
+
+Tools:
+  - module: neosophia.db.sqlite_utils
+    functions: # If no functions are listed, all from the module will be loaded
+      - execute_query
+      - get_table_schema
+      - get_tables_from_db
+
