@@ -1,12 +1,26 @@
 """ Tools for interacting with SQLite """
-
 import csv
 import sqlite3
+
+from typing import Any, List
 
 import pandas as pd
 
 
-def get_table_schema(conn: sqlite3.Connection, table_name: str) -> pd.DataFrame:
+def get_conn(db_file: str) -> sqlite3.Connection:
+    return sqlite3.connect(db_file)
+
+
+def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
+    """ Executes an SQL query """
+    cursor = conn.cursor()
+    if query[0] == "'" or query[0] == '"':
+        query = query[1:-1]
+    return cursor.execute(query).fetchall()
+
+
+def get_table_schema(
+        conn: sqlite3.Connection, table_name: str) -> pd.DataFrame:
     """Get a description of a table into a pandas dataframe."""
     query = f"PRAGMA table_info({table_name});"
     return pd.read_sql_query(query, conn)
@@ -25,7 +39,15 @@ def get_db_creation_sql(conn: sqlite3.Connection) -> str:
     return schema_description
 
 
-def create_database_from_csv(conn: sqlite3.Connection, csv_file: str, table_name: str) -> None:
+def get_tables_from_db(conn: sqlite3.Connection) -> List[str]:
+    """ Get a list of table names from the database """
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    return [x[0] for x in cursor.fetchall()]
+
+
+def create_database_from_csv(
+        conn: sqlite3.Connection, csv_file: str, table_name: str) -> None:
     """Create database table from a CSV file."""
 
     # Connect to the SQLite database
