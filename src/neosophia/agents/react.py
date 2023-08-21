@@ -8,32 +8,6 @@ from collections.abc import Callable, Generator
 from neosophia.llmtools import openaiapi as openai
 
 
-FORMAT_MESSAGE_SIMPLE = (
-    "When the user asks a question, think about what to do before responding. "
-    "Share your thoughts with the user so they understand what you are doing. "
-    "You can use a function call to get additional information from the user. "
-    "When you have the final answer say, \"Final Answer: \" followed by the "
-    "resposne to the user's question."
-)
-
-FORMAT_MESSAGE_REACT = (
-    "ALWAYS use the following format:\n\n"
-    "Question: the input question you have to answer\n"
-    "Thought: you should always think about what to do\n"
-    "Action: the function to execute; fill this in with a properly formatted "
-    "function call for the user to execute\n"
-    "Observation: the result of the function, provided by the user\n"
-    "... (this Thought/Action/Observation can repeat N times)\n"
-    "Thought: I now know the final answer\n"
-    "Final Answer: the final answer to the original input question\n\n"
-    "The user will execute the function calls for you and return the results as "
-    "an observation.  After forming a thought and action, remember to wait for an "
-    "observation from the user.  Try to answer the question in as few steps as "
-    "possible.\n\n"
-    "Begin! Reminder to always use the exact characters `Final Answer` when responding."
-)
-
-
 def get_next_message(
         response: openai.Message,
         functions: list[dict]) -> tuple[openai.Message, bool]:
@@ -88,10 +62,22 @@ def make_react_agent(
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
 
-    if simple_formatting:
-        format_message = FORMAT_MESSAGE_SIMPLE
-    else:
-        format_message = FORMAT_MESSAGE_REACT
+    format_message = (
+        "ALWAYS use the following format:\n\n"
+        "Question: the input question you have to answer\n"
+        "Thought: you should always think about what to do\n"
+        "Action: the function to execute; fill this in with a properly formatted "
+        "function call for the user to execute\n"
+        "Observation: the result of the function, provided by the user\n"
+        "... (this Thought/Action/Observation can repeat N times)\n"
+        "Thought: I now know the final answer\n"
+        "Final Answer: the final answer to the original input question\n\n"
+        "The user will execute the function calls for you and return the results as "
+        "an observation.  After forming a thought and action, remember to wait for an "
+        "observation from the user.  Try to answer the question in as few steps as "
+        "possible.\n\n"
+        "Begin! Reminder to always use the exact characters `Final Answer` when responding."
+    )
 
     system_message += format_message
 
