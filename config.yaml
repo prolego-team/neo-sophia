@@ -23,4 +23,6 @@ Tools:
       - execute_query
       - get_table_schema
       - get_tables_from_db
-
+  - module: neosophia.agents.tools
+    functions:
+      - dataframe_intersection

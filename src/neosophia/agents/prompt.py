@@ -16,7 +16,7 @@ class Prompt:
         self.examples = []
         self.constraints = []
         self.steps = []
-        self.function_resources = []
+        self.variables = []
 
     def add_base_prompt(self, prompt):
         """ This prompt always goes at the beginning """
@@ -28,7 +28,7 @@ class Prompt:
     def add_example(self, example):
         self.examples.append(example)
 
-    def add_function_resources(self, name, value):
+    def add_variable(self, name, value):
         prompt = f'Name: {name}\n'
         if isinstance(value, pd.DataFrame):
             cols = value.columns
@@ -37,15 +37,15 @@ class Prompt:
         else:
             value = str(value)
         prompt += f'Value: {value}\n'
-        self.function_resources.append(prompt)
+        self.variables.append(prompt)
 
     def add_resource(self, name, info):
         prompt = f'Resource Name: {name}\n'
         prompt += f'Resource Info: {info}\n'
         self.resources.append(prompt)
 
-    def add_tool(self, description):
-        self.tools.append(description)
+    def add_tool(self, tool):
+        self.tools.append(str(tool))
 
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
@@ -76,8 +76,8 @@ class Prompt:
             prompt += _construct('TOOLS', self.tools)
         if self.resources:
             prompt += _construct('DATA RESOURCES', self.resources)
-        if self.function_resources:
-            prompt += _construct('FUNCTION RESOURCES', self.function_resources)
+        if self.variables:
+            prompt += _construct('VARIABLES', self.variables)
         if self.constraints:
             prompt += _construct('CONSTRAINTS', self.constraints)
         if self.examples:
