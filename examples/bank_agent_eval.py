@@ -26,7 +26,8 @@ def main():
     """main program"""
 
     # configuration
-    n_runs = 2
+    n_runs = 10
+
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -65,6 +66,7 @@ def main():
                 agent = react.make_react_agent(
                     system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
                     ba.MAX_LLM_CALLS_PER_INTERACTION)
+
             return find_answer(agent(question))
 
         return call
@@ -253,6 +255,7 @@ def patch_format_message_simple(msg: str):
     """replace the default format message"""
     react_chat.FORMAT_MESSAGE_BACKUP = react_chat.FORMAT_MESSAGE
     react_chat.FORMAT_MESSAGE = msg
+
 
 
 def undo_patch_format_message_simple():
