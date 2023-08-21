@@ -66,7 +66,7 @@ def main():
         return call
 
     # An alternate format message that asks the system to not engage in conversation.
-    format_message_patched = (
+    format_message_quiet = (
         "When the user asks a question, think about what to do before responding. "
         "Briefly share your thoughts, but do not engage in conversation. "
         "You can use a function call to get additional information from the user. "
@@ -76,9 +76,9 @@ def main():
 
     systems = {
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        'agent (simple, patched)': patch_agent(
+        'agent (simple, quiet)': patch_agent(
             build_agent(model_name='gpt-4-0613', simple=True),
-            lambda: patch_format_message_simple(format_message_patched),
+            lambda: patch_format_message_simple(format_message_quiet),
             undo_patch_format_message_simple
         ),
         'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
