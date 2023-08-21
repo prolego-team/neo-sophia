@@ -54,7 +54,7 @@ def make_react_agent(
         "Share your thoughts with the user so they understand what you are doing. "
         "You can use a function call to get additional information from the user. "
         "When you have the final answer say, \"Final Answer: \" followed by the "
-        "resposne to the user's question."
+        "response to the user's question."
     )
 
     system_message += format_message
