@@ -8,6 +8,15 @@ from collections.abc import Callable, Generator
 from neosophia.llmtools import openaiapi as openai
 
 
+FORMAT_MESSAGE = (
+    "When the user asks a question, think about what to do before responding. "
+    "Share your thoughts with the user so they understand what you are doing. "
+    "You can use a function call to get additional information from the user. "
+    "When you have the final answer say, \"Final Answer: \" followed by the "
+    "response to the user's question."
+)
+
+
 def get_next_message(
         response: openai.Message,
         functions: dict[str, Callable]) -> tuple[openai.Message, bool]:
@@ -50,15 +59,8 @@ def make_react_agent(
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
 
-    format_message = (
-        "When the user asks a question, think about what to do before responding. "
-        "Share your thoughts with the user so they understand what you are doing. "
-        "You can use a function call to get additional information from the user. "
-        "When you have the final answer say, \"Final Answer: \" followed by the "
-        "response to the user's question."
-    )
 
-    system_message += format_message
+    system_message += FORMAT_MESSAGE
 
     messages = [
         openai.Message('system', system_message)
