@@ -1,4 +1,4 @@
-# Create you AI or LLM Strategy
+# Create your AI or LLM Strategy
 
 Large-scale language models like GPT-4 from OpenAI serve as foundational technologies that can be applied to virtually any business issue. However, the robust power and flexibility of this technology come with a significant challenge: it is extremely difficult to pinpoint the optimal opportunities for leveraging this technology within a company. 
 
