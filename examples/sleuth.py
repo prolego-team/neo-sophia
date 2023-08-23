@@ -269,7 +269,37 @@ def main():
         return response
 
     with gr.Blocks() as demo:
-        gr.Markdown('# Chat About a Something')
+        gr.Markdown('# Chat About Techtonic Tech, Inc\'s P&L')
+        gr.Markdown(
+            '```\n'
+            '--------------------------------------------------------------------------\n'
+            '                        |   Q1  |     Q2   |    Q3   |    Q4   | Total\n'
+            '--------------------------------------------------------------------------\n'
+            'Revenue\n'
+            'Product Sales           | 1.0M  |    1.05M | 1.1025M | 1.1576M | 4.31M\n'
+            '--------------------------------------------------------------------------\n'
+            'Costs\n'
+            'Cost of Goods Sold      |  0.3M |    0.3M  |   0.22M |   0.22M | 1.02M\n'
+            '--------------------------------------------------------------------------\n'
+            'Gross Profit            |  0.7M |    0.75M | 0.8825M | 0.9376M | 3.27M\n'
+            '--------------------------------------------------------------------------\n'
+            'Operating Expenses\n'
+            'R&D                     | 0.15M |    0.17M |   0.19M |   0.21M | 0.73M\n'
+            'Marketing               | 0.10M |    0.10M |   0.12M |   0.13M | 0.45M\n'
+            'Admin Expenses          | 0.05M |    0.05M |   0.06M |   0.06M | 0.22M\n'
+            'Employee Compensation   | 0.20M |    0.21M |   0.23M |   0.35M | 0.99M\n'
+            '--------------------------------------------------------------------------\n'
+            'Operating Income        |  0.2M |   0.22M |  0.2825M | 0.1876M | 0.89M\n'
+            '--------------------------------------------------------------------------\n'
+            'Other Income/Expense    | 0.01M |   0.01M |   -0.02M |  -0.02M | -0.02M\n'
+            '--------------------------------------------------------------------------\n'
+            'Net Income Before Taxes | 0.21M  |   0.23M | 0.2625M | 0.1676M | 0.868M\n'
+            'Taxes                   | 0.033M |  0.037M |  0.041M |   0.05M | 0.163M\n'
+            '--------------------------------------------------------------------------\n'
+            'Net Profit              | 0.18M  |  0.193M | 0.2215M | 0.1176M | 0.705M\n'
+            '--------------------------------------------------------------------------\n'
+            '```'
+        )
 
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question')
@@ -284,6 +314,15 @@ def main():
         final_answer = gr.Textbox(value='', label='Answer', interactive=False)
 
         chatbot = gr.Chatbot(label='Chatbot message log')
+
+        gr.Markdown(
+            'You have access to four databases:\n'
+            '\n'
+            '1. Expense database with high-level expenses per category.\n'
+            '2. Employee compensation database with the cost of employee taxes, salaries and bonuses.\n'
+            '3. Competition database with competitor\'s rough financial and market data for the year.\n'
+            '4. Customer feedback database with customer feedback by category.'
+        )
 
         clear_button.add([question, chatbot])
 
