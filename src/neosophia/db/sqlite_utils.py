@@ -16,7 +16,7 @@ def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
     cursor = conn.cursor()
     if query[0] == "'" or query[0] == '"':
         query = query[1:-1]
-    return cursor.execute(query).fetchall()
+    return pd.read_sql_query(query, conn)
 
 
 def get_table_schema(

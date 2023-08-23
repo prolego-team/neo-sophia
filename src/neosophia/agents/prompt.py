@@ -1,4 +1,6 @@
 """ Class for generating a structured prompt """
+import re
+
 import pandas as pd
 
 
@@ -28,21 +30,38 @@ class Prompt:
     def add_example(self, example):
         self.examples.append(example)
 
-    def add_variable(self, name, value):
-        prompt = f'Name: {name}\n'
-        if isinstance(value, pd.DataFrame):
-            cols = value.columns
-            value = '<pd.Dataframe object>\n'
-            value += f'Columns: {cols}'
-        else:
-            value = str(value)
-        prompt += f'Value: {value}\n'
-        self.variables.append(prompt)
+    def add_variable(self, variable, visible=False):
+        """
 
-    def add_resource(self, name, info):
-        prompt = f'Resource Name: {name}\n'
-        prompt += f'Resource Info: {info}\n'
-        self.resources.append(prompt)
+        """
+        if visible or variable.visible:
+
+            if isinstance(variable.value, pd.DataFrame):
+                value = variable.value.head(5)
+                value = re.sub(r' +', '|', str(value))
+            else:
+                value = variable.value
+            var_type = str(type(variable.value).__module__)
+            var_type += '.' + str(type(variable.value).__name__)
+            prompt = f'Name: {variable.name}\n'
+            prompt += f'Description: {variable.description}\n'
+            prompt += f'Type: {var_type}\n'
+            prompt += f'Value: {value}\n'
+            prompt += '\n'
+            self.variables.append(prompt)
+        #if isinstance(value, pd.DataFrame):
+        #    cols = value.columns
+        #    value = '<pd.Dataframe object>\n'
+        #    value += f'Columns: {cols}'
+        #else:
+        #    value = str(value)
+        #prompt += f'Value: {value}\n'
+
+    def add_resource(self, resource, visible=False):
+        if visible or resource.visible:
+            prompt = f'Name: {resource.name}\n'
+            prompt += f'Description: {resource.description}\n'
+            self.resources.append(prompt)
 
     def add_tool(self, tool):
         self.tools.append(str(tool))

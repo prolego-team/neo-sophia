@@ -61,10 +61,21 @@ def main():
         variable = autils.Variable(
             name=var_name,
             value=conn,
-            display_name=conn,
             description=f'Connection to {name} database')
 
         variables[var_name] = variable
+
+        tables = sql_utils.get_tables_from_db(conn)
+        for table in tables:
+            table_schema = sql_utils.get_table_schema(conn, table)
+
+            variable = autils.Variable(
+                name=table + '_table_schema',
+                value=table_schema,
+                description=f'Schema for table {table} in database {name}')
+
+            #variable.get_summary('gpt-4')
+            variables[table + '_table_schema'] = variable
 
     system_prompt = UNLQ_GPT_BASE_PROMPT
     agent = Agent('MyAgent', system_prompt, tools, resources, variables)
