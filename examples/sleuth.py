@@ -2,18 +2,15 @@
 Example of using an LLM to chat with a database.
 """
 
-import os
 import sys
 import logging
 import sqlite3
-from datetime import datetime
 from pathlib import Path
 
 import gradio as gr
 
 from neosophia.llmtools import openaiapi as openai, tools, dispatch
 from neosophia.agents.react_chat import make_react_agent
-from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_table_schema
 
 from examples import project
@@ -52,41 +49,34 @@ DATABASES = {
         'connection': None
     }
 }
-PRIMARY_ASSET = """================================================
-Profit and Loss Statement for Tectonic Tech Inc.
-Fiscal Year: 1st Jan 2021 - 31st Dec 2021
-================================================
-
---------------------------------------------------------------------------
-              |   Q1   |   Q2   |   Q3   |  Q4   | Total
---------------------------------------------------------------------------
-Revenue
-Product Sales      | 1.0M | 1.05M | 1.1025M | 1.1576M | 4.31M
---------------------------------------------------------------------------
-Costs
-Cost of Goods Sold | 0.3M | 0.3M | 0.22M | 0.22M | 1.02M
---------------------------------------------------------------------------
-Gross Profit       | 0.7M | 0.75M | 0.8825M | 0.9376M | 3.27M
---------------------------------------------------------------------------
-Operating Expenses
-R&D                   | 0.15M | 0.17M | 0.19M | 0.21M | 0.73M
-Marketing             | 0.10M | 0.10M | 0.12M | 0.13M | 0.45M
-Admin Expenses        | 0.05M | 0.05M | 0.06M | 0.06M | 0.22M
-Employee Compensation | 0.20M | 0.21M | 0.23M | 0.35M | 0.99M
---------------------------------------------------------------------------
-Operating Income      | 0.2M | 0.22M | 0.2825M | 0.1876M | 0.89M
---------------------------------------------------------------------------
-Other Income/Expense  | 0.01M | 0.01M | -0.02M | -0.02M | -0.02M
---------------------------------------------------------------------------
-Net Income Before Taxes | 0.21M | 0.23M | 0.2625M | 0.1676M | 0.868M
-Taxes                   | 0.033M | 0.037M | 0.041M | 0.05M | 0.163M
---------------------------------------------------------------------------
-Net Profit              | 0.18M |  0.193M | 0.2215M | 0.1176M | 0.705M
---------------------------------------------------------------------------
-
-Note: All amounts are represented in millions.
-
-"""
+PRIMARY_ASSET = (
+    '--------------------------------------------------------------------------\n'
+    '                        |   Q1  |     Q2   |    Q3   |    Q4   | Total\n'
+    '--------------------------------------------------------------------------\n'
+    'Revenue\n'
+    'Product Sales           | 1.0M  |    1.05M | 1.1025M | 1.1576M | 4.31M\n'
+    '--------------------------------------------------------------------------\n'
+    'Costs\n'
+    'Cost of Goods Sold      |  0.3M |    0.3M  |   0.22M |   0.22M | 1.02M\n'
+    '--------------------------------------------------------------------------\n'
+    'Gross Profit            |  0.7M |    0.75M | 0.8825M | 0.9376M | 3.27M\n'
+    '--------------------------------------------------------------------------\n'
+    'Operating Expenses\n'
+    'R&D                     | 0.15M |    0.17M |   0.19M |   0.21M | 0.73M\n'
+    'Marketing               | 0.10M |    0.10M |   0.12M |   0.13M | 0.45M\n'
+    'Admin Expenses          | 0.05M |    0.05M |   0.06M |   0.06M | 0.22M\n'
+    'Employee Compensation   | 0.20M |    0.21M |   0.23M |   0.35M | 0.99M\n'
+    '--------------------------------------------------------------------------\n'
+    'Operating Income        |  0.2M |   0.22M |  0.2825M | 0.1876M | 0.89M\n'
+    '--------------------------------------------------------------------------\n'
+    'Other Income/Expense    | 0.01M |   0.01M |   -0.02M |  -0.02M | -0.02M\n'
+    '--------------------------------------------------------------------------\n'
+    'Net Income Before Taxes | 0.21M  |   0.23M | 0.2625M | 0.1676M | 0.868M\n'
+    'Taxes                   | 0.033M |  0.037M |  0.041M |   0.05M | 0.163M\n'
+    '--------------------------------------------------------------------------\n'
+    'Net Profit              | 0.18M  |  0.193M | 0.2215M | 0.1176M | 0.705M\n'
+    '--------------------------------------------------------------------------\n'
+)
 
 
 DEFAULT_QUESTION = 'Does anything look unusual in the report?'
@@ -186,28 +176,12 @@ def main():
 
     def agent_wrapper(question, status, chat_history):
 
-        # Check the reasonableness of the question
-        # response = check_question(
-        #     question,
-        #     schema_description + additional_check,
-        #     model,
-        #     FUNCTION_DESCRIPTIONS
-        # )
-        # chat_history.append([None, response])
-
-        # if "This is a reasonable question" in response:
-        #     yield 'Checked that the question is answerable', chat_history
-        # else:
-        #     response = 'Final Answer: ' + response
-        #     chat_history[-1][1] = response
-        #     yield 'Could not answer question', chat_history
-        #     return
-
-
         # Build the functions that the agent can use
         for db in DATABASES:
             DATABASES[db]['connection'] = sqlite3.connect(DATABASES[db]['file'])
+
         databases = {db: DATABASES[db]['connection'] for db in DATABASES}
+
         def query_database(database: str, query: str) -> str:
             tool, _ = tools.make_sqlite_query_tool(databases[database])
             return tool(query)
@@ -216,6 +190,7 @@ def main():
             'query_database': query_database
         }
 
+        # Prepare the agent
         if len(chat_history)>1:
             extra_context = 'Here is a summary of our conversation so far:\n\n'
             extra_context += concat_chat_history(chat_history[1:])
@@ -270,36 +245,7 @@ def main():
 
     with gr.Blocks() as demo:
         gr.Markdown('# Chat About Techtonic Tech, Inc\'s P&L')
-        gr.Markdown(
-            '```\n'
-            '--------------------------------------------------------------------------\n'
-            '                        |   Q1  |     Q2   |    Q3   |    Q4   | Total\n'
-            '--------------------------------------------------------------------------\n'
-            'Revenue\n'
-            'Product Sales           | 1.0M  |    1.05M | 1.1025M | 1.1576M | 4.31M\n'
-            '--------------------------------------------------------------------------\n'
-            'Costs\n'
-            'Cost of Goods Sold      |  0.3M |    0.3M  |   0.22M |   0.22M | 1.02M\n'
-            '--------------------------------------------------------------------------\n'
-            'Gross Profit            |  0.7M |    0.75M | 0.8825M | 0.9376M | 3.27M\n'
-            '--------------------------------------------------------------------------\n'
-            'Operating Expenses\n'
-            'R&D                     | 0.15M |    0.17M |   0.19M |   0.21M | 0.73M\n'
-            'Marketing               | 0.10M |    0.10M |   0.12M |   0.13M | 0.45M\n'
-            'Admin Expenses          | 0.05M |    0.05M |   0.06M |   0.06M | 0.22M\n'
-            'Employee Compensation   | 0.20M |    0.21M |   0.23M |   0.35M | 0.99M\n'
-            '--------------------------------------------------------------------------\n'
-            'Operating Income        |  0.2M |   0.22M |  0.2825M | 0.1876M | 0.89M\n'
-            '--------------------------------------------------------------------------\n'
-            'Other Income/Expense    | 0.01M |   0.01M |   -0.02M |  -0.02M | -0.02M\n'
-            '--------------------------------------------------------------------------\n'
-            'Net Income Before Taxes | 0.21M  |   0.23M | 0.2625M | 0.1676M | 0.868M\n'
-            'Taxes                   | 0.033M |  0.037M |  0.041M |   0.05M | 0.163M\n'
-            '--------------------------------------------------------------------------\n'
-            'Net Profit              | 0.18M  |  0.193M | 0.2215M | 0.1176M | 0.705M\n'
-            '--------------------------------------------------------------------------\n'
-            '```'
-        )
+        gr.Markdown('```\n' + PRIMARY_ASSET + '```')
 
         question = gr.Textbox(
             value=DEFAULT_QUESTION, label='Ask a question')
