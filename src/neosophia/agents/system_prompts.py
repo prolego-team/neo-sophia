@@ -1,5 +1,8 @@
 """ Collection of prompts used by the system """
 
+NO_TOOL_PROMPT = """ERROR: The tool you chose is not in the available list of
+tools.  Choose an available tool from the TOOLS section\n\n"""
+
 CHOOSE_VARIABLES_PROMPT = """Given a command from a user, determine which
 variables in the VARIABLES section may be required to answer the question. Your
 output should be in the following format:

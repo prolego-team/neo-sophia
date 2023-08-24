@@ -37,6 +37,7 @@ class Prompt:
         if visible or variable.visible:
 
             if isinstance(variable.value, pd.DataFrame):
+                # check if empty
                 value = variable.value.head(5)
                 value = re.sub(r' +', '|', str(value))
             else:

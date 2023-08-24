@@ -13,8 +13,8 @@ import yaml
 import neosophia.agents.utils as autils
 
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.agents.utils import Resource, Tool, Variable, cprint as cprint
 from neosophia.agents.prompt import Prompt
+from neosophia.agents.dataclasses import GPT_MODELS, Resource, Tool, Variable
 from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
                                              CHOOSE_RESOURCES_PROMPT,
                                              CHOOSE_VARIABLES_PROMPT,
@@ -22,11 +22,6 @@ from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
                                              NO_CONVERSATION_CONSTRAINT)
 
 opj = os.path.join
-
-TOKEN_LIMIT = {
-    'gpt-4': 8192,
-    'gpt-4-0613': 8192,
-}
 
 
 class Agent:
@@ -41,17 +36,19 @@ class Agent:
             tools: Dict[str, Tool],
             resources: Dict[str, Resource],
             variables: Dict[str, Variable],
-            model: str = 'gpt-4-0613'):
-        """
-        Initializes an Agent object
-        """
+            model_name: str = 'gpt-4-0613'):
+        """ Initializes an Agent object """
+
+        # Get info such as max_tokens, cost per token, etc.
+        self.model_info = GPT_MODELS[model_name]
+
+        self.input_cost = 0.
+        self.output_cost = 0.
 
         self.tools = tools
         self.llm_calls = 0
         self.variables = variables
         self.resources = resources
-        self.model_name = model
-        self.token_limit = TOKEN_LIMIT[model]
         self.system_prompt = system_prompt
 
         # Manually add the `extract_answer` function that's used at the end of
@@ -70,45 +67,13 @@ class Agent:
             call=sys.exit
         )
 
-    def _toggle_variables(self, command):
-        """
-        Function to choose which variables we want to show the values for
-        """
-        prompt = Prompt()
-        prompt.add_base_prompt(CHOOSE_VARIABLES_PROMPT)
-        prompt.add_command(command)
-        prompt.add_constraint(NO_CONVERSATION_CONSTRAINT)
-
-        for variable in self.variables.values():
-            variable.visible = False
-            prompt.add_variable(variable, True)
-
-        prompt_str = prompt.generate_prompt()
-        response = self.execute(prompt_str)
-
-        variables_to_show = autils.parse_response(response)
-        for var_name in variables_to_show.values():
-            self.variables[var_name].visible = True
-
-    def _toggle_resources(self, command):
-        """
-        Function to choose which data resources we want to show
-        """
-        prompt = Prompt()
-        prompt.add_base_prompt(CHOOSE_RESOURCES_PROMPT)
-        prompt.add_command(command)
-        prompt.add_constraint(NO_CONVERSATION_CONSTRAINT)
-
-        for resource in self.resources.values():
-            resource.visible = False
-            prompt.add_resource(resource, True)
-
-        prompt_str = prompt.generate_prompt()
-        response = self.execute(prompt_str)
-
-        resources_to_show = autils.parse_response(response)
-        for var_name in resources_to_show.values():
-            self.resources[var_name].visible = True
+    def calculate_prompt_cost(self, prompt: str):
+        """ Function to calculate the input or output cost """
+        num_tokens = autils.count_tokens(prompt, self.model_info.name)
+        return {
+            'input': num_tokens * self.model_info.input_token_cost,
+            'output': num_tokens * self.model_info.output_token_cost
+        }
 
     def _toggle_items(self, items_dict, base_prompt, command):
         """
@@ -128,8 +93,6 @@ class Agent:
 
         prompt_str = prompt.generate_prompt()
         response = self.execute(prompt_str)
-        #print(f'{autils.Colors.RED}{prompt_str}{autils.Colors.ENDC}\n')
-        #print(f'{autils.Colors.CYAN}{response}{autils.Colors.ENDC}\n')
 
         items_to_show = autils.parse_response(response)
         for item_name in items_to_show.values():
@@ -144,7 +107,8 @@ class Agent:
         self._toggle_items(self.resources, CHOOSE_RESOURCES_PROMPT, command)
 
     def build_prompt(self, user_input, completed_steps):
-        """ """
+        """ Builds a prompt object and returns a string """
+
         prompt = Prompt()
         prompt.add_base_prompt(self.system_prompt)
 
@@ -214,10 +178,9 @@ class Agent:
                 print('#' * 60 + ' RESPONSE END ' + '#' * 60)
                 tool, args = self.extract_params(parsed_response)
 
+                # Agent chose a tool that isn't available
                 if tool is None:
-                    #user_input = get_command()
-                    error_msg = 'The tool you chose is not in the available list of tools. Choose an available tool from the TOOLS section'
-                    completed_steps[-1] = completed_steps[-1] + error_msg
+                    completed_steps[-1] = completed_steps[-1] + NO_TOOL_PROMPT
                     prompt_str = self.build_prompt(user_input, completed_steps)
                     continue
 
@@ -231,9 +194,7 @@ class Agent:
                     called = True
                 except Exception as e:
                     # Add the error into the prompt so it can fix it
-                    error_msg = f'\nERROR\n{e}'
-                    print('ERROR:', str(e))
-                    completed_steps[-1] = completed_steps[-1] + error_msg
+                    completed_steps[-1] = completed_steps[-1] + f'\nERROR\n{e}'
                     prompt_str = self.build_prompt(user_input, completed_steps)
                     continue
 
@@ -261,33 +222,28 @@ class Agent:
                 n = 1
                 # Truncate prompt if it's too long - probably a better way
                 # to do this to keep relevant information
-                while num_tokens > self.token_limit:
+                while num_tokens > self.model_info.max_tokens:
                     prompt_str = prompt_str[n:]
                     n += 1
                     num_tokens = autils.count_tokens(
-                        prompt_str, self.model_name)
-
-                nct1 = f'| Number of LLM Calls: {self.llm_calls} |'
-                nct2 = '+' + (len(nct1) - 2) * '-' + '+'
-                print('\n')
-                print(nct2)
-                print(nct1)
-                print(nct2)
-                print('\n')
+                        prompt_str, self.model_info.name)
 
                 #input('\nPress enter to continue...\n')
 
             end_time = time.time() - time_start
             print(answer)
-            print(80 * '-')
-            nct1 = f'| Number of LLM Calls: {self.llm_calls} |'
-            nct2 = f'| Time: {self.end_time} |'
-            nct3 = '+' + (len(nct1) - 2) * '-' + '+'
+            nct1 = f'| Number of LLM Calls: {self.llm_calls} '
+            nct2 = f'| Time: {end_time} '
+            nct3 = f'| Input Cost: {round(self.input_cost, 2)} '
+            max_width = max(len(nct1), len(nct2), len(nct3))
+
+            nct4 = '+' + (max_width - 2) * '-' + '+'
             print('\n')
-            print(nct3)
+            print(nct4)
             print(nct1)
             print(nct2)
             print(nct3)
+            print(nct4)
             print('\n')
             exit()
 
@@ -297,6 +253,8 @@ class Agent:
         func_key = 'Tool'
         param_prefix = 'Parameter_'
 
+        # Get the tool from available tools. If this function returns None,
+        # then it must have chosen a tool that isn't available
         tool = None
         if func_key in parsed_data:
             if parsed_data[func_key] in self.tools:
@@ -374,6 +332,7 @@ class Agent:
     def execute(self, prompt):
         self.llm_calls += 1
         print('Thinking...')
+        self.input_cost += self.calculate_prompt_cost(prompt)['input']
         return oaiapi.chat_completion(
-            prompt=prompt, model=self.model_name)
+            prompt=prompt, model=self.model_info.name)
 
