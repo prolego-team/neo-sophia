@@ -11,7 +11,7 @@ import pandas as pd
 import tqdm
 
 from neosophia.llmtools import openaiapi as openai, tools
-from neosophia.agents import react
+from neosophia.agents import react, react_chat
 from neosophia.llmtools import openaiapi as oaiapi
 
 from examples import bank_agent as ba
@@ -27,6 +27,7 @@ def main():
 
     # configuration
     n_runs = 10
+
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -57,16 +58,21 @@ def main():
 
         def call(question: str) -> Tuple[Optional[str], int]:
             """answer a question with the simple agent"""
-            agent = react.make_react_agent(
-                system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
-                ba.MAX_LLM_CALLS_PER_INTERACTION,
-                simple_formatting=simple)
+            if simple:
+                agent = react_chat.make_react_agent(
+                    system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
+                    ba.MAX_LLM_CALLS_PER_INTERACTION)
+            else:
+                agent = react.make_react_agent(
+                    system_message, model, ba.FUNCTION_DESCRIPTIONS, functions,
+                    ba.MAX_LLM_CALLS_PER_INTERACTION)
+
             return find_answer(agent(question))
 
         return call
 
     # An alternate format message that asks the system to not engage in conversation.
-    format_message_patched = (
+    format_message_quiet = (
         "When the user asks a question, think about what to do before responding. "
         "Briefly share your thoughts, but do not engage in conversation. "
         "You can use a function call to get additional information from the user. "
@@ -76,9 +82,9 @@ def main():
 
     systems = {
         'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        'agent (simple, patched)': patch_agent(
+        'agent (simple, quiet)': patch_agent(
             build_agent(model_name='gpt-4-0613', simple=True),
-            lambda: patch_format_message_simple(format_message_patched),
+            lambda: patch_format_message_simple(format_message_quiet),
             undo_patch_format_message_simple
         ),
         'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
@@ -247,13 +253,14 @@ def patch_agent(
 
 def patch_format_message_simple(msg: str):
     """replace the default format message"""
-    react.FORMAT_MESSAGE_SIMPLE_BACKUP = react.FORMAT_MESSAGE_SIMPLE
-    react.FORMAT_MESSAGE_SIMPLE = msg
+    react_chat.FORMAT_MESSAGE_BACKUP = react_chat.FORMAT_MESSAGE
+    react_chat.FORMAT_MESSAGE = msg
+
 
 
 def undo_patch_format_message_simple():
     """undo the format message replacement"""
-    react.FORMAT_MESSAGE_SIMPLE = react.FORMAT_MESSAGE_SIMPLE_BACKUP
+    react_chat.FORMAT_MESSAGE = react_chat.FORMAT_MESSAGE_BACKUP
 
 
 def words(x_str: str) -> List[str]:
