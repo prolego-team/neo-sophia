@@ -92,20 +92,20 @@ GPT_MODELS = {
     for info in [
         GPTModelInfo(
             name='gpt-3.5-turbo-0301',
-            input_token_cost=0.0015,
-            output_token_cost=0.002,
+            input_token_cost=0.0015 / 1000,
+            output_token_cost=0.002 / 1000,
             max_tokens=4096,
         ),
         GPTModelInfo(
             name='gpt-3.5-turbo-0613',
-            input_token_cost=0.0015,
-            output_token_cost=0.002,
+            input_token_cost=0.0015 / 1000,
+            output_token_cost=0.002 / 1000,
             max_tokens=4096,
         ),
         GPTModelInfo(
             name='gpt-3.5-turbo-16k-0613',
-            input_token_cost=0.003,
-            output_token_cost=0.004,
+            input_token_cost=0.003 / 1000,
+            output_token_cost=0.004 / 1000,
             max_tokens=16384,
         ),
         GPTModelInfo(
