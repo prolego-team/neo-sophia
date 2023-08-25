@@ -360,7 +360,7 @@ class Agent:
                 prompt = Prompt()
                 prompt.add_base_prompt(FIX_QUERY_PROMPT)
                 for variable in self.variables.values():
-                    prompt.add_variable(variable)
+                    prompt.add_variable(variable, True)
 
                 prompt_str = prompt.generate_prompt()
                 prompt_str += '\nOriginal Query: ' + query + '\n\n'

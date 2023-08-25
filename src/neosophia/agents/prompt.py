@@ -73,11 +73,11 @@ class Prompt:
 
         """
         if visible or variable.visible:
-            value = None
             if isinstance(variable.value, pd.DataFrame):
-                if not variable.value.empty:
-                    value = variable.value.head(5)
-                    value = format_df(value)
+                value = variable.value
+                if not value.empty:
+                    value = value.head(5)
+                value = format_df(value)
             else:
                 value = variable.value
             var_type = str(type(variable.value).__module__)

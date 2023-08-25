@@ -2,6 +2,7 @@
 import os
 
 import yaml
+import click
 
 import neosophia.agents.utils as autils
 
@@ -17,7 +18,9 @@ opj = os.path.join
 RESOURCES_FILENAME = 'resources.yaml'
 
 
-def main():
+@click.command()
+@click.option('--toggle', '-t', is_flag=True, help='Toggle variables/resources')
+def main(toggle):
     """ main """
     print('\n')
 
@@ -95,7 +98,7 @@ def main():
         tools,
         resources,
         variables,
-        toggle=False)
+        toggle=toggle)
     agent.chat()
 
 
