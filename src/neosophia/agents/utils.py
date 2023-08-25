@@ -8,17 +8,16 @@ import textwrap
 import importlib
 
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from dataclasses import asdict, dataclass
 
 import yaml
 import tiktoken
 import astunparse
 
-from dataclasses import asdict, dataclass
-
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.agents.prompt import Prompt
-from neosophia.agents.dataclasses import Colors, Resource, Tool, Variable
+from neosophia.agents.data_classes import Colors, Resource, Tool, Variable
 from neosophia.agents.system_prompts import (DB_INFO_PROMPT,
                                              FUNCTION_GPT_PROMPT,
                                              NO_CONVERSATION_CONSTRAINT,
