@@ -1,9 +1,6 @@
 """ Example script to interact with the Agent class """
 import os
 
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict
-
 import yaml
 
 import neosophia.agents.utils as autils
@@ -50,6 +47,7 @@ def main():
         config['Resources']['SQLite'], workspace_dir,
         resources_filepath, workspace_resources)
 
+    # Dictionary to store all variables the Agent has access to
     variables = {}
 
     # Connect to any SQLite databases
@@ -65,20 +63,39 @@ def main():
 
         variables[var_name] = variable
 
+        # Add table schemas as variables
         tables = sql_utils.get_tables_from_db(conn)
         for table in tables:
+
+            # Don't include system tables
+            if table in ['sqlite_master', 'sqlite_sequence']:
+                continue
+
             table_schema = sql_utils.get_table_schema(conn, table)
+
+            example_data = 'Example data:\n'
+            example_data += str(sql_utils.execute_query(
+                conn, f'SELECT * FROM {table} LIMIT 3'))
+
+            description = f'Schema for table {table} in database {name}\n'
+            description += example_data
 
             variable = autils.Variable(
                 name=table + '_table_schema',
                 value=table_schema,
-                description=f'Schema for table {table} in database {name}')
+                description=description)
 
-            #variable.get_summary('gpt-4')
             variables[table + '_table_schema'] = variable
 
     system_prompt = UNLQ_GPT_BASE_PROMPT
-    agent = Agent('MyAgent', system_prompt, tools, resources, variables)
+    agent = Agent(
+        'MyAgent',
+        workspace_dir,
+        system_prompt,
+        tools,
+        resources,
+        variables,
+        toggle=False)
     agent.chat()
 
 

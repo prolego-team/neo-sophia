@@ -1,39 +1,45 @@
 """ Module for holding data classes """
 from typing import Any, Callable
-
 from dataclasses import dataclass
+
+from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.agents.system_prompts import VARIABLE_SUMMARY_PROMPT
 
 
 @dataclass
 class Resource:
+    """ Class to hold a data Resource that the agent can access """
     name: str
     path: str
     description: str
+    visible = True
 
     def __str__(self):
 
         output = f'\n{Colors.BLUE}Resource Name: {Colors.ENDC}{self.name}\n'
         output += f'Path: {self.path}\n'
         output += f'Decription: {self.description}'
-
+        output += f'Visible: {self.visible}'
         return output
 
 
 @dataclass
 class Variable:
+    """ Class to hold a Variable that the agent can use """
     name: str
     value: Any
     description: str
     summary = None
-    visible = False
+    visible = True
 
     def to_string(self):
         output = f'\n{Colors.BLUE}Name: {Colors.ENDC}{self.name}\n'
-        output += f'{Colors.BLUE}Description: {Colors.ENDC}{self.description}\n'
         output += f'{Colors.BLUE}Value:\n{Colors.ENDC}{self.value}\n'
+        output += f'{Colors.BLUE}Description: {Colors.ENDC}{self.description}\n'
         return output
 
     def get_summary(self, model_name):
+        """ Calls a LLM to obtain a summary about the variable """
         prompt = VARIABLE_SUMMARY_PROMPT + self.to_string()
         self.summary = oaiapi.chat_completion(prompt=prompt, model=model_name)
         return self.summary
@@ -47,6 +53,7 @@ class Variable:
 
 @dataclass
 class Tool:
+    """ Class to hold a Tool which is a Python function that the agent can use """
     name: str
     function_str: str
     description: str
@@ -59,6 +66,7 @@ class Tool:
 
 
 class Colors:
+    """ Colors for printing """
     BLACK = '\033[30m'
     RED = '\033[31m'
     GREEN = '\033[32m'
@@ -72,6 +80,7 @@ class Colors:
 
 @dataclass
 class GPTModelInfo:
+    """ Class to hold information about a GPT model """
     name: str
     input_token_cost: float
     output_token_cost: float
@@ -100,16 +109,22 @@ GPT_MODELS = {
             max_tokens=16384,
         ),
         GPTModelInfo(
+            name='gpt-4',
+            input_token_cost=0.03 / 1000,
+            output_token_cost=0.06 / 1000,
+            max_tokens=8192,
+        ),
+        GPTModelInfo(
             name='gpt-4-0314',
-            input_token_cost=0.03,
-            output_token_cost=0.06,
+            input_token_cost=0.03 / 1000,
+            output_token_cost=0.06 / 1000,
             max_tokens=8192,
         ),
         GPTModelInfo(
             name='gpt-4-0613',
             input_token_cost=0.03 / 1000,
             output_token_cost=0.06 / 1000,
-            max_tokens=8191,
+            max_tokens=8192,
         )
     ]
 }

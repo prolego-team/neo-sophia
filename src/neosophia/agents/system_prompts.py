@@ -1,6 +1,6 @@
 """ Collection of prompts used by the system """
 
-NO_TOOL_PROMPT = """ERROR: The tool you chose is not in the available list of
+NO_TOOL_PROMPT = """\n\nERROR: The tool you chose is not in the available list of
 tools.  Choose an available tool from the TOOLS section\n\n"""
 
 CHOOSE_VARIABLES_PROMPT = """Given a command from a user, determine which
@@ -14,10 +14,26 @@ Variable_N: variable_n_name
 
 """
 
-CHOOSE_RESOURCES_PROMPT = """Given a command from a user, determine which
-data resources in the RESOURCES section may be required to answer the question. Your
+CHOOSE_RESOURCES_PROMPT = """Given a command from a user, determine which data
+resources in the RESOURCES section may be required to answer the question. Your
 output should be in the following format:
 
+Resource_0: resource_0_name
+Resource_1: resource_1_name
+...
+Resource_N: resource_n_name
+
+"""
+
+CHOOSE_VARIABLES_AND_RESOURCES_PROMPT = """Given a command from a user,
+determine which variables in the VARIABLES section and which resources in the
+RESOURCES section may be required to answer the question. Your output should be
+in the following format:
+
+Variable_0: variable_0_name
+Variable_1: variable_1_name
+...
+Variable_N: variable_n_name
 Resource_0: resource_0_name
 Resource_1: resource_1_name
 ...
@@ -101,9 +117,9 @@ Step: Step Number
 Thoughts: Explanation of why the action is to be taken
 Resource: The resource name to use in this step
 Tool: The Python function to call in order to get the information needed
-Parameter_0: Parameter_0 Name | Parameter_0 Value | type
+Parameter_0: Parameter_0 Name | Parameter_0 Value | parameter type | 'reference' or 'value'
 ...
-Parameter_N: Parameter_N Name | Parameter_N Value | type
+Parameter_N: Parameter_N Name | Parameter_N Value | parameter type | 'reference' or 'value'
 Returned: Variable name for what the function returned to store as a variable
 Description: Description of the variable that was returned
 

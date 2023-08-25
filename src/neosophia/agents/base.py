@@ -3,23 +3,23 @@ import os
 import re
 import sys
 import time
-import types
+import datetime
 import readline
 
-from typing import Dict, List
-
-import yaml
+from typing import Dict
 
 import neosophia.agents.utils as autils
 
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.agents.prompt import Prompt
-from neosophia.agents.dataclasses import GPT_MODELS, Resource, Tool, Variable
+from neosophia.agents.data_classes import GPT_MODELS, Resource, Tool, Variable
 from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
                                              CHOOSE_RESOURCES_PROMPT,
+                                             CHOOSE_VARIABLES_AND_RESOURCES_PROMPT,
                                              CHOOSE_VARIABLES_PROMPT,
                                              FIX_QUERY_PROMPT,
-                                             NO_CONVERSATION_CONSTRAINT)
+                                             NO_CONVERSATION_CONSTRAINT,
+                                             NO_TOOL_PROMPT)
 
 opj = os.path.join
 
@@ -32,23 +32,35 @@ class Agent:
     def __init__(
             self,
             name: str,
+            workspace_dir: str,
             system_prompt: str,
             tools: Dict[str, Tool],
             resources: Dict[str, Resource],
             variables: Dict[str, Variable],
-            model_name: str = 'gpt-4-0613'):
+            model_name: str = 'gpt-4-0613',
+            toggle: bool = True):
         """ Initializes an Agent object """
+
+        # Keep a log and save it to the workspace_dir
+        self.log = {
+            'prompt': [],
+            'response': []
+        }
 
         # Get info such as max_tokens, cost per token, etc.
         self.model_info = GPT_MODELS[model_name]
 
+        # Monetary cost of input and output from the LLM
         self.input_cost = 0.
         self.output_cost = 0.
 
+        self.name = name
         self.tools = tools
+        self.toggle = toggle
         self.llm_calls = 0
         self.variables = variables
         self.resources = resources
+        self.workspace_dir = workspace_dir
         self.system_prompt = system_prompt
 
         # Manually add the `extract_answer` function that's used at the end of
@@ -92,7 +104,7 @@ class Agent:
                 prompt.add_resource(item, True)
 
         prompt_str = prompt.generate_prompt()
-        response = self.execute(prompt_str)
+        response = self.execute(prompt_str, False, False)
 
         items_to_show = autils.parse_response(response)
         for item_name in items_to_show.values():
@@ -106,6 +118,50 @@ class Agent:
         """ Function to choose which data resources to show """
         self._toggle_items(self.resources, CHOOSE_RESOURCES_PROMPT, command)
 
+    def toggle_variables_and_resources(self, command: str):
+        """
+        Tries to toggle which variables and resources are visible to the Agent
+        in a single call. If the context is too big, it splits it into two
+        calls (one for the variables, one for the resources)
+        """
+        prompt = Prompt()
+        prompt.add_base_prompt(CHOOSE_VARIABLES_AND_RESOURCES_PROMPT)
+        prompt.add_command(command)
+        prompt.add_constraint(NO_CONVERSATION_CONSTRAINT)
+
+        def helper(items_dict):
+            for item in items_dict.values():
+                item.visible = False
+                if isinstance(item, Variable):
+                    prompt.add_variable(item, True)
+                elif isinstance(item, Resource):
+                    prompt.add_resource(item, True)
+
+        helper(self.variables)
+        helper(self.resources)
+
+        prompt_str = prompt.generate_prompt()
+
+        # Variables and Resources fit into one prompt
+        if self.check_prompt(prompt_str):
+            response = self.execute(prompt_str, False, False)
+            items_to_show = autils.parse_response(response)
+            for item_name in items_to_show.values():
+                if item_name in self.variables:
+                    self.variables[item_name].visible = True
+                elif item_name in self.resources:
+                    self.resources[item_name].visible = True
+        else:
+            self.toggle_variables(command)
+            self.toggle_resources(command)
+
+    def check_prompt(self, prompt: str):
+        """ Function to check if the prompt fits in the context window """
+        num_tokens = autils.count_tokens(prompt, self.model_info.name)
+        if num_tokens < self.model_info.max_tokens:
+            return True
+        return False
+
     def build_prompt(self, user_input, completed_steps):
         """ Builds a prompt object and returns a string """
 
@@ -118,7 +174,7 @@ class Agent:
             prompt.add_completed_step(step)
 
         # Add resources to prompt
-        for name, resource in self.resources.items():
+        for resource in self.resources.values():
             prompt.add_resource(resource)
 
         # Add tools to prompt
@@ -131,15 +187,18 @@ class Agent:
 
         return prompt.generate_prompt()
 
+    def get_running_cost(self):
+        """ Returns the running input and output cost for the LLM """
+        return {
+            'input': self.input_cost,
+            'output': self.output_cost,
+            'total': self.input_cost + self.output_cost
+        }
+
     def chat(self):
         """ Function to give a command to interact with the LLM """
 
         time_start = time.time()
-
-        # TODO - determine whether or not to toggle variables or send
-        # everything into the prompt. I think this would be a cost problem.
-        # For example, if everything fits into the prompt, is it cheaper to
-        # send everything with 1 LLM call or 2 shorter LLM calls?
 
         # Track the number of LLM calls throughout the interaction
         self.llm_calls = 0
@@ -159,23 +218,21 @@ class Agent:
 
             completed_steps = []
 
-            self.toggle_variables(user_input)
-            self.toggle_resources(user_input)
-
             prompt_str = self.build_prompt(user_input, completed_steps)
+
+            # Toggle variables and resources on/off if the user wants or if the
+            # prompt with all variables and resources is too long
+            if self.toggle or not self.check_prompt(prompt_str):
+                self.toggle_variables_and_resources(user_input)
+                prompt_str = self.build_prompt(user_input, completed_steps)
 
             while True:
 
-                print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
-                print(prompt_str)
-                print('#' * 60 + ' PROMPT END ' + '#' * 60)
                 response = self.execute(prompt_str)
+
                 completed_steps.append(response)
 
                 parsed_response = autils.parse_response(response)
-                print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)
-                print(response)
-                print('#' * 60 + ' RESPONSE END ' + '#' * 60)
                 tool, args = self.extract_params(parsed_response)
 
                 # Agent chose a tool that isn't available
@@ -191,7 +248,6 @@ class Agent:
 
                 try:
                     res = tool.call(**args)
-                    called = True
                 except Exception as e:
                     # Add the error into the prompt so it can fix it
                     completed_steps[-1] = completed_steps[-1] + f'\nERROR\n{e}'
@@ -210,11 +266,12 @@ class Agent:
                     description=description)
                 self.variables[return_name] = return_var
 
-                # Toggle variables and resources
-                self.toggle_variables(user_input)
-                self.toggle_resources(user_input)
-
                 prompt_str = self.build_prompt(user_input, completed_steps)
+
+                # Toggle variables and resources
+                if self.toggle or not self.check_prompt(prompt_str):
+                    self.toggle_variables_and_resources(user_input)
+                    prompt_str = self.build_prompt(user_input, completed_steps)
 
                 # Get an approximate token count without needing to encode
                 num_tokens = int(len(prompt_str) // 4)
@@ -228,24 +285,20 @@ class Agent:
                     num_tokens = autils.count_tokens(
                         prompt_str, self.model_info.name)
 
-                #input('\nPress enter to continue...\n')
-
-            end_time = time.time() - time_start
+            end_time = round(time.time() - time_start, 2)
+            total_cost = round(self.input_cost + self.output_cost, 2)
             print(answer)
-            nct1 = f'| Number of LLM Calls: {self.llm_calls} '
-            nct2 = f'| Time: {end_time} '
-            nct3 = f'| Input Cost: {round(self.input_cost, 2)} '
-            max_width = max(len(nct1), len(nct2), len(nct3))
+            nct = f'| Number of LLM Calls: {self.llm_calls}\n'
+            nct += f'| Time: {end_time}\n'
+            nct += f'| Input Cost: {round(self.input_cost, 2)}\n'
+            nct += f'| Output Cost: {round(self.output_cost, 2)}\n'
+            nct += f'| Total Cost: {total_cost}'
 
-            nct4 = '+' + (max_width - 2) * '-' + '+'
             print('\n')
-            print(nct4)
-            print(nct1)
-            print(nct2)
-            print(nct3)
-            print(nct4)
+            print(nct)
             print('\n')
-            exit()
+
+            self.save_log()
 
     def extract_params(self, parsed_data: Dict):
         """ Extract parameters from LLM response """
@@ -266,24 +319,23 @@ class Agent:
             if key.startswith(param_prefix):
                 param_name = value[0]
                 param_value = value[1]
-
                 param_type = value[2].replace(' ', '')
+                param_vr = value[3]
 
-                if param_type == 'str' and param_name != 'query':
-                    param_value = str(param_value.replace("'", ""))
-                    param_value = str(param_value.replace('"', ""))
-
-                if param_value in self.variables:
+                # The parameter is a reference to a Variable in self.variables
+                if 'reference' in param_vr:
+                    # Strip out any quotes that might be at the beginning/end
+                    if param_value[0] == "'" or param_value[0] == '"':
+                        param_value = param_value[1:-1]
                     param_value = self.variables[param_value].value
 
-                param_type = value[2].replace(' ', '')
-
-                # Stripping out quotes differently when it's a query
-                if param_type == 'str' and param_name != 'query':
+                # Parameter is a string but not a SQL query
+                elif param_type == 'str' and param_name != 'query':
                     param_value = str(param_value.replace("'", ""))
                     param_value = str(param_value.replace('"', ""))
 
-                if param_type == 'str' and param_name == 'query' and '+' in param_value:
+                # Parameter is a SQL query that has other variables in it
+                elif param_type == 'str' and param_name == 'query' and '+' in param_value:
                     param_value = self.replace_variables_in_query(param_value)
 
                 # Add param name and its value to the dictionary
@@ -318,6 +370,7 @@ class Agent:
         return query
 
     def extract_answer(self, question):
+        """ """
         prompt = Prompt()
         prompt.add_base_prompt(ANSWER_QUESTION_PROMPT)
         prompt.add_command(question)
@@ -325,14 +378,51 @@ class Agent:
             if variable.visible:
                 prompt.add_variable(variable)
         prompt_str = prompt.generate_prompt()
-        print(prompt_str)
-        print('\n===========================================\n')
         return self.execute(prompt_str)
 
-    def execute(self, prompt):
+    def execute(self, prompt, print_prompt=True, print_response=True):
+        """ """
         self.llm_calls += 1
-        print('Thinking...')
+        if print_prompt or print_response:
+            print('Thinking...')
         self.input_cost += self.calculate_prompt_cost(prompt)['input']
-        return oaiapi.chat_completion(
+        response = oaiapi.chat_completion(
             prompt=prompt, model=self.model_info.name)
+        self.log['prompt'].append(prompt)
+        self.log['response'].append(response)
+        self.output_cost += self.calculate_prompt_cost(response)['output']
+        if print_prompt:
+            print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
+            print(prompt)
+            print('#' * 60 + ' PROMPT END ' + '#' * 60)
+            print('\n')
+        if print_response:
+            print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)
+            print(response)
+            print('#' * 60 + ' RESPONSE END ' + '#' * 60)
+            print('\n')
+        return response
+
+    def save_log(self):
+        """
+        Save the log dictionary to a text file in a readable format.
+
+        Parameters:
+        - log (dict): Dictionary containing prompts and responses.
+        - filename (str): Name of the file to save the log.
+
+        Returns:
+        None
+        """
+        save_dir = opj(self.workspace_dir, 'logs')
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'log_{timestamp}.txt'
+        filepath = opj(save_dir, filename)
+        os.makedirs(save_dir, exist_ok=True)
+        with open(filepath, 'w') as file:
+            for prompt, response in zip(self.log['prompt'], self.log['response']):
+                file.write("Prompt: " + prompt + "\n")
+                file.write("Response: " + response + "\n")
+                file.write("-" * 80 + "\n")
+        print('Log saved to', filepath)
 

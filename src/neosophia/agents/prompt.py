@@ -1,7 +1,45 @@
 """ Class for generating a structured prompt """
 import re
 
+from functools import partial
+
 import pandas as pd
+
+
+def format_df(df):
+    """
+    Function that stripts out all whitespace between dataframe columns while
+    preserving white space in individual cells
+    """
+    def get_fmt_str(x, fill):
+        return '| {message: >{fill}} '.format(message=x, fill=fill-2)
+
+    # Max character length per column
+    s = df.astype(str).agg(lambda x: x.str.len()).max()
+    pad = 0  # How many spaces between
+    fmts = {}
+    header_strs = []
+    for idx, c_len in s.items():
+        if isinstance(idx, tuple):
+            lab_len = max([len(str(x)) for x in idx])
+        else:
+            lab_len = len(str(idx))
+
+        fill = max(lab_len, c_len) + pad
+        fmts[idx] = partial(get_fmt_str, fill=fill)
+
+        # Formatting the header
+        header_strs.append(get_fmt_str(idx, fill))
+
+    # Generate the formatted DataFrame string without the header
+    df_str = df.to_string(formatters=fmts, index=False, header=False)
+
+    # Generate the header string with the | separator
+    header = ''.join(header_strs) + '|'
+
+    # Combine the header and the DataFrame string
+    final_str = header + '\n' + df_str
+    return re.sub(r'[ \t]*\|[ \t]*', '|', final_str)
 
 
 class Prompt:
@@ -35,28 +73,21 @@ class Prompt:
 
         """
         if visible or variable.visible:
-
+            value = None
             if isinstance(variable.value, pd.DataFrame):
-                # check if empty
-                value = variable.value.head(5)
-                value = re.sub(r' +', '|', str(value))
+                if not variable.value.empty:
+                    value = variable.value.head(5)
+                    value = format_df(value)
             else:
                 value = variable.value
             var_type = str(type(variable.value).__module__)
             var_type += '.' + str(type(variable.value).__name__)
             prompt = f'Name: {variable.name}\n'
-            prompt += f'Description: {variable.description}\n'
             prompt += f'Type: {var_type}\n'
-            prompt += f'Value: {value}\n'
+            prompt += f'Value:\n{value}\n'
+            prompt += f'Description: {variable.description}\n'
             prompt += '\n'
             self.variables.append(prompt)
-        #if isinstance(value, pd.DataFrame):
-        #    cols = value.columns
-        #    value = '<pd.Dataframe object>\n'
-        #    value += f'Columns: {cols}'
-        #else:
-        #    value = str(value)
-        #prompt += f'Value: {value}\n'
 
     def add_resource(self, resource, visible=False):
         if visible or resource.visible:
