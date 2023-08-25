@@ -179,7 +179,7 @@ def main():
         for db in DATABASES:
             DATABASES[db]['connection'] = sqlite3.connect(DATABASES[db]['file'])
 
-        databases = {db: DATABASES[db]['connection'] for db in DATABASES}
+        databases = {db: record['connection'] for db, record in DATABASES.items()}
 
         def query_database(database: str, query: str) -> str:
             tool, _ = tools.make_sqlite_query_tool(databases[database])
