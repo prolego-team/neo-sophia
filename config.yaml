@@ -9,9 +9,6 @@ Resources:
   - name: SynthBank
     path: data/synthbank.db
     description: # Description here will override LLM generated description
-  - name: Cats and Dogs
-    path: data/cats_and_dogs.db
-    description: # Description here will override LLM generated description
   - name: Transactions
     path: data/transactions.db
     description:
