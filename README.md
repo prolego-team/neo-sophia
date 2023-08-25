@@ -76,7 +76,7 @@ Video: coming soon!
 ## Episode 5 - Queries Across Multiple Data Sources
 Every practical problem you encounter will require accessing large datasets such as multiple databases. In doing so you will encounter the limits of the LLM's context window. In this example we explain this limitation and a simple approach for overcoming it.
 
-Video: [How to Overcome LLM Context Window Limiations](https://www.youtube.com/watch?v=_deDqraxqog)
+Video: [How to Overcome LLM Context Window Limitations](https://www.youtube.com/watch?v=_deDqraxqog)
 
 1. Checkout Episode 5, [Release v0.5.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.5.0)
 ````
