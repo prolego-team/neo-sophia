@@ -32,24 +32,14 @@ MARKET_TRENDS_DATABASE = GAMEDIR
 COMPETITOR_ANALYSIS_DATABASE = GAMEDIR / 'competition.db'
 CUSTOMER_FEEDBACK_DATABASE = GAMEDIR / 'customer_feedback.db'
 DATABASES = {
-    'expense_database': {
-        'file': EXPENSE_DATABASE,
-        'connection': None
-    },
-    'employee_database': {
-        'file': EMPLOYEE_DATABASE,
-        'connection': None
-    },
-    'competition': {
-        'file': COMPETITOR_ANALYSIS_DATABASE,
-        'connection': None
-    },
-    'customer_feedback': {
-        'file': CUSTOMER_FEEDBACK_DATABASE,
-        'connection': None
-    }
+    'expense_database': EXPENSE_DATABASE,
+    'employee_database': EMPLOYEE_DATABASE,
+    'competition': COMPETITOR_ANALYSIS_DATABASE,
+    'customer_feedback': CUSTOMER_FEEDBACK_DATABASE,
 }
 PRIMARY_ASSET = (
+    'Profit and Loss Statement for Tectonic Tech Inc.\n'
+    'Fiscal Year: 1st Jan 2021 - 31st Dec 2021\n'
     '----------------------------------------------------------------\n'
     '                        |   Q1  |     Q2   |    Q3   |    Q4   | \n'
     '----------------------------------------------------------------\n'
@@ -100,32 +90,31 @@ FUNCTION_DESCRIPTIONS = dispatch.convert_function_descs({
 })
 
 
-def get_system_message() -> str:
-    """Get the system message."""
-    return (
-        "You are a business analyst for Tectonic Tech, Inc.  You have the ability to run sqlite queries "
-        "against the company's databses to collect information for the user.\n\n "
-        "Answer the user's questions as best as you can.  Only use the functions you have been "
-        "provided with.\n\n"
-        "Before running a query check to see if you already have part or all of the answer from "
-        "your interaction history!\n\n"
-    )
+SYSTEM_MESSAGE = (
+    "You are a business analyst for Tectonic Tech, Inc.  You have the ability to run sqlite queries "
+    "against the company's databses to collect information for the user.\n\n "
+    "Answer the user's questions as best as you can, and prioritize using data from one of the databases.\n\n"
+    "Before running a query check to see if you already have part or all of the answer from "
+    "your interaction history!\n\n"
+    "If you are unable to answer a question, suggest some alternative questions that you can answer.  Your"
+    "goal is to be helpful."
+)
 
 
-def get_schema_description(databases) -> str:
+def get_schema_description(db_connections) -> str:
     """
     Construct a description of the DB schema for the LLM by retrieving the
     CREATE commands used to create the tables.
     """
-    schema_description = f"There are {len(databases)} databases  Here are their names and schemas:\n"
-    for i,db in enumerate(databases.keys()):
+    schema_description = f"There are {len(db_connections)} databases  Here are their names and schemas:\n"
+    for i,db in enumerate(db_connections.keys()):
         schema_description += f'{i+1}. {db}\n'
-        cur = databases[db]['connection'].cursor()
+        cur = db_connections[db].cursor()
         tables = cur.execute("select name from sqlite_master where type='table';").fetchall()
         tables = [col[0] for col in tables]
         for table in tables:
             schema_description += f'Table `{table}:`\n'
-            schema_description += str(get_table_schema(databases[db]['connection'], table)) + '\n'
+            schema_description += str(get_table_schema(db_connections[db], table)) + '\n'
         schema_description += '\n'
 
     return schema_description
@@ -157,16 +146,16 @@ def main():
 
     # Connect to the DB and get the table names
     log.debug('Getting the DB information.')
+    db_connections = {}
     for db in DATABASES:
-        DATABASES[db]['connection'] = sqlite3.connect(DATABASES[db]['file'])
-    schema_description = get_schema_description(DATABASES)
+        db_connections[db] = sqlite3.connect(DATABASES[db])
+    schema_description = get_schema_description(db_connections)
 
-    for db in DATABASES:
-        DATABASES[db]['connection'].close()
-        DATABASES[db]['connection'] = None
+    for _,db in db_connections.items():
+        db.close()
 
     # Setup the agent
-    system_message = get_system_message()
+    system_message = SYSTEM_MESSAGE
     system_message += schema_description
     print(system_message)
 
@@ -176,13 +165,12 @@ def main():
     def agent_wrapper(question, status, chat_history):
 
         # Build the functions that the agent can use
+        db_connections = {}
         for db in DATABASES:
-            DATABASES[db]['connection'] = sqlite3.connect(DATABASES[db]['file'])
-
-        databases = {db: record['connection'] for db, record in DATABASES.items()}
+            db_connections[db] = sqlite3.connect(DATABASES[db])
 
         def query_database(database: str, query: str) -> str:
-            tool, _ = tools.make_sqlite_query_tool(databases[database])
+            tool, _ = tools.make_sqlite_query_tool(db_connections[database])
             return tool(query)
 
         functions = {
@@ -226,9 +214,8 @@ def main():
             chat_history.append(update)
             yield status, chat_history
 
-        for db in DATABASES:
-            DATABASES[db]['connection'].close()
-            DATABASES[db]['connection'] = None
+        for _,connection in db_connections.items():
+            connection.close()
 
     def answer_wrapper(chat_history):
         final_message = chat_history[-1][1]
@@ -273,21 +260,21 @@ def main():
 
         question.submit(
             new_question_wrapper,
-            outputs=final_answer) \
-        .then(
+            outputs=final_answer
+        ).then(
             agent_wrapper,
             [question, status, chatbot],
-            [status, chatbot]) \
-        .then(answer_wrapper, chatbot, final_answer)
+            [status, chatbot]
+        ).then(answer_wrapper, chatbot, final_answer)
 
         ask_button.click(
             new_question_wrapper,
-            outputs=final_answer) \
-        .then(
+            outputs=final_answer
+        ).then(
             agent_wrapper,
             [question, status, chatbot],
-            [status, chatbot]) \
-        .then(answer_wrapper, chatbot, final_answer)
+            [status, chatbot]
+        ).then(answer_wrapper, chatbot, final_answer)
 
         clear_button.click(lambda: None, None, [chatbot, status, final_answer], queue=False)
 
