@@ -63,9 +63,9 @@ LLM hallucinations and inconsistencies are real challenges, but you can begin ov
 
 Video: coming soon!
 
-1. Checkout Episode 6, [Release v0.X.0]()
+1. Checkout Episode 6, [Release v0.6.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.6.0)
 ````
-    git checkout tags/v0.X.0
+    git checkout tags/v0.6.0
 ````
 2. Start the demo by running
 
@@ -78,9 +78,9 @@ Every practical problem you encounter will require accessing large datasets such
 
 Video: [How to Overcome LLM Context Window Limiations](https://www.youtube.com/watch?v=_deDqraxqog)
 
-1. Checkout Episode 5, [Release v0.X.0]()
+1. Checkout Episode 5, [Release v0.5.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.5.0)
 ````
-    git checkout tags/v0.X.0
+    git checkout tags/v0.5.0
 ````
 2. Start the demo by running
 
