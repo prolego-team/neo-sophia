@@ -6,13 +6,20 @@ from typing import Iterable, Optional, List, Tuple, Callable, Dict
 import sqlite3
 import time
 import re
+import random
+import os
 
+import llama_cpp
 import pandas as pd
 import tqdm
 
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents import react, react_chat
+from neosophia.agents import react
+from neosophia.agents import simplelocal
 from neosophia.llmtools import openaiapi as oaiapi
+from neosophia.llmtools import dispatch as dp
+from neosophia.db import sqlite_utils
 
 from examples import bank_agent as ba
 from examples import project
@@ -22,12 +29,38 @@ DATABASE = 'data/synthbank.db'
 DEBUG = True
 
 
+FUNCTION_DESCS = {
+    'query_database': dp.FunctionDesc(
+        description='Query the bank sqlite database.',
+        params={
+            'query': dp.ParamDesc(
+                description='A sqlite query to run against the bank databse.',
+                typ=str,
+                required=True
+            )
+        }
+    )
+}
+
+FUNCTION_DESCS_GET_SCHEMA = {
+    'get_table_schema': dp.FunctionDesc(
+        description='Get the schema of a sqlite table.',
+        params={
+            'name': dp.ParamDesc(
+                description='Name of table.',
+                typ=str,
+                required=True
+            )
+        }
+    )
+}
+
+
 def main():
     """main program"""
 
     # configuration
-    n_runs = 10
-
+    n_runs = 3
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -47,9 +80,49 @@ def main():
         'query_database': query_database
     }
 
+    def get_table_schema(name: str) -> str:
+        return sqlite_utils.get_table_schema(db_connection, name).to_string()
+
+    functions_with_get_schema = {
+        'query_database': query_database,
+        'get_table_schema': get_table_schema
+    }
+
     # Systems to evaluate. These take a question as input and return
     # an answer or None (for an uncaught error or if the system can't
     # answer the question) as well as a count of API / LLM interactions
+
+    # model_path = os.path.join(
+    #     '/Users/ben/Prolego/code/llama.cpp',
+    #     'llama-2-13b-chat.ggmlv3.q4_0.bin'
+    # )
+    model_path = os.path.join(
+        '/Users/ben/Prolego/models',
+        # 'codellama-13b-instruct.Q5_K_M.gguf'
+        'codellama-13b-instruct.Q5_K_M.gguf'
+    )
+
+    assert os.path.exists(model_path)
+
+    llama_model = llama_cpp.Llama(
+        model_path=model_path,
+        n_gpu_layers=10000,
+        n_ctx=simplelocal.LLAMA2_MAX_TOKENS
+    )
+
+    llama_model_wrapped = simplelocal.build_llama2_wrapper(llama_model)
+
+    def agent_simple_llama2(question: str) -> Tuple[Optional[str], int]:
+        """answer a question with the react agent"""
+        agent = simplelocal.make_simple_agent(
+            system_message, llama_model_wrapped,
+            # FUNCTION_DESCS,
+            # functions,
+            {**FUNCTION_DESCS, **FUNCTION_DESCS_GET_SCHEMA},
+            functions_with_get_schema,
+            ba.MAX_LLM_CALLS_PER_INTERACTION
+        )
+        return find_answer(agent(question))
 
     def build_agent(model_name: str, simple: bool) -> Callable:
         """build an agent"""
@@ -80,15 +153,23 @@ def main():
         "response to the user's question."
     )
 
+    def dummy(_: str) -> Tuple[Optional[str], int]:
+        """Dummy system for quickly testing things."""
+        # time.sleep(random.random() * 3.0)
+        time.sleep(random.random() * 0.1)
+        return 'As an AI model, I\'m unable to answer the question.', 1
+
     systems = {
-        'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
-        'agent (simple, quiet)': patch_agent(
-            build_agent(model_name='gpt-4-0613', simple=True),
-            lambda: patch_format_message_simple(format_message_quiet),
-            undo_patch_format_message_simple
-        ),
-        'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
-        'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
+        'dummy': dummy,
+        # 'agent (simple)': build_agent(model_name='gpt-4-0613', simple=True),
+        # 'agent (simple, quiet)': patch_agent(
+        #     build_agent(model_name='gpt-4-0613', simple=True),
+        #     lambda: patch_format_message_simple(format_message_quiet),
+        #     undo_patch_format_message_simple
+        # ),
+        # 'agent (react)': build_agent(model_name='gpt-4-0613', simple=False),
+        # 'agent (simple, 3.5)': build_agent(model_name='gpt-3.5-turbo-0613', simple=True),
+        'agent (simple llama2)': agent_simple_llama2
     }
 
     qs_and_evals = [
@@ -225,7 +306,7 @@ def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]
                 call_count += 1
             if message.role == 'assistant':
                 # I think this logic is correct and shouldn't cause early stopping.
-                if 'Final Answer:' in message.content:
+                if 'final answer' in message.content.lower():
                     answer_message = message
                     break
     except Exception as e:

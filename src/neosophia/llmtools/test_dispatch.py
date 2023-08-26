@@ -71,9 +71,9 @@ def test_parse_dispatch_response():
         response=(
             'blah blah baloney\n' +
             'FUNCTION: combine\n' +
-            'PARAMETER: a 5\n' +
-            'PARAMETER: b 6\n' +
-            'PARAMETER: c "Hello, world!"'
+            'PARAMETER: a=5\n' +
+            'PARAMETER: b=6\n' +
+            'PARAMETER: c="Hello, world!"'
         ),
         functions=functions
     )
@@ -82,7 +82,7 @@ def test_parse_dispatch_response():
 
     # name doesn't match
     res = dp.parse_dispatch_response(
-        response='FUNCTION: baloney\nPARAMETER: a 5',
+        response='FUNCTION: baloney\nPARAMETER: a=5',
         functions=functions
     )
     assert res is None
@@ -91,9 +91,9 @@ def test_parse_dispatch_response():
     name, params = dp.parse_dispatch_response(
         response=(
             'FUNCTION: combine\n' +
-            'PARAMETER: a 5\n' +
-            'PARAMETER: b 6\n' +
-            'PARAMETER: d "Hello, world!"'
+            'PARAMETER: a=5\n' +
+            'PARAMETER: b=6\n' +
+            'PARAMETER: d="Hello, world!"'
         ),
         functions=functions
     )
@@ -104,9 +104,9 @@ def test_parse_dispatch_response():
     name, params = dp.parse_dispatch_response(
         response=(
             'FUNCTION: combine\n' +
-            'PARAMETER: a "Hello, world!"\n' +
-            'PARAMETER: b 6\n' +
-            'PARAMETER: c "Hello, world!"'
+            'PARAMETER: a="Hello, world!"\n' +
+            'PARAMETER: b=6\n' +
+            'PARAMETER: c="Hello, world!"'
         ),
         functions=functions
     )
