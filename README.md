@@ -113,10 +113,10 @@ Videos
 
 ### Running the Episode 2 application
 
-1. Checkout Episode 2, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.0)
+1. Checkout Episode 2, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.1)
 
 ````
-    git checkout tags/v0.2.0
+    git checkout tags/v0.2.1
 ````
 
 2. Start the demo by running
