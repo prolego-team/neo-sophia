@@ -72,11 +72,13 @@ class Prompt:
         """
 
         """
+        dots = ''
         if visible or variable.visible:
             if isinstance(variable.value, pd.DataFrame):
                 value = variable.value
                 if not value.empty:
-                    value = value.head(5)
+                    value = value.head(10)
+                    dots = '...\n'
                 value = format_df(value)
             else:
                 value = variable.value
@@ -84,7 +86,7 @@ class Prompt:
             var_type += '.' + str(type(variable.value).__name__)
             prompt = f'Name: {variable.name}\n'
             prompt += f'Type: {var_type}\n'
-            prompt += f'Value:\n{value}\n'
+            prompt += f'Value:\n{value}\n{dots}'
             prompt += f'Description: {variable.description}\n'
             prompt += '\n'
             self.variables.append(prompt)
