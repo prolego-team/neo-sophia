@@ -300,6 +300,30 @@ class Agent:
 
             self.save_log()
 
+    def extract_value(self, key_expr):
+        """
+        Extract a value from the variables dictionary based on a key or
+        expression.
+
+        Parameters:
+        - variables (dict): Dictionary containing variable names and their
+          values.
+        - key_expr (str): Key or expression to evaluate.
+
+        Returns:
+        - Value extracted from the dictionary or evaluated from the expression.
+        """
+        # Check if key_expr is a direct key in the dictionary
+        if key_expr in self.variables:
+            return self.variables[key_expr].value
+
+        # If not, try to evaluate it as an expression
+        try:
+            x = eval(key_expr, {}, self.variables).value
+        except:
+            # If evaluation fails, return the key_expr as is
+            return key_expr
+
     def extract_params(self, parsed_data: Dict):
         """ Extract parameters from LLM response """
 
@@ -327,7 +351,7 @@ class Agent:
                     # Strip out any quotes that might be at the beginning/end
                     if param_value[0] == "'" or param_value[0] == '"':
                         param_value = param_value[1:-1]
-                    param_value = self.variables[param_value].value
+                    param_value = self.extract_value(param_value)
 
                 # Parameter is a string but not a SQL query
                 elif param_type == 'str' and param_name != 'query':
