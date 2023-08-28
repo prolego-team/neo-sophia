@@ -54,14 +54,15 @@ Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
 
 # Episodes
 
-
 ## Episode 7 - How to pick the Best LLM for Your Project
+GPT-3? GPT-4? Claude 2? Open source? You have so many options and don't know where to start. Fortunately, there is an easy answer for the majority of teams. Start with the most intelligent model, currently GPT-4.
 
+Video: How to pick the Best LLM for Your Project
 
 ## Episode 6 - Improving LLM Reliablity with Evaluation frameworks
 LLM hallucinations and inconsistencies are real challenges, but you can begin overcoming them with a good evaluation framework.
 
-Video: coming soon!
+Video: [Conquer LLM Hallucinations with an Evaluation Framework](https://www.youtube.com/watch?v=mW3_vn1zGfE)
 
 1. Checkout Episode 6, [Release v0.6.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.6.0)
 ````
