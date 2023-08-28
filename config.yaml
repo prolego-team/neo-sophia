@@ -26,3 +26,5 @@ Tools:
   - module: neosophia.agents.tools
     functions:
       - dataframe_intersection
+      - get_max_values
+      - get_min_values
