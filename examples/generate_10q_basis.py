@@ -22,7 +22,7 @@ OPENAI_LLM_MODEL_NAME = 'gpt-4'
 
 def generate_output(base_prompt: str, context: str, template: str) -> str:
     """Rewrite text to match a template."""
-    base_prompt += 'Template: ' + template + '\n\n---------------------------\n\n'
+    base_prompt += '\n\nTemplate: ' + template + '\n\n---------------------------\n\n'
     prompt = base_prompt + 'Input Text: ' + context
     return oaiapi.chat_completion(
         prompt=prompt,
@@ -90,10 +90,10 @@ def main(template_file, prompt_file):
         exit()
 
     with open(template_file, 'r') as f:
-        template = f.readlines()[0].rstrip()
+        template = ''.join(f.readlines())
 
     with open(prompt_file, 'r') as f:
-        base_prompt = f.readlines()[0].rstrip()
+        base_prompt = ''.join(f.readlines())
 
     if not os.path.exists(json_file):
         print('Generating json file...')
