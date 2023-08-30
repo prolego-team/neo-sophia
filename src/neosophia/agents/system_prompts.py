@@ -106,15 +106,14 @@ single quotes if and only if the value is a string. Do not use quotes if the
 variable is not a string. Do not write Python expressions, only use variable
 names or literals. Your job is to come up with a plan in order to retrieve the
 information needed to answer the question.  Because some tools require the
-result from previously run tools, ONLY GENERATE ONE STEP AT A TIME starting
-with Step 1.  You will be provided with the previous steps that have been
-taken. The results from tools that have been called as a result of certain
-steps will be added to the VARIABLES section. When you have collected enough
-information to answer the question, call the function `extract_answer`. Do not
-engage in any conversation outside of the "Thoughts" section. Each step in your
-plan must be in the following format:
+result from previously run tools, ONLY GENERATE ONE STEP AT A TIME.  You will
+be provided with the previous steps that have been taken. The results from
+tools that have been called as a result of certain steps will be added to the
+VARIABLES section. When you have collected enough information to answer the
+question, call the function `extract_answer`. Do not engage in any conversation
+outside of the "Thoughts" section. Each step in your plan must be in the
+following format:
 
-Step: Step Number
 Thoughts: Explanation of why the action is to be taken
 Resource: The resource name to use in this step
 Tool: The Python function to call in order to get the information needed
@@ -127,7 +126,6 @@ Description: Description of the variable that was returned
 If a function is to be called that doesn't have any arguments, your step must
 be in the following format:
 
-Step: Step Number
 Thoughts: Explanation of why the action is to be taken
 Resource: The resource name to use in this step
 Tool: The Python function to call in order to get the information needed

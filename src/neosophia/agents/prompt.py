@@ -5,11 +5,21 @@ from functools import partial
 
 import pandas as pd
 
+from neosophia.agents.data_classes import Resource, Tool, Variable
 
-def format_df(df):
+
+def format_df(df: pd.DataFrame) -> str:
     """
     Function that stripts out all whitespace between dataframe columns while
     preserving white space in individual cells
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be formatted.
+
+    Returns:
+        final_str (str): The formatted DataFrame string with stripped
+        whitespace between columns and preserved whitespace in individual
+        cells.
     """
     def get_fmt_str(x, fill):
         return '| {message: >{fill}} '.format(message=x, fill=fill-2)
@@ -58,27 +68,61 @@ class Prompt:
         self.steps = []
         self.variables = []
 
-    def add_base_prompt(self, prompt):
-        """ This prompt always goes at the beginning """
+    def add_base_prompt(self, prompt: str) -> None:
+        """
+        Adds a base prompt that always goes at the beginning
+
+        Args:
+            prompt (str): The base prompt to be added.
+
+        Returns:
+            None
+        """
         self.base_prompt.append(prompt + '\n')
 
-    def add_command(self, command):
+    def add_command(self, command: str) -> None:
+        """
+        Adds a command to the list of commands
+
+        Args:
+            command (str): The command from the user
+        Returns:
+            None
+        """
         self.commands.append(command)
 
-    def add_example(self, example):
+    def add_example(self, example: str) -> None:
+        """
+        Adds an example to the list of examples
+
+        Args:
+            example (str): The example to add
+        Returns:
+            None
+        """
         self.examples.append(example)
 
-    def add_variable(self, variable, visible=False):
+    def add_variable(self, variable: Variable, visible: bool=False) -> None:
         """
+        Adds a Variable to the list of Variables. If the Variable is a pandas
+        dataframe and has more than 10 rows of data, only the first 10 are
+        shown, UNLESS it's a schema. If that's the case, then we show all of
+        the rows
 
+        Args:
+            variable (Variable): The variable to add
+            visible (bool): Whether or not the Variable should be shown
+        Returns:
+            None
         """
         dots = ''
         if visible or variable.visible:
             if isinstance(variable.value, pd.DataFrame):
                 value = variable.value
                 if not value.empty:
-                    value = value.head(10)
-                    dots = '...\n'
+                    if 'schema' not in variable.name:
+                        value = value.head(10)
+                        dots = '...\n'
                 value = format_df(value)
             else:
                 value = variable.value
@@ -91,31 +135,77 @@ class Prompt:
             prompt += '\n'
             self.variables.append(prompt)
 
-    def add_resource(self, resource, visible=False):
+    def add_resource(self, resource: Resource, visible: bool=False) -> None:
+        """
+        Adds a Resource to the list of Resources
+
+        Args:
+            resource (Resource): The Resource to add
+            visible (bool): Whether or not the Resource should be shown
+        Returns:
+            None
+        """
         if visible or resource.visible:
             prompt = f'Name: {resource.name}\n'
             prompt += f'Description: {resource.description}\n'
             self.resources.append(prompt)
 
-    def add_tool(self, tool):
+    def add_tool(self, tool: Tool) -> None:
+        """
+        Adds a Tool to the list of Tools
+
+        Args:
+            tool (Tool): The Tool to add
+        Returns:
+            None
+        """
         self.tools.append(str(tool))
 
-    def add_constraint(self, constraint):
+    def add_constraint(self, constraint: str) -> None:
+        """
+        Adds a constraint to the list of constraints
+
+        Args:
+            constraint (str): The constraint to add
+        Returns:
+            None
+        """
         self.constraints.append(constraint)
 
-    def add_completed_step(self, step):
-        self.steps.append(step + '\n')
+    def add_completed_step(self, step: str) -> None:
+        """
+        Adds a step to the list of completed_steps
 
-    def generate_prompt(self, tot=80):
+        Args:
+            step (str): The step to add
+        Returns:
+            None
+        """
+        #num_step = len(self.steps) + 1
+        #step = f'Step: {num_step}\n{step}'
+        self.steps.append(step)
+
+    def generate_prompt(self, tot: int=80) -> str:
+        """
+        Organizes the base prompt, Variables, Resources, Tools, constraints,
+        completed steps, and commands to generate a string prompt for the LLM.
+
+        args:
+            tot (int): Number of '-' to use for the different sections
+        Returns:
+            prompt (str): The generated prompt
+        """
         prompt = ''
         dash = '-'
 
         def _get_dash(text):
+            """ Helper function to calculate the number of dashes to use """
             n = (tot - len(text)) // 2
             extra = '' if len(text) % 2 == 0 else dash
             return dash * n + extra + text + dash * n
 
         def _construct(text, items):
+            """ Constructs a section with correct dashes and newlines """
             items = '\n'.join(items) + '\n\n'
             prompt = _get_dash(text) + '\n'
             prompt += items
@@ -137,7 +227,8 @@ class Prompt:
             for idx, example in enumerate(self.examples):
                 prompt += f'EXAMPLE {idx + 1}:\n{example}\n'
         if self.steps:
-            prompt += _construct('COMPLETED STEPS', self.steps)
+            prompt += _construct(
+                'COMPLETED STEPS', [x + '\n--\n' for x in self.steps])
 
         prompt += tot * dash
         return prompt

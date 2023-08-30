@@ -13,9 +13,10 @@ def get_conn(db_file: str) -> sqlite3.Connection:
 
 def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
     """ Executes an SQL query """
+    cursor = conn.cursor()
     if query[0] == "'" or query[0] == '"':
         query = query[1:-1]
-    return pd.read_sql_query(query, conn)
+    return cursor.execute(query).fetchall()
 
 
 def get_table_schema(

@@ -10,7 +10,7 @@ from examples import project
 
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.agents.base import Agent
+from neosophia.agents.agent import Agent
 from neosophia.agents.system_prompts import UNLQ_GPT_BASE_PROMPT
 
 opj = os.path.join
@@ -90,11 +90,11 @@ def main(toggle):
 
             variables[table + '_table_schema'] = variable
 
-    system_prompt = UNLQ_GPT_BASE_PROMPT
+    agent_base_prompt = UNLQ_GPT_BASE_PROMPT
     agent = Agent(
         'MyAgent',
         workspace_dir,
-        system_prompt,
+        agent_base_prompt,
         tools,
         resources,
         variables,

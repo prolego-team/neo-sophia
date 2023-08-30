@@ -6,7 +6,7 @@ import time
 import datetime
 import readline
 
-from typing import Dict
+from typing import Any, Dict, List, Tuple, Union
 
 import neosophia.agents.utils as autils
 
@@ -33,14 +33,36 @@ class Agent:
             self,
             name: str,
             workspace_dir: str,
-            system_prompt: str,
+            agent_base_prompt: str,
             tools: Dict[str, Tool],
             resources: Dict[str, Resource],
             variables: Dict[str, Variable],
             model_name: str = 'gpt-4-0613',
-            toggle: bool = True):
-        """ Initializes an Agent object """
+            toggle: bool = True) -> None:
+        """
+        Initializes an Agent object.
 
+        Args:
+            name (str): The name of the agent.
+            workspace_dir (str): The directory where the agent's log will be
+            saved.
+            agent_base_prompt (str): The system prompt for the agent.
+            tools (Dict[str, Tool]): A dictionary of tools available to the
+            agent.
+            resources (Dict[str, Resource]): A dictionary of resources
+            available to the agent.
+            variables (Dict[str, Variable]): A dictionary of variables
+            available to the agent.
+            model_name (str, optional): The name of the GPT model to use.
+            toggle (bool, optional): A toggle for the agent. If set to True,
+            the Agent will make additionall LLM calls to toggle which Resources
+            and Variables are needed for the current step in execution. If
+            False, then all Resources and Variables will be included in the
+            Prompt.
+
+        Returns:
+            None
+        """
         # Keep a log and save it to the workspace_dir
         self.log = {
             'prompt': [],
@@ -61,7 +83,7 @@ class Agent:
         self.variables = variables
         self.resources = resources
         self.workspace_dir = workspace_dir
-        self.system_prompt = system_prompt
+        self.agent_base_prompt = agent_base_prompt
 
         # Manually add the `extract_answer` function that's used at the end of
         # every interaction
@@ -79,18 +101,42 @@ class Agent:
             call=sys.exit
         )
 
-    def calculate_prompt_cost(self, prompt: str):
-        """ Function to calculate the input or output cost """
+    def calculate_prompt_cost(self, prompt: str) -> Dict[str, float]:
+        """
+        Function to calculate the input or output cost
+
+        Args:
+            self (object): The class instance of the function.
+            prompt (str): The prompt string for which the cost needs to be
+            calculated.
+
+        Returns:
+            dict: A dictionary containing the cost for input and output tokens.
+        """
         num_tokens = autils.count_tokens(prompt, self.model_info.name)
         return {
             'input': num_tokens * self.model_info.input_token_cost,
             'output': num_tokens * self.model_info.output_token_cost
         }
 
-    def _toggle_items(self, items_dict, base_prompt, command):
+    def _toggle_items(
+            self,
+            items_dict: Union[Dict[str, Resource], Dict[str, Variable]],
+            base_prompt: str,
+            command: str) -> None:
         """
         Helper function to toggle visibility of items (variables or resources).
+
+        Args:
+            items_dict (dict): A dictionary containing items to toggle
+            visibility.
+            base_prompt (str): The base prompt to tell the LLM what its job is.
+            command (str): The command to toggle visibility.
+
+        Returns:
+            None
         """
+
         prompt = Prompt()
         prompt.add_base_prompt(base_prompt)
         prompt.add_command(command)
@@ -110,19 +156,44 @@ class Agent:
         for item_name in items_to_show.values():
             items_dict[item_name].visible = True
 
-    def toggle_variables(self, command):
-        """ Function to choose which variables to show the values for """
+    def toggle_variables(self, command: str) -> None:
+        """
+        Function to choose which variables to show the values for
+
+        Args:
+            command (str): the command from the user that will determine which
+            variables to toggle
+
+        Returns:
+            None
+        """
         self._toggle_items(self.variables, CHOOSE_VARIABLES_PROMPT, command)
 
-    def toggle_resources(self, command):
-        """ Function to choose which data resources to show """
+    def toggle_resources(self, command: str) -> None:
+        """
+        Function to choose which resources to show the values for
+
+        Args:
+            command (str): the command from the user that will determine which
+            resources to toggle
+
+        Returns:
+            None
+        """
         self._toggle_items(self.resources, CHOOSE_RESOURCES_PROMPT, command)
 
-    def toggle_variables_and_resources(self, command: str):
+    def toggle_variables_and_resources(self, command: str) -> None:
         """
         Tries to toggle which variables and resources are visible to the Agent
         in a single call. If the context is too big, it splits it into two
         calls (one for the variables, one for the resources)
+
+        Args:
+            command (str): the command from the user that will determine which
+            variables and resources to toggle
+
+        Returns:
+            None
         """
         prompt = Prompt()
         prompt.add_base_prompt(CHOOSE_VARIABLES_AND_RESOURCES_PROMPT)
@@ -155,18 +226,35 @@ class Agent:
             self.toggle_variables(command)
             self.toggle_resources(command)
 
-    def check_prompt(self, prompt: str):
-        """ Function to check if the prompt fits in the context window """
+    def check_prompt(self, prompt: str) -> bool:
+        """
+        Function to check if the prompt fits in the context window
+
+        Args:
+            prompt (str): The prompt to be checked.
+
+        Returns:
+            True if the prompt fits within the context window, False otherwise.
+        """
         num_tokens = autils.count_tokens(prompt, self.model_info.name)
         if num_tokens < self.model_info.max_tokens:
             return True
         return False
 
-    def build_prompt(self, user_input, completed_steps):
-        """ Builds a prompt object and returns a string """
+    def build_prompt(self, user_input: str, completed_steps: List[str]) -> str:
+        """
+        Builds a prompt object and returns a string
+
+        Args:
+            user_input (str): The question/command given by the user
+            completed_steps (list): The completed_steps taken by the Agent
+
+        Returns:
+            prompt (str): The generated prompt string.
+        """
 
         prompt = Prompt()
-        prompt.add_base_prompt(self.system_prompt)
+        prompt.add_base_prompt(self.agent_base_prompt)
 
         prompt.add_command(user_input)
 
@@ -187,16 +275,32 @@ class Agent:
 
         return prompt.generate_prompt()
 
-    def get_running_cost(self):
-        """ Returns the running input and output cost for the LLM """
+    def get_running_cost(self) -> Dict[str, float]:
+        """
+        Returns the running input, output, and total cost for the LLM
+
+        Args:
+            None
+        Returns:
+            cost_dict (dict): Dictionary contaning the input, output, and total
+            cost
+        """
+
         return {
             'input': self.input_cost,
             'output': self.output_cost,
             'total': self.input_cost + self.output_cost
         }
 
-    def chat(self):
-        """ Function to give a command to interact with the LLM """
+    def chat(self) -> None:
+        """
+        Function to give a command to interact with the LLM
+
+        Args:
+            None
+        Returns:
+            None
+        """
 
         time_start = time.time()
 
@@ -204,6 +308,7 @@ class Agent:
         self.llm_calls = 0
 
         def get_command():
+            """ Helper function to get a command from the user """
             print('\nAsk a question')
             user_input = ''
             while user_input == '':
@@ -300,18 +405,16 @@ class Agent:
 
             self.save_log()
 
-    def extract_value(self, key_expr):
+    def extract_value(self, key_expr: str) -> Any:
         """
         Extract a value from the variables dictionary based on a key or
         expression.
 
-        Parameters:
-        - variables (dict): Dictionary containing variable names and their
-          values.
-        - key_expr (str): Key or expression to evaluate.
+        Args:
+            key_expr (str): Key or expression to evaluate.
 
         Returns:
-        - Value extracted from the dictionary or evaluated from the expression.
+            Value extracted from the dictionary or evaluated from the expression.
         """
         # Check if key_expr is a direct key in the dictionary
         if key_expr in self.variables:
@@ -324,8 +427,22 @@ class Agent:
             # If evaluation fails, return the key_expr as is
             return key_expr
 
-    def extract_params(self, parsed_data: Dict):
-        """ Extract parameters from LLM response """
+    def extract_params(
+            self,
+            parsed_data: Dict[str, Union[str, List[str]]]) -> Tuple[
+                Tool, Dict[str, Any]]:
+        """
+        Extract parameters from LLM response
+
+        Args:
+        parsed_data (Dict): A dictionary containing the parsed data from LLM.
+
+        Returns:
+            tool (Tool): The tool extracted from available tools based on
+            'Tool' key in parsed_data.
+            args (Dict): A dictionary of arguments to be passed to the
+            function.
+        """
 
         func_key = 'Tool'
         param_prefix = 'Parameter_'
@@ -355,8 +472,8 @@ class Agent:
 
                 # Parameter is a string but not a SQL query
                 elif param_type == 'str' and param_name != 'query':
-                    param_value = str(param_value.replace("'", ""))
-                    param_value = str(param_value.replace('"', ""))
+                    if param_value[0] == "'" or param_value[0] == '"':
+                        param_value = param_value[1:-1]
 
                 # Parameter is a SQL query that has other variables in it
                 elif param_type == 'str' and param_name == 'query' and '+' in param_value:
@@ -371,6 +488,12 @@ class Agent:
         """
         Replace variables in the query string with their corresponding values
         from the variables dictionary.
+
+        Args:
+            query (str): The query string to replace variables in.
+
+        Returns:
+            query (str): The modified query string with variables replaced.
         """
 
         # Regular expression pattern to identify potential variable names
@@ -393,8 +516,17 @@ class Agent:
 
         return query
 
-    def extract_answer(self, question):
-        """ """
+    def extract_answer(self, question: str) -> str:
+        """
+        Extracts an answer to a given question.
+
+        Args:
+            question (str): The question for which the answer is to be
+            extracted.
+
+        Returns:
+            extracted_answer (str): The extracted answer to the question.
+        """
         prompt = Prompt()
         prompt.add_base_prompt(ANSWER_QUESTION_PROMPT)
         prompt.add_command(question)
@@ -404,8 +536,23 @@ class Agent:
         prompt_str = prompt.generate_prompt()
         return self.execute(prompt_str)
 
-    def execute(self, prompt, print_prompt=True, print_response=True):
-        """ """
+    def execute(
+            self,
+            prompt: str,
+            print_prompt: bool=True,
+            print_response: bool=True) -> str:
+        """
+        Calls the LLM, updates the running cost, adds the prompt and response
+        to the log, and prints the prompt/response.
+
+        Args:
+            prompt (str): The prompt for the LLM
+            print_prompt (bool): If True, prints the prompt
+            print_response (bool): If True, prints the response
+
+        Returns:
+            response (str): The response from the LLM.
+        """
         self.llm_calls += 1
         if print_prompt or print_response:
             print('Thinking...')
@@ -427,16 +574,16 @@ class Agent:
             print('\n')
         return response
 
-    def save_log(self):
+    def save_log(self) -> None:
         """
         Save the log dictionary to a text file in a readable format.
 
-        Parameters:
-        - log (dict): Dictionary containing prompts and responses.
-        - filename (str): Name of the file to save the log.
+        Args:
+            log (dict): Dictionary containing prompts and responses.
+            filename (str): Name of the file to save the log.
 
         Returns:
-        None
+            None
         """
         save_dir = opj(self.workspace_dir, 'logs')
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
