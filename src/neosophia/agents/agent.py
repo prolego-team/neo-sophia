@@ -292,6 +292,81 @@ class Agent:
             'total': self.input_cost + self.output_cost
         }
 
+    def interact(self, user_input):
+
+        completed_steps = []
+
+        prompt_str = self.build_prompt(user_input, completed_steps)
+
+        # Toggle variables and resources on/off if the user wants or if the
+        # prompt with all variables and resources is too long
+        if self.toggle or not self.check_prompt(prompt_str):
+            self.toggle_variables_and_resources(user_input)
+            prompt_str = self.build_prompt(user_input, completed_steps)
+
+        while True:
+
+            response = self.execute(prompt_str)
+
+            completed_steps.append(response)
+
+            parsed_response = autils.parse_response(response)
+            tool, args = self.extract_params(parsed_response)
+
+            yield #self.variables
+
+            # Agent chose a tool that isn't available
+            if tool is None:
+                completed_steps[-1] = completed_steps[-1] + NO_TOOL_PROMPT
+                prompt_str = self.build_prompt(user_input, completed_steps)
+                continue
+
+            # The LLM has enough information to answer the question
+            if tool.name == 'extract_answer':
+                answer = self.extract_answer(user_input)
+                break
+
+            try:
+                res = tool.call(**args)
+            except Exception as e:
+                # Add the error into the prompt so it can fix it
+                completed_steps[-1] = completed_steps[-1] + f'\nERROR\n{e}'
+                prompt_str = self.build_prompt(user_input, completed_steps)
+                continue
+
+            # Variable name and description from function call
+            return_name = parsed_response['Returned'].replace(
+                ' ', '').rstrip()
+            description = parsed_response['Description']
+
+            # Add variable to variables
+            return_var = Variable(
+                name=return_name,
+                value=res,
+                description=description)
+            self.variables[return_name] = return_var
+
+            prompt_str = self.build_prompt(user_input, completed_steps)
+
+            # Toggle variables and resources
+            if self.toggle or not self.check_prompt(prompt_str):
+                self.toggle_variables_and_resources(user_input)
+                prompt_str = self.build_prompt(user_input, completed_steps)
+
+            # Get an approximate token count without needing to encode
+            num_tokens = int(len(prompt_str) // 4)
+
+            n = 1
+            # Truncate prompt if it's too long - probably a better way
+            # to do this to keep relevant information
+            while num_tokens > self.model_info.max_tokens:
+                prompt_str = prompt_str[n:]
+                n += 1
+                num_tokens = autils.count_tokens(
+                    prompt_str, self.model_info.name)
+
+        return answer
+
     def chat(self) -> None:
         """
         Function to give a command to interact with the LLM
@@ -321,74 +396,7 @@ class Agent:
 
             user_input = get_command()
 
-            completed_steps = []
-
-            prompt_str = self.build_prompt(user_input, completed_steps)
-
-            # Toggle variables and resources on/off if the user wants or if the
-            # prompt with all variables and resources is too long
-            if self.toggle or not self.check_prompt(prompt_str):
-                self.toggle_variables_and_resources(user_input)
-                prompt_str = self.build_prompt(user_input, completed_steps)
-
-            while True:
-
-                response = self.execute(prompt_str)
-
-                completed_steps.append(response)
-
-                parsed_response = autils.parse_response(response)
-                tool, args = self.extract_params(parsed_response)
-
-                # Agent chose a tool that isn't available
-                if tool is None:
-                    completed_steps[-1] = completed_steps[-1] + NO_TOOL_PROMPT
-                    prompt_str = self.build_prompt(user_input, completed_steps)
-                    continue
-
-                # The LLM has enough information to answer the question
-                if tool.name == 'extract_answer':
-                    answer = self.extract_answer(user_input)
-                    break
-
-                try:
-                    res = tool.call(**args)
-                except Exception as e:
-                    # Add the error into the prompt so it can fix it
-                    completed_steps[-1] = completed_steps[-1] + f'\nERROR\n{e}'
-                    prompt_str = self.build_prompt(user_input, completed_steps)
-                    continue
-
-                # Variable name and description from function call
-                return_name = parsed_response['Returned'].replace(
-                    ' ', '').rstrip()
-                description = parsed_response['Description']
-
-                # Add variable to variables
-                return_var = Variable(
-                    name=return_name,
-                    value=res,
-                    description=description)
-                self.variables[return_name] = return_var
-
-                prompt_str = self.build_prompt(user_input, completed_steps)
-
-                # Toggle variables and resources
-                if self.toggle or not self.check_prompt(prompt_str):
-                    self.toggle_variables_and_resources(user_input)
-                    prompt_str = self.build_prompt(user_input, completed_steps)
-
-                # Get an approximate token count without needing to encode
-                num_tokens = int(len(prompt_str) // 4)
-
-                n = 1
-                # Truncate prompt if it's too long - probably a better way
-                # to do this to keep relevant information
-                while num_tokens > self.model_info.max_tokens:
-                    prompt_str = prompt_str[n:]
-                    n += 1
-                    num_tokens = autils.count_tokens(
-                        prompt_str, self.model_info.name)
+            answer = self.interact(user_input)
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)
