@@ -1,5 +1,5 @@
 """ Module for holding data classes """
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from dataclasses import dataclass
 
 from neosophia.llmtools import openaiapi as oaiapi
@@ -12,7 +12,7 @@ class Resource:
     name: str
     path: str
     description: str
-    visible = True
+    visible: bool = True
 
     def __str__(self):
 
@@ -29,8 +29,8 @@ class Variable:
     name: str
     value: Any
     description: str
-    summary = None
-    visible = True
+    summary: Optional[str] = None
+    visible: bool = True
 
     def to_string(self):
         output = f'\n{Colors.BLUE}Name: {Colors.ENDC}{self.name}\n'
