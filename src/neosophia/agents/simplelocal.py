@@ -127,11 +127,19 @@ def build_llama2_wrapper(
             else:
                 # build the prompt manually
                 prompt = messages_to_llama2_prompt(messages)
+
+                hash_str = str(hash(prompt))
+                prompt_file_path = f'prompt_{hash_str}.txt'
+                with open(prompt_file_path, 'w') as fp:
+                    fp.write(prompt)
+
                 output = llama_model(
                     prompt=prompt,
                     temperature=0.7,
-                    repeat_penalty=1.1,
+                    # repeat_penalty=1.1,
+                    repeat_penalty=1.2,
                     max_tokens=LLAMA2_MAX_TOKENS,
+                    stop=['[INST', '[Inst', '### ', '<|im_end|>', '<|im_start|>']
                 )
                 response = output['choices'][0]['text']
 

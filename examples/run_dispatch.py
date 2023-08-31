@@ -18,7 +18,8 @@ from examples import project
 def main():
     """main program"""
 
-    llama_models_dir_path = '/Users/ben/Prolego/code/llama.cpp'
+    # llama_models_dir_path = '/Users/ben/Prolego/code/llama.cpp'
+    llama_models_dir_path = '/Users/ben/Prolego/models'
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -27,11 +28,14 @@ def main():
     # prepare info
 
     functions = tdp.EXAMPLE_FUNCTIONS
+    functions = dict(functions)
+    del functions['find_document']
 
     questions = [
-        'Find up to three documents that describes the process for second mortgages.',
-        'Which customers have more than $1000 in their Roth IRA?',
-        'What is the current date and time?'
+        'Which customer most recently opened a checking account?',
+        # 'Find up to three documents that describes the process for second mortgages.',
+        # 'Which customers have more than $1000 in their Roth IRA?',
+        # 'What is the current date and time?'
     ]
 
     dispatchers = {
@@ -40,18 +44,21 @@ def main():
             question=q,
             functions=f
         ),
-        'OpenAI - Function Calling': lambda q, f: dp.dispatch_openai_functioncall(
-            # model='gpt-4',
-            model='gpt-4-0613',
-            question=q,
-            functions=f
-        )
+        # 'OpenAI - Function Calling': lambda q, f: dp.dispatch_openai_functioncall(
+        #     # model='gpt-4',
+        #     model='gpt-4-0613',
+        #     question=q,
+        #     functions=f
+        # )
     }
 
     # add local llama-2 dispatchers
 
     for name, path in [
-            ('llama-2-13b-chat - Custom Prompt', 'llama-2-13b-chat.ggmlv3.q4_0.bin'),
+            # ('llama-2-13b-chat - Custom Prompt', 'llama-2-13b-chat.ggmlv3.q4_0.bin'),
+            # ('code-llama-13b-chat - Custom Prompt', 'codellama-13b-instruct.Q5_K_M.gguf'),
+            # ('code-llama-34b-chat - Custom Prompt', 'codellama-34b-instruct.Q5_K_M.gguf'),
+            ('code-llama-34b-chat - Custom Prompt', 'codellama-34b-instruct.Q4_K_M.gguf'),
             # ('llama-2-13b - Custom Prompt', 'llama-2-13b.ggmlv3.q4_0.bin')
             ]:
         model_file_path = os.path.join(llama_models_dir_path, path)

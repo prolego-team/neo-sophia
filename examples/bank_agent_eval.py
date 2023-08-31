@@ -60,7 +60,7 @@ def main():
     """main program"""
 
     # configuration
-    n_runs = 3
+    n_runs = 1
 
     # setup
     api_key = oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
@@ -83,8 +83,21 @@ def main():
     def get_table_schema(name: str) -> str:
         return sqlite_utils.get_table_schema(db_connection, name).to_string()
 
+    import pandas as pd
+
+    def build_query_db_debug(conn):
+        def query_db_debug(query: str) -> str:
+            print(f'\t\tQUERY STRING: ```{query}```')
+            try:
+                res = pd.read_sql_query(query, conn).to_string()
+            except Exception as error:
+                res = f'Query failed: {error}'
+            return res
+        return query_db_debug
+
     functions_with_get_schema = {
-        'query_database': query_database,
+        # 'query_database': query_database,
+        'query_database': build_query_db_debug(db_connection),
         'get_table_schema': get_table_schema
     }
 
@@ -98,8 +111,12 @@ def main():
     # )
     model_path = os.path.join(
         '/Users/ben/Prolego/models',
+
         # 'codellama-13b-instruct.Q5_K_M.gguf'
-        'codellama-13b-instruct.Q5_K_M.gguf'
+        # 'codellama-34b-instruct.Q4_K_M.gguf'
+        # 'wizardcoder-python-13b-v1.0.Q4_K_M.gguf'  # TODO: needs different prompt format
+        # 'llama-2-13b-chat.q4_0.gguf'
+        'codellama-13b-oasst-sft-v10.Q4_K_M.gguf'      # TODO: needs different prompt format
     )
 
     assert os.path.exists(model_path)
@@ -301,7 +318,7 @@ def find_answer(messages: Iterable[openai.Message]) -> Tuple[Optional[str], int]
                 print('Name:', message.name)
                 print('Content:', message.content)
                 print('Function Call:', message.function_call)
-                print('~~~')
+                print('~~~ ~~~ ~~~ ~~~ ~~~')
             if message.role == 'system' or message.role == 'user' or message.role == 'function':
                 call_count += 1
             if message.role == 'assistant':
@@ -336,7 +353,6 @@ def patch_format_message_simple(msg: str):
     """replace the default format message"""
     react_chat.FORMAT_MESSAGE_BACKUP = react_chat.FORMAT_MESSAGE
     react_chat.FORMAT_MESSAGE = msg
-
 
 
 def undo_patch_format_message_simple():

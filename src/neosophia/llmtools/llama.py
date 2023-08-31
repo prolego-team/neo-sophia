@@ -26,10 +26,11 @@ def llama2_text(
         print(text)
 
         output = model(
-            prompt=f'[INST]{text}[/INST]',
+            prompt=f'[INST] {text} [/INST]',
             temperature=0.7,
             repeat_penalty=1.1,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            stop='[INST]'  # stop when we hit another INST
         )
         answer = output['choices'][0]['text']
         print('~~~~ ANSWER ~~~~ ~~~~ ~~~~')
