@@ -61,7 +61,8 @@ def main(toggle):
         df_variables = {}
         for variable in variables.values():
             df_variables.setdefault('Name', []).append(variable.name)
-            df_variables.setdefault('Value', []).append(str(variable.value))
+            df_variables.setdefault('Value', []).append(
+                str(variable.value).replace('\n', '<br>'))
             df_variables.setdefault(
                 'Description', []).append(variable.description)
         return pd.DataFrame(df_variables)
@@ -84,6 +85,8 @@ def main(toggle):
 
     def new_question_wrapper():
         return ''
+
+    import pickle
 
     def agent_wrapper(user_input, chat_history):
 
@@ -133,14 +136,28 @@ def main(toggle):
             variables,
             toggle=toggle)
 
+        #with open('temp.pkl', 'rb') as f:
+        #    x = pickle.load(f)
+        #v = x['variables']
+        #print(v, '\n')
+        #v = v['Value'].values[1]
+        #print(v, '\n')
+        #exit()
+        #r = x['resources']
+        #t = x['tools']
+
+        #for _ in range(100):
         for _ in agent.interact(user_input):
 
             #chat_history.append(agent.log['prompt'][-1])
             #chat_history.append(agent.log['response'][-1])
+            v = variables_to_dataframe(agent.variables)
+            t = tools_to_dataframe(agent.tools)
+            r = resources_to_dataframe(agent.resources)
             yield (
-                variables_to_dataframe(agent.variables),
-                tools_to_dataframe(agent.tools),
-                resources_to_dataframe(agent.resources),
+                v,
+                t,
+                r,
                 chat_history
             )
 
@@ -155,6 +172,8 @@ def main(toggle):
             with gr.Column():
                 gr.Markdown('## Variables')
                 variables_df = gr.Dataframe(value=None, wrap=True)
+                #variables_df = gr.Textbox(value=None, interactive=False)
+                #variables_df = gr.Markdown(value=None)
         with gr.Row():
             with gr.Column():
                 gr.Markdown('## Tools')
