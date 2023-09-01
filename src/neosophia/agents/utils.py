@@ -152,7 +152,6 @@ def build_function_dict_from_module(
         function names to tuples containing the callable function and its
         string representation.
     """
-
     function_dict = {}
     with open(module.__file__, 'r') as f:
         function_text = ''.join(f.readlines())
@@ -290,12 +289,12 @@ def setup_and_load_yaml(filepath: str, key: str) -> Dict[str, Dict[str, Any]]:
 
 
 def write_dict_to_yaml(
-        functions_dict: Dict, keyword: str, filename: str) -> None:
+        data_dict: Dict, keyword: str, filename: str) -> None:
     """
     Write the given dictionary to a YAML file using a specified keyword.
 
     Args:
-        functions_dict (Dict): A dictionary containing the details to be
+        data_dict (Dict): A dictionary containing the details to be
         written to the YAML file.
         keyword (str): The keyword to use when wrapping the dictionary in the
         YAML file.
@@ -305,7 +304,7 @@ def write_dict_to_yaml(
         None
     """
     # Transform the dictionary into the desired format
-    data_list = [details for name, details in functions_dict.items()]
+    data_list = [details for name, details in data_dict.items()]
 
     # Wrap the list in a dictionary with the keyword
     data = {keyword: data_list}
@@ -358,6 +357,7 @@ def process_for_yaml(name: str, description: str, width=80) -> str:
     wrapper = textwrap.TextWrapper(width=width, subsequent_indent='    ')
     wrapped_description = wrapper.fill(description)
     yaml_output = f'- name: {name}\n  description: {wrapped_description}'
+
     return yaml_output
 
 
