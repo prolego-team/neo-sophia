@@ -56,7 +56,6 @@ class TestUtils(unittest.TestCase):
     def test_setup_sqlite_resources(self):
         x = setup_sqlite_resources(
             TEST_CONFIG['Resources']['SQLite'],
-            TEST_CONFIG['Agent']['workspace_dir'],
             TEST_CONFIG['Agent']['resources_filename'],
             WORKSPACE_RESOURCES
         )

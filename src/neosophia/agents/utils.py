@@ -7,21 +7,18 @@ import inspect
 import textwrap
 import importlib
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from dataclasses import asdict, dataclass
+from typing import Any, Callable, Dict, List, Tuple
+from dataclasses import asdict
 
 import yaml
 import tiktoken
 import astunparse
 
+import neosophia.agents.system_prompts as sp
+
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.agents.prompt import Prompt
-from neosophia.agents.data_classes import Colors, Resource, Tool, Variable
-from neosophia.agents.system_prompts import (DB_INFO_PROMPT,
-                                             FUNCTION_GPT_PROMPT,
-                                             NO_CONVERSATION_CONSTRAINT,
-                                             VARIABLE_SUMMARY_PROMPT)
+from neosophia.agents.data_classes import Colors, Resource, Tool
 
 opj = os.path.join
 
@@ -50,7 +47,6 @@ def cprint(*args) -> None:
 
 def setup_sqlite_resources(
         sqlite_resources: List[Dict[str, str]],
-        workspace_dir: str,
         resources_filepath: str,
         workspace_resources: Dict[str, Dict[str, str]]) -> Dict[str, Resource]:
 
@@ -61,8 +57,6 @@ def setup_sqlite_resources(
         sqlite_resources (list): List of dictionaries representing the SQLite
         resources to be added.  Each dictionary must contain the keys 'name',
         'path', and 'description'.
-        workspace_dir (str): Path to the directory where the Agent's workspace
-        is located.
         resources_filepath (str): Path to the resources yaml file.
         workspace_resources (dict): Dictionary containing existing workspace
         resources.
@@ -174,7 +168,7 @@ def convert_function_str_to_yaml(function_str: str) -> str:
     Returns:
         str: The YAML representation of the given function string.
     """
-    prompt = FUNCTION_GPT_PROMPT + '\n' + function_str
+    prompt = sp.FUNCTION_GPT_PROMPT + '\n' + function_str
     return oaiapi.chat_completion(prompt=prompt, model='gpt-4')
 
 
@@ -228,7 +222,7 @@ def get_database_description(db_file: str, model: str = 'gpt-4') -> str:
     for table in tables:
         table_schemas[table] = sql_utils.get_table_schema(conn, table)
 
-    prompt = DB_INFO_PROMPT
+    prompt = sp.DB_INFO_PROMPT
     prompt += f'Database name: {db_file}\n'
     prompt += 'Database Tables:\n\n'
     for table, schema in table_schemas.items():
@@ -284,8 +278,8 @@ def setup_and_load_yaml(filepath: str, key: str) -> Dict[str, Dict[str, Any]]:
     # Process the loaded data
     if data is None:
         return {}
-    else:
-        return {item['name']: item for item in data[key]}
+
+    return {item['name']: item for item in data[key]}
 
 
 def write_dict_to_yaml(
@@ -376,7 +370,7 @@ def save_tools_to_yaml(tools: Dict[str, Tool], filename: str) -> None:
 
     # Convert the tools dictionary into a list of dictionaries
     tools_list = []
-    for tool_name, tool in tools.items():
+    for tool in tools.values():
         tool_yaml = yaml.safe_load(tool.description)
         tools_list.append(tool_yaml)
 

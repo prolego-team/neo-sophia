@@ -9,17 +9,11 @@ import readline
 from typing import Any, Dict, List, Tuple, Union
 
 import neosophia.agents.utils as autils
+import neosophia.agents.system_prompts as sp
 
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.agents.prompt import Prompt
 from neosophia.agents.data_classes import GPT_MODELS, Resource, Tool, Variable
-from neosophia.agents.system_prompts import (ANSWER_QUESTION_PROMPT,
-                                             CHOOSE_RESOURCES_PROMPT,
-                                             CHOOSE_VARIABLES_AND_RESOURCES_PROMPT,
-                                             CHOOSE_VARIABLES_PROMPT,
-                                             FIX_QUERY_PROMPT,
-                                             NO_CONVERSATION_CONSTRAINT,
-                                             NO_TOOL_PROMPT)
 
 opj = os.path.join
 
@@ -140,7 +134,7 @@ class Agent:
         prompt = Prompt()
         prompt.add_base_prompt(base_prompt)
         prompt.add_command(command)
-        prompt.add_constraint(NO_CONVERSATION_CONSTRAINT)
+        prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
 
         for item in items_dict.values():
             item.visible = False
@@ -167,7 +161,7 @@ class Agent:
         Returns:
             None
         """
-        self._toggle_items(self.variables, CHOOSE_VARIABLES_PROMPT, command)
+        self._toggle_items(self.variables, sp.CHOOSE_VARIABLES_PROMPT, command)
 
     def toggle_resources(self, command: str) -> None:
         """
@@ -180,7 +174,7 @@ class Agent:
         Returns:
             None
         """
-        self._toggle_items(self.resources, CHOOSE_RESOURCES_PROMPT, command)
+        self._toggle_items(self.resources, sp.CHOOSE_RESOURCES_PROMPT, command)
 
     def toggle_variables_and_resources(self, command: str) -> None:
         """
@@ -196,9 +190,9 @@ class Agent:
             None
         """
         prompt = Prompt()
-        prompt.add_base_prompt(CHOOSE_VARIABLES_AND_RESOURCES_PROMPT)
+        prompt.add_base_prompt(sp.CHOOSE_VARIABLES_AND_RESOURCES_PROMPT)
         prompt.add_command(command)
-        prompt.add_constraint(NO_CONVERSATION_CONSTRAINT)
+        prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
 
         def helper(items_dict):
             for item in items_dict.values():
@@ -342,7 +336,7 @@ class Agent:
 
                 # Agent chose a tool that isn't available
                 if tool is None:
-                    completed_steps[-1] = completed_steps[-1] + NO_TOOL_PROMPT
+                    completed_steps[-1] = completed_steps[-1] + sp.NO_TOOL_PROMPT
                     prompt_str = self.build_prompt(user_input, completed_steps)
                     continue
 
@@ -422,7 +416,7 @@ class Agent:
 
         # If not, try to evaluate it as an expression
         try:
-            x = eval(key_expr, {}, self.variables).value
+            return eval(key_expr, {}, self.variables).value
         except:
             # If evaluation fails, return the key_expr as is
             return key_expr
@@ -505,7 +499,7 @@ class Agent:
             word = match.group()
             if word in self.variables:
                 prompt = Prompt()
-                prompt.add_base_prompt(FIX_QUERY_PROMPT)
+                prompt.add_base_prompt(sp.FIX_QUERY_PROMPT)
                 for variable in self.variables.values():
                     prompt.add_variable(variable, True)
 
@@ -528,7 +522,7 @@ class Agent:
             extracted_answer (str): The extracted answer to the question.
         """
         prompt = Prompt()
-        prompt.add_base_prompt(ANSWER_QUESTION_PROMPT)
+        prompt.add_base_prompt(sp.ANSWER_QUESTION_PROMPT)
         prompt.add_command(question)
         for variable in self.variables.values():
             if variable.visible:

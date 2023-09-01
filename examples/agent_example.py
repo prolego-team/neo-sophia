@@ -47,7 +47,7 @@ def main(toggle):
         resources_filepath, 'resources')
 
     resources = autils.setup_sqlite_resources(
-        config['Resources']['SQLite'], workspace_dir,
+        config['Resources']['SQLite'],
         resources_filepath, workspace_resources)
 
     # Dictionary to store all variables the Agent has access to
