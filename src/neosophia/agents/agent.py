@@ -25,7 +25,6 @@ class Agent:
     """
     def __init__(
             self,
-            name: str,
             workspace_dir: str,
             agent_base_prompt: str,
             tools: Dict[str, Tool],
@@ -70,7 +69,6 @@ class Agent:
         self.input_cost = 0.
         self.output_cost = 0.
 
-        self.name = name
         self.tools = tools
         self.toggle = toggle
         self.llm_calls = 0

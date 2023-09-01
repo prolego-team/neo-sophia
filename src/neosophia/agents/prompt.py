@@ -10,7 +10,7 @@ from neosophia.agents.data_classes import Resource, Tool, Variable
 
 def format_df(df: pd.DataFrame) -> str:
     """
-    Function that stripts out all whitespace between dataframe columns while
+    Function that strips out all whitespace between dataframe columns while
     preserving white space in individual cells
 
     Args:
