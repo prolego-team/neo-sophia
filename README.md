@@ -54,16 +54,34 @@ Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
 
 # Episodes
 
-## Episode 6 - Evaluation techniques
+## Episode 7 - How to pick the Best LLM for Your Project
+GPT-3? GPT-4? Claude 2? Open source? You have so many options and don't know where to start. Fortunately, there is an easy answer for the majority of teams. Start with the most intelligent model, currently GPT-4.
+
+Video: How to pick the Best LLM for Your Project
+
+## Episode 6 - Improving LLM Reliablity with Evaluation frameworks
+LLM hallucinations and inconsistencies are real challenges, but you can begin overcoming them with a good evaluation framework.
+
+Video: [Conquer LLM Hallucinations with an Evaluation Framework](https://www.youtube.com/watch?v=mW3_vn1zGfE)
+
+1. Checkout Episode 6, [Release v0.6.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.6.0)
+````
+    git checkout tags/v0.6.0
+````
+2. Start the demo by running
+
+````
+    python -m examples.bank_agent_eval
+````
 
 ## Episode 5 - Queries Across Multiple Data Sources
 Every practical problem you encounter will require accessing large datasets such as multiple databases. In doing so you will encounter the limits of the LLM's context window. In this example we explain this limitation and a simple approach for overcoming it.
 
-Video: coming soon!
+Video: [How to Overcome LLM Context Window Limitations](https://www.youtube.com/watch?v=_deDqraxqog)
 
-1. Checkout Episode 5, [Release v0.X.0]()
+1. Checkout Episode 5, [Release v0.5.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.5.0)
 ````
-    git checkout tags/v0.X.0
+    git checkout tags/v0.5.0
 ````
 2. Start the demo by running
 
@@ -113,10 +131,10 @@ Videos
 
 ### Running the Episode 2 application
 
-1. Checkout Episode 2, [Release v0.2.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.0)
+1. Checkout Episode 2, [Release v0.2.1](https://github.com/prolego-team/neo-sophia/releases/tag/v0.2.1)
 
 ````
-    git checkout tags/v0.2.0
+    git checkout tags/v0.2.1
 ````
 
 2. Start the demo by running
