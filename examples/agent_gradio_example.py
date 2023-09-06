@@ -13,6 +13,7 @@ from examples import project
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.agents.agent import Agent
+from neosophia.agents.data_classes import Variable
 from neosophia.agents.system_prompts import UNLQ_GPT_BASE_PROMPT
 
 opj = os.path.join
@@ -49,8 +50,7 @@ def main(toggle):
         resources_filepath, 'resources')
 
     resources = autils.setup_sqlite_resources(
-        config['Resources']['SQLite'], workspace_dir,
-        resources_filepath, workspace_resources)
+        config['Resources']['SQLite'], resources_filepath, workspace_resources)
 
     # Dictionary to store all variables the Agent has access to
     variables = {}
@@ -86,8 +86,6 @@ def main(toggle):
     def new_question_wrapper():
         return ''
 
-    import pickle
-
     def agent_wrapper(user_input, chat_history):
 
         # Connect to any SQLite databases
@@ -96,7 +94,7 @@ def main(toggle):
             name = db_info['name']
             var_name = name + '_conn'
 
-            variable = autils.Variable(
+            variable = Variable(
                 name=var_name,
                 value=conn,
                 description=f'Connection to {name} database')
@@ -120,7 +118,7 @@ def main(toggle):
                 description = f'Schema for table {table} in database {name}\n'
                 description += example_data
 
-                variable = autils.Variable(
+                variable = Variable(
                     name=table + '_table_schema',
                     value=table_schema,
                     description=description)
@@ -128,7 +126,6 @@ def main(toggle):
                 variables[table + '_table_schema'] = variable
 
         agent = Agent(
-            'MyAgent',
             workspace_dir,
             agent_base_prompt,
             tools,

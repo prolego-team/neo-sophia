@@ -6,7 +6,7 @@ from typing import Any, List
 import pandas as pd
 
 
-def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
+def execute_query(conn: sqlite3.Connection, query: str) -> pd.DataFrame:
     """
     This function executes a given SQL query on a specified sqlite3 database
     connection and returns the results as a pandas DataFrame.
