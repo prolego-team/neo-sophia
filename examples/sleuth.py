@@ -26,8 +26,8 @@ log = logging.getLogger('agent')
 # ===================================================================
 
 SIMDIR = Path(project.DATASETS_DIR_PATH) / Path('sim1')
-FINANCE_DATABASE = SIMDIR / 'Company_B_finance.db'
-COMPETITION_DATABSE = SIMDIR / 'Company_B_competition.db'
+FINANCE_DATABASE = SIMDIR / 'Techtonic_Tech_finance.db'
+COMPETITION_DATABSE = SIMDIR / 'Techtonic_Tech_competition.db'
 DATABASES = {
     'finance_database': (FINANCE_DATABASE, 'This database describes the company financial operation, including costs and revenues.'),
     'competitor_database': (COMPETITION_DATABSE, 'This database describes activities of the company\'s competitors who may influence the market.')
@@ -40,24 +40,24 @@ All units are in $1000.
                           |      Q1 |      Q2 |      Q3 |      Q4 |
 --------------------------------------------------------------------
 Revenue
-Product sales             |   17791 |   22115 |   17165 |   10804 |
+Product sales             |   18159 |   22666 |   17782 |   11090 |
 --------------------------------------------------------------------
 Costs
-Cost of goods sold        |   14820 |   18489 |   14273 |    9047 |
+Cost of goods sold        |   15106 |   18930 |   15000 |    9403 |
 --------------------------------------------------------------------
-GROSS PROFIT              |    2971 |    3626 |    2892 |    1756 |
+GROSS PROFIT              |    3053 |    3735 |    2782 |    1687 |
 --------------------------------------------------------------------
 Operating Expenses
-HR Expenditure            |    1485 |    1505 |    1499 |    1515 |
-Marketing Expenditure     |      59 |      61 |      60 |      61 |
-Operations Expenditure    |      30 |      29 |      31 |      29 |
-R&D Expenditure           |      60 |      60 |      59 |      60 |
+HR Expenditure            |    1482 |    1493 |    1494 |    1487 |
+Marketing Expenditure     |      61 |      60 |      61 |      60 |
+Operations Expenditure    |      30 |      30 |      30 |      30 |
+R&D Expenditure           |      59 |      60 |      60 |      60 |
 --------------------------------------------------------------------
-OPERATING INCOME          |    1337 |    1971 |    1243 |      91 |
+OPERATING INCOME          |    1421 |    2093 |    1137 |      49 |
 --------------------------------------------------------------------
-Taxes                     |     241 |     355 |     224 |      16 |
+Taxes                     |     256 |     377 |     205 |       9 |
 --------------------------------------------------------------------
-NET PROFIT                |    1096 |    1616 |    1019 |      75 |
+NET PROFIT                |    1165 |    1716 |     932 |      40 |
 """
 
 DEFAULT_QUESTION = 'Does anything look unusual in the report?'
@@ -91,9 +91,9 @@ SYSTEM_MESSAGE = (
     "\"Marketing Expenditure\", \"HR Expenditure\", \"R&D Expenditure\" and \"Operations Expenditure\".\n\n"
     "Answer the user's questions as best as you can, and prioritize using data from one or more of the databases."
     "You do not need permission to run a query against a databse, you can just do it, although you should "
-    "check to see if you already have part or all of the answer from your interaction history!\n\n"
-    "If you are unable to answer a question, suggest some alternative questions that you can answer.  Your"
-    "goal is to be helpful."
+    "check to see if you already have part or all of the answer from your interaction history.\n\n"
+    "Whenever you answer a question (or even if you are unable to answer a question definitively) always "
+    "suggest some alternative questions that you have the ability to answer.  Your goal is to be helpful."
 )
 
 
