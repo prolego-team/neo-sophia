@@ -6,7 +6,7 @@ This project is designed to assist analytics leaders, product managers, and deve
 
 1. Walkthrough videos available on [Prolego's YouTube Channel](https://www.youtube.com/@prolego9489).
 2. Tagged releases on the main branch of this repository.
-3. Conversations held within [Prolego's Discord community](https://discord.gg/tzjEEjyg).
+3. Conversations held within [Prolego's Discord community](https://discord.gg/TcxeD6q5).
 
 ## Capabilities approach
 We advise our clients to take a capabilties-based approach when building their AI. That is, create foundational solutions that allow you to solve many different business use cases. Unfortunately too many teams begin solving specifing business problems withough building a generalizable foundation. 
