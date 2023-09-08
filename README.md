@@ -1,15 +1,15 @@
 # Create your AI or LLM Strategy
 
-Large-scale language models like GPT-4 from OpenAI serve as foundational technologies that can be applied to virtually any business issue. However, the robust power and flexibility of this technology come with a significant challenge: it is extremely difficult to pinpoint the optimal opportunities for leveraging this technology within a company. 
+Large-scale language models like GPT-4 from OpenAI serve as foundational technologies that can be applied to virtually any business issue. However, the robust power and flexibility of this technology come with a significant challenge: it is extremely difficult to pinpoint the optimal opportunities for leveraging this technology within a company.
 
 This project is designed to assist analytics leaders, product managers, and development teams in surmounting these obstacles by demonstrating the technology's application across a variety of common business problems. The project unfolds through a series of episodes, each accompanied by the following resources:
 
 1. Walkthrough videos available on [Prolego's YouTube Channel](https://www.youtube.com/@prolego9489).
 2. Tagged releases on the main branch of this repository.
-3. Conversations held within [Prolego's Discord community](https://discord.gg/TcxeD6q5).
+3. Conversations held within [Prolego's Discord community](https://discord.gg/eaPAhJcTpJ).
 
 ## Capabilities approach
-We advise our clients to take a capabilties-based approach when building their AI. That is, create foundational solutions that allow you to solve many different business use cases. Unfortunately too many teams begin solving specifing business problems withough building a generalizable foundation. 
+We advise our clients to take a capabilties-based approach when building their AI. That is, create foundational solutions that allow you to solve many different business use cases. Unfortunately too many teams begin solving specifing business problems withough building a generalizable foundation.
 
 Most companies are developing the following capabilties as part of their AI strategy.
 
@@ -25,7 +25,7 @@ Most companies are developing the following capabilties as part of their AI stra
 | routine task automation        | Automating analysis of information from various sources, reasoning across them, and making decisions.                         |       [Episode 4](#episode-4---unified-nlq-with-a-table-and-document)                                                                 |
 
 ## Quickstart installation
-Remember, this is demo code! Don't attempt to use it for production without first redesigning it. 
+Remember, this is demo code! Don't attempt to use it for production without first redesigning it.
 
 First install the neo-sophia code on your local machine before proceeding to the examples from the Episodes below.
 
@@ -33,7 +33,7 @@ First install the neo-sophia code on your local machine before proceeding to the
 
     git clone https://github.com/prolego-team/neo-sophia.git
     conda env create -f neo-sophia/env.yml
-    conda activate neosophia 
+    conda activate neosophia
     pip install -e neo-sophia
     cd neo-sophia
     cp config_example.json config.json
@@ -50,7 +50,7 @@ First install the neo-sophia code on your local machine before proceeding to the
 
 If the tests pass you are ready to run the code in one of the Episodes.
 
-Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
+Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
@@ -109,7 +109,7 @@ Video: [Supercharge Your Data Anlaytics with LLM Agents](https://www.youtube.com
 What will be the AI "killer app" in the enterprise? Our bet is Unified Natural Language Query (NQL). It gives executives and business leaders the ability to get insights from data by asking "natural" questions, similar to how you currently use ChatGPT. In this Episode we describe the business problem and show the extensible power of a simple example of SQL generation supplemented with the reasoning power of an LLM like GPT-4.
 
 Video
-- [Unified Natural Language Query is the enerprise AI "killer app"](https://www.youtube.com/watch?v=zuLxXDdEVEE) 
+- [Unified Natural Language Query is the enerprise AI "killer app"](https://www.youtube.com/watch?v=zuLxXDdEVEE)
 
 1. Checkout Episode 3, [Release v0.3.2](https://github.com/prolego-team/neo-sophia/releases/tag/v0.3.2)
 
@@ -143,7 +143,7 @@ Videos
 ````
 
 ## Episode 1 - Embeddings, Semantic search and Document Q&A
-Most companies are struggling to pick the best AI use cases from many different options. By building a core competency in document embeddings you can begin developing a set of capabilities applicable for many enterprise use cases. In Episoide 1 we provide a primer on embeddings for a business audience and demonstrate the use of embeddings in semantic search and document Q&A. 
+Most companies are struggling to pick the best AI use cases from many different options. By building a core competency in document embeddings you can begin developing a set of capabilities applicable for many enterprise use cases. In Episoide 1 we provide a primer on embeddings for a business audience and demonstrate the use of embeddings in semantic search and document Q&A.
 
 This episode uses data from the [MSRB Regulatory Rulebook](https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf)
 
