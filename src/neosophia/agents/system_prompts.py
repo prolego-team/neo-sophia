@@ -95,6 +95,27 @@ Begin!
 
 """
 
+EXAMPLE_1 = """
+Thoughts: One aspect about forming this question is to identify who own a 'Dog' from the information in the 'pets' table. The SQL query "SELECT * FROM pets WHERE Animal='Dog'" can be used to fetch this data from the "Cats and Dogs" database.
+Resource: Cats and Dogs
+Tool: execute_query
+Parameter_0: conn | Cats and Dogs_conn | sqlite3.Connection | reference
+Parameter_1: query | "SELECT * FROM pets WHERE Animal='Dog'" | str | value
+Returned: dog_owners_data
+Description: DataFrame containing information about all dog owners from the 'pets' table in the "Cats and Dogs" database."""
+EXAMPLE_2 = """
+This is an example of something you SHOULD NOT do. DO NOT generate Python as
+part of the Parameter
+
+Thoughts: Now that I have the minimum auto loan interest rate, I need to identify the customers who have this auto interest rate. I will use the execute_query tool to run a select query on the auto_loan table to retrieve the customer account details with the minimum auto loan interest rate.
+Resource: SynthBank
+Tool: execute_query
+Parameter_0: conn | SynthBank_conn | sqlite3.Connection | reference
+Parameter_1: query | 'SELECT * FROM auto_loan WHERE interest_rate = ' + str(min_auto_loan_interest_rate.iloc[0][0]) | str | value
+Returned: customer_min_interest_rate_details
+Description: Customer account details with the minimum auto loan interest rate.
+"""
+
 CONSTRAINT_1 = (
     '- You do NOT have access to any other functions or tools aside'
     'from those listed in the TOOLS section.'

@@ -272,6 +272,9 @@ class Agent:
         prompt.add_constraint(sp.CONSTRAINT_6)
         prompt.add_constraint(sp.CONSTRAINT_7)
 
+        prompt.add_example(sp.EXAMPLE_1)
+        prompt.add_example(sp.EXAMPLE_2)
+
         prompt_dict = {
             'system_prompt': prompt.generate_prompt(),
             'user_prompt': '\n'.join([x for x in prompt.commands])

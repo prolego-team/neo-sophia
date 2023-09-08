@@ -227,8 +227,9 @@ class Prompt:
         if self.constraints:
             prompt += _construct('CONSTRAINTS', self.constraints)
         if self.examples:
+            prompt += _get_dash('EXAMPLES') + '\n'
             for idx, example in enumerate(self.examples):
-                prompt += f'EXAMPLE {idx + 1}:\n{example}\n'
+                prompt += f'EXAMPLE {idx + 1}:{example}\n\n'
         if self.steps:
             prompt += _construct(
                 'COMPLETED STEPS', [x + '\n--\n' for x in self.steps])
