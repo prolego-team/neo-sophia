@@ -40,24 +40,24 @@ All units are in $1000.
                           |      Q1 |      Q2 |      Q3 |      Q4 |
 --------------------------------------------------------------------
 Revenue
-Product sales             |   18159 |   22666 |   17782 |   11090 |
+Product sales             |   18013 |   22151 |   17212 |   10976 |
 --------------------------------------------------------------------
 Costs
-Cost of goods sold        |   15106 |   18930 |   15000 |    9403 |
+Cost of goods sold        |   15119 |   18542 |   14410 |    9224 |
 --------------------------------------------------------------------
-GROSS PROFIT              |    3053 |    3735 |    2782 |    1687 |
+GROSS PROFIT              |    2894 |    3609 |    2802 |    1751 |
 --------------------------------------------------------------------
 Operating Expenses
-HR Expenditure            |    1482 |    1493 |    1494 |    1487 |
-Marketing Expenditure     |      61 |      60 |      61 |      60 |
+HR Expenditure            |    1476 |    1514 |    1501 |    1512 |
+Marketing Expenditure     |      60 |      62 |      60 |      61 |
 Operations Expenditure    |      30 |      30 |      30 |      30 |
-R&D Expenditure           |      59 |      60 |      60 |      60 |
+R&D Expenditure           |      60 |      60 |      61 |      59 |
 --------------------------------------------------------------------
-OPERATING INCOME          |    1421 |    2093 |    1137 |      49 |
+OPERATING INCOME          |    1267 |    1944 |    1150 |      89 |
 --------------------------------------------------------------------
-Taxes                     |     256 |     377 |     205 |       9 |
+Taxes                     |     228 |     350 |     207 |      16 |
 --------------------------------------------------------------------
-NET PROFIT                |    1165 |    1716 |     932 |      40 |
+NET PROFIT                |    1039 |    1594 |     943 |      73 |
 """
 
 DEFAULT_QUESTION = 'Does anything look unusual in the report?'
@@ -84,7 +84,7 @@ FUNCTION_DESCRIPTIONS = dispatch.convert_function_descs({
 
 SYSTEM_MESSAGE = (
     "You are a business analyst for Tectonic Tech, Inc.  You have the ability to run sqlite queries "
-    "against the company's databses to collect information for the user.\n\n "
+    "against the company's FY2022 databses to collect information for the user.\n\n "
     "Techtonic Tech is a product company selling direct to consumers. You are in a small but stable market "
     "with only one direct competitor.\n\n"
     "The values of `expense_category` in the `operating_expenses` table in the `finance_database` include "
@@ -93,7 +93,8 @@ SYSTEM_MESSAGE = (
     "You do not need permission to run a query against a databse, you can just do it, although you should "
     "check to see if you already have part or all of the answer from your interaction history.\n\n"
     "Whenever you answer a question (or even if you are unable to answer a question definitively) always "
-    "suggest some alternative questions that you have the ability to answer.  Your goal is to be helpful."
+    "suggest some alternative questions that you have the ability to answer based on available data.  "
+    "Your goal is to be helpful."
 )
 
 
