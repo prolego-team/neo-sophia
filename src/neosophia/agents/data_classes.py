@@ -15,8 +15,8 @@ class Resource:
     visible: bool = True
 
     def __str__(self):
-
-        output = f'\n{Colors.BLUE}Resource Name: {Colors.ENDC}{self.name}\n'
+        #output = f'\n{Colors.BLUE}Resource Name: {Colors.ENDC}{self.name}\n'
+        output = f'\nResource Name: {self.name}\n'
         output += f'Path: {self.path}\n'
         output += f'Decription: {self.description}'
         output += f'Visible: {self.visible}'
@@ -33,9 +33,12 @@ class Variable:
     visible: bool = True
 
     def to_string(self):
-        output = f'\n{Colors.BLUE}Name: {Colors.ENDC}{self.name}\n'
-        output += f'{Colors.BLUE}Value:\n{Colors.ENDC}{self.value}\n'
-        output += f'{Colors.BLUE}Description: {Colors.ENDC}{self.description}\n'
+        #output = f'\n{Colors.BLUE}Name: {Colors.ENDC}{self.name}\n'
+        #output += f'{Colors.BLUE}Value:\n{Colors.ENDC}{self.value}\n'
+        #output += f'{Colors.BLUE}Description: {Colors.ENDC}{self.description}\n'
+        output = f'\nName: {self.name}\n'
+        output += f'Value:\n{self.value}\n'
+        output += f'Description: {self.description}\n'
         return output
 
     def get_summary(self, model_name):
@@ -47,7 +50,8 @@ class Variable:
     def __str__(self):
         output = self.to_string()
         if self.summary is not None:
-            output += f'{Colors.BLUE}Summary: {Colors.ENDC}{self.summary}\n'
+            #output += f'{Colors.BLUE}Summary: {Colors.ENDC}{self.summary}\n'
+            output += f'Summary: {self.summary}\n'
         return output
 
 
@@ -60,7 +64,8 @@ class Tool:
     call: Callable
 
     def __str__(self):
-        output = f'\n{Colors.BLUE}Tool Name: {Colors.ENDC}{self.name}\n'
+        #output = f'\n{Colors.BLUE}Tool Name: {Colors.ENDC}{self.name}\n'
+        output = f'\nTool Name: {self.name}\n'
         output += f'Description: {self.description}\n'
         return output
 

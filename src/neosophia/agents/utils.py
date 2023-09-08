@@ -168,8 +168,10 @@ def convert_function_str_to_yaml(function_str: str) -> str:
     Returns:
         str: The YAML representation of the given function string.
     """
-    prompt = sp.FUNCTION_GPT_PROMPT + '\n' + function_str
-    return oaiapi.chat_completion(prompt=prompt, model='gpt-4')
+    return oaiapi.chat_completion(
+        system_prompt=sp.FUNCTION_GPT_PROMPT,
+        user_prompt=function_str,
+        model='gpt-4')
 
 
 def parse_response(text: str) -> Dict[str, str]:
@@ -183,25 +185,34 @@ def parse_response(text: str) -> Dict[str, str]:
         dict: A dictionary representation of the parsed text.
     """
 
+    keywords = ['Thoughts', 'Tool', 'Resource', 'Returned', 'Description']
+
     # Split the text into lines
     lines = text.split('\n')
 
     parsed_dict = {}
     for line in lines:
 
-        # Split the line based on ": " to separate the key and the value
-        parts = line.split(': ', 1)
-        if len(parts) == 2:
-            key, value = parts
+        line_start = line.split(': ', 1)[0]
 
-            # Check if there are multiple '|' in the value
-            if '|' in value:
-                value_parts = value.split(' | ')
-                parsed_dict[key] = value_parts
-            else:
-                parsed_dict[key] = value
+        if line_start in keywords or line_start.startswith('Parameter_'):
+            current_keyword = line_start
+            line = ''.join(line.split(current_keyword + ': ')[1:])
 
-    return parsed_dict
+        values = parsed_dict.setdefault(current_keyword, [])
+        values.append(line)
+
+    result_dict = {}
+    for key, val in parsed_dict.items():
+
+        val = '\n'.join(val)
+
+        if key.startswith('Parameter_'):
+            val = val.split(' | ')
+
+        result_dict[key] = val
+
+    return result_dict
 
 
 def get_database_description(db_file: str, model: str = 'gpt-4') -> str:
@@ -222,18 +233,18 @@ def get_database_description(db_file: str, model: str = 'gpt-4') -> str:
     for table in tables:
         table_schemas[table] = sql_utils.get_table_schema(conn, table)
 
-    prompt = sp.DB_INFO_PROMPT
-    prompt += f'Database name: {db_file}\n'
-    prompt += 'Database Tables:\n\n'
+    user_prompt = f'Database name: {db_file}\n'
+    user_prompt += 'Database Tables:\n\n'
     for table, schema in table_schemas.items():
-        prompt += table
-        prompt += schema.to_string() + '\n'
+        user_prompt += table
+        user_prompt += schema.to_string() + '\n'
 
         query = f'SELECT * FROM {table} LIMIT 3'
         sample = sql_utils.execute_query(conn, query)
-        prompt += f'Data Sample:\n{sample}\n\n'
+        user_prompt += f'Data Sample:\n{sample}\n\n'
 
-    return oaiapi.chat_completion(prompt=prompt, model=model)
+    return oaiapi.chat_completion(
+        system_prompt=sp.DB_INFO_PROMPT, user_prompt=user_prompt, model=model)
 
 
 def count_tokens(prompt: str, model: str) -> int:

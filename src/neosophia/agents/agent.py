@@ -36,7 +36,6 @@ class Agent:
         Initializes an Agent object.
 
         Args:
-            name (str): The name of the agent.
             workspace_dir (str): The directory where the agent's log will be
             saved.
             agent_base_prompt (str): The system prompt for the agent.
@@ -69,10 +68,10 @@ class Agent:
         self.input_cost = 0.
         self.output_cost = 0.
 
-        self.tools = tools
+        self.tools = dict(tools)
         self.toggle = toggle
         self.llm_calls = 0
-        self.variables = variables
+        self.variables = dict(variables)
         self.resources = resources
         self.workspace_dir = workspace_dir
         self.agent_base_prompt = agent_base_prompt
@@ -265,7 +264,20 @@ class Agent:
         for variable in self.variables.values():
             prompt.add_variable(variable)
 
-        return prompt.generate_prompt()
+        prompt.add_constraint(sp.CONSTRAINT_1)
+        prompt.add_constraint(sp.CONSTRAINT_2)
+        prompt.add_constraint(sp.CONSTRAINT_3)
+        prompt.add_constraint(sp.CONSTRAINT_4)
+        prompt.add_constraint(sp.CONSTRAINT_5)
+        prompt.add_constraint(sp.CONSTRAINT_6)
+        prompt.add_constraint(sp.CONSTRAINT_7)
+
+        prompt_dict = {
+            'system_prompt': prompt.generate_prompt(),
+            'user_prompt': '\n'.join([x for x in prompt.commands])
+        }
+
+        return prompt_dict
 
     def get_running_cost(self) -> Dict[str, float]:
         """
@@ -303,11 +315,19 @@ class Agent:
             """ Helper function to get a command from the user """
             print('\nAsk a question')
             user_input = ''
+            user_input = 'Which customer had the largest withdrawal?'
+            #user_input = 'Which customer who opened a mortgage account after 1990 has the highest interest rate in their savings account?'
+            #user_input = 'How old is the oldest dog?'
             while user_input == '':
                 user_input = input('> ')
             if user_input == 'exit':
                 sys.exit(1)
             return user_input
+
+        def remove_blank_lines(input_string):
+            lines = input_string.split("\n")
+            non_empty_lines = [line for line in lines if line.strip() != ""]
+            return "\n".join(non_empty_lines)
 
         while True:
 
@@ -315,27 +335,46 @@ class Agent:
 
             completed_steps = []
 
-            prompt_str = self.build_prompt(user_input, completed_steps)
+            prompt = self.build_prompt(user_input, completed_steps)
 
             # Toggle variables and resources on/off if the user wants or if the
             # prompt with all variables and resources is too long
-            if self.toggle or not self.check_prompt(prompt_str):
-                self.toggle_variables_and_resources(user_input)
-                prompt_str = self.build_prompt(user_input, completed_steps)
+            #if self.toggle or not self.check_prompt(prompt_str):
+            #    self.toggle_variables_and_resources(user_input)
+            #    prompt_str = self.build_prompt(user_input, completed_steps)
 
             while True:
 
-                response = self.execute(prompt_str)
+                response = remove_blank_lines(self.execute(prompt))
 
                 completed_steps.append(response)
 
                 parsed_response = autils.parse_response(response)
                 tool, args = self.extract_params(parsed_response)
 
+                '''
+                var_in_val = False
+                for key, val in parsed_response.items():
+                    if key.startswith('Parameter_') and 'value' in val[3]:
+                        for var_name in self.variables.keys():
+                            if var_name in val[1]:
+                                var_in_val = True
+                                break
+                    if var_in_val:
+                        break
+
+                if var_in_val:
+                    completed_steps[-1] = completed_steps[-1] + sp.NO_VAR_PROMPT
+                    #prompt_str = self.build_prompt(user_input, completed_steps)
+                    prompt = self.build_prompt(user_input, completed_steps)
+                    continue
+                '''
+
                 # Agent chose a tool that isn't available
                 if tool is None:
                     completed_steps[-1] = completed_steps[-1] + sp.NO_TOOL_PROMPT
-                    prompt_str = self.build_prompt(user_input, completed_steps)
+                    #prompt_str = self.build_prompt(user_input, completed_steps)
+                    prompt = self.build_prompt(user_input, completed_steps)
                     continue
 
                 # The LLM has enough information to answer the question
@@ -348,7 +387,8 @@ class Agent:
                 except Exception as e:
                     # Add the error into the prompt so it can fix it
                     completed_steps[-1] = completed_steps[-1] + f'\nERROR\n{e}'
-                    prompt_str = self.build_prompt(user_input, completed_steps)
+                    #prompt_str = self.build_prompt(user_input, completed_steps)
+                    prompt = self.build_prompt(user_input, completed_steps)
                     continue
 
                 # Variable name and description from function call
@@ -363,14 +403,15 @@ class Agent:
                     description=description)
                 self.variables[return_name] = return_var
 
-                prompt_str = self.build_prompt(user_input, completed_steps)
+                prompt = self.build_prompt(user_input, completed_steps)
 
                 # Toggle variables and resources
-                if self.toggle or not self.check_prompt(prompt_str):
-                    self.toggle_variables_and_resources(user_input)
-                    prompt_str = self.build_prompt(user_input, completed_steps)
+                #if self.toggle or not self.check_prompt(prompt_str):
+                #    self.toggle_variables_and_resources(user_input)
+                #    prompt_str = self.build_prompt(user_input, completed_steps)
 
                 # Get an approximate token count without needing to encode
+                '''
                 num_tokens = int(len(prompt_str) // 4)
 
                 n = 1
@@ -381,6 +422,9 @@ class Agent:
                     n += 1
                     num_tokens = autils.count_tokens(
                         prompt_str, self.model_info.name)
+                '''
+
+                input('\nPress enter to continue...\n')
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)
@@ -396,28 +440,6 @@ class Agent:
             print('\n')
 
             self.save_log()
-
-    def extract_value(self, key_expr: str) -> Any:
-        """
-        Extract a value from the variables dictionary based on a key or
-        expression.
-
-        Args:
-            key_expr (str): Key or expression to evaluate.
-
-        Returns:
-            Value extracted from the dictionary or evaluated from the expression.
-        """
-        # Check if key_expr is a direct key in the dictionary
-        if key_expr in self.variables:
-            return self.variables[key_expr].value
-
-        # If not, try to evaluate it as an expression
-        try:
-            return eval(key_expr, {}, self.variables).value
-        except:
-            # If evaluation fails, return the key_expr as is
-            return key_expr
 
     def extract_params(
             self,
@@ -450,6 +472,11 @@ class Agent:
         args = {}
         for key, value in parsed_data.items():
             if key.startswith(param_prefix):
+
+                # Value does not contain name | value | type | val/ref
+                if len(value) != 4:
+                    continue
+
                 param_name = value[0]
                 param_value = value[1]
                 param_type = value[2].replace(' ', '')
@@ -460,7 +487,9 @@ class Agent:
                     # Strip out any quotes that might be at the beginning/end
                     if param_value[0] == "'" or param_value[0] == '"':
                         param_value = param_value[1:-1]
-                    param_value = self.extract_value(param_value)
+
+                    if param_value in self.variables:
+                        param_value = self.variables[param_value].value
 
                 # Parameter is a string but not a SQL query
                 elif param_type == 'str' and param_name != 'query':
@@ -468,8 +497,8 @@ class Agent:
                         param_value = param_value[1:-1]
 
                 # Parameter is a SQL query that has other variables in it
-                elif param_type == 'str' and param_name == 'query' and '+' in param_value:
-                    param_value = self.replace_variables_in_query(param_value)
+                #elif param_type == 'str' and param_name == 'query' and '+' in param_value:
+                #    param_value = self.replace_variables_in_query(param_value)
 
                 # Add param name and its value to the dictionary
                 args[param_name.replace(' ', '')] = param_value
@@ -525,12 +554,16 @@ class Agent:
         for variable in self.variables.values():
             if variable.visible:
                 prompt.add_variable(variable)
-        prompt_str = prompt.generate_prompt()
-        return self.execute(prompt_str)
+        return self.execute(
+            {
+                'system_prompt': prompt.generate_prompt(),
+                'user_prompt': '\n'.join(prompt.commands)
+            }
+        )
 
     def execute(
             self,
-            prompt: str,
+            prompt_dict: Dict[str, str],
             print_prompt: bool=True,
             print_response: bool=True) -> str:
         """
@@ -548,16 +581,22 @@ class Agent:
         self.llm_calls += 1
         if print_prompt or print_response:
             print('Thinking...')
-        self.input_cost += self.calculate_prompt_cost(prompt)['input']
+        #self.input_cost += self.calculate_prompt_cost(prompt)['input']
         response = oaiapi.chat_completion(
-            prompt=prompt, model=self.model_info.name)
-        self.log['prompt'].append(prompt)
-        self.log['response'].append(response)
-        self.output_cost += self.calculate_prompt_cost(response)['output']
+            user_prompt=prompt_dict['user_prompt'],
+            system_prompt=prompt_dict['system_prompt'],
+            model=self.model_info.name)
+        #self.log['prompt'].append(prompt)
+        #self.log['response'].append(response)
+        #self.output_cost += self.calculate_prompt_cost(response)['output']
         if print_prompt:
-            print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
-            print(prompt)
-            print('#' * 60 + ' PROMPT END ' + '#' * 60)
+            print('#' * 60 + ' SYSTEM PROMPT BEGIN ' + '#' * 60)
+            print(prompt_dict['system_prompt'])
+            print('#' * 60 + ' SYSTEM PROMPT END ' + '#' * 60)
+            print('\n')
+            print('#' * 60 + ' USER PROMPT BEGIN ' + '#' * 60)
+            print(prompt_dict['user_prompt'])
+            print('#' * 60 + ' USER PROMPT END ' + '#' * 60)
             print('\n')
         if print_response:
             print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)

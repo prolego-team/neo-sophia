@@ -1,15 +1,14 @@
 """
 Wrappers for OpenAI API.
 """
-
-from typing import Any, List, Callable, Optional
 import os
 import sys
+
+from typing import Any, Callable, List, Optional
 from dataclasses import dataclass
 
-import openai as oai
 import torch
-
+import openai as oai
 
 EMBEDDING_DIM_DEFAULT = 1536
 EMBEDDING_MODEL_DEFAULT = 'text-embedding-ada-002'
@@ -48,13 +47,16 @@ def embeddings(texts: List[str]) -> Any:
     )
 
 
-def chat_completion(prompt: str, model: str) -> str:
+def chat_completion(
+        user_prompt: str,
+        model: str,
+        system_prompt: str='You are a helpful assistant') -> str:
     """simple chat completion"""
     res = oai.ChatCompletion.create(
         model=model,
         messages=[
-            {'role': 'system', 'content': 'You are a helpful assistant.'},
-            {'role': 'user', 'content': prompt}
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt}
         ]
     )
     return res['choices'][0]['message']['content']

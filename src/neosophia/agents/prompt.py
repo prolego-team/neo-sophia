@@ -116,6 +116,7 @@ class Prompt:
             None
         """
         dots = ''
+        truncated = False
         if visible or variable.visible:
             if isinstance(variable.value, pd.DataFrame):
                 value = variable.value
@@ -123,6 +124,7 @@ class Prompt:
                     if 'schema' not in variable.name:
                         value = value.head(10)
                         dots = '...\n'
+                        truncated = True
                 value = format_df(value)
             else:
                 value = variable.value
@@ -131,6 +133,7 @@ class Prompt:
             prompt = f'Name: {variable.name}\n'
             prompt += f'Type: {var_type}\n'
             prompt += f'Value:\n{value}\n{dots}'
+            prompt += f'Truncated: {truncated}\n'
             prompt += f'Description: {variable.description}\n'
             prompt += '\n'
             self.variables.append(prompt)
@@ -213,8 +216,8 @@ class Prompt:
 
         if self.base_prompt:
             prompt += '\n'.join(self.base_prompt)
-        if self.commands:
-            prompt += _construct('COMMANDS', self.commands)
+        #if self.commands:
+        #    prompt += _construct('COMMANDS', self.commands)
         if self.tools:
             prompt += _construct('TOOLS', self.tools)
         if self.resources:
