@@ -50,7 +50,7 @@ First install the neo-sophia code on your local machine before proceeding to the
 
 If the tests pass you are ready to run the code in one of the Episodes.
 
-Questions? Just ask in our [Discord Community](https://discord.gg/tzjEEjyg).
+Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
