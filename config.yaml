@@ -12,24 +12,9 @@ Resources:
   - name: Transactions
     path: data/transactions.db
     description:
-  #- name:  Competition
-  #  path: data/game1/competition.db
-  #  description:
-  #- name: CustomerFeedback
-  #  path: data/game1/customer_feedback.db
-  #  description:
-  #- name: Employees
-  #  path: data/game1/employee_database.db
-  #  description:
-  #- name: Expense
-  #  path: data/game1/expense_database.db
-  #  description:
 
 Tools:
   - module: neosophia.agents.tools
     functions:
       - dataframe_intersection
-      - get_max_values
-      - get_min_values
-      - execute_query
-      - execute_query_with_variables
+      - execute_pandas_query

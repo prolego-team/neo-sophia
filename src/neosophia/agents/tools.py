@@ -6,6 +6,64 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
+from pandasql import load_meat, sqldf
+
+
+def _execute_pandas_query(
+        query: str, dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Executes a SQL query against a Pandas DataFrame. In the SQL command refer
+    to the dataframe as table named `df_table`.
+
+    Args:
+        query (str): The SQL query to be executed.
+        dataframe: pd.DataFrame: A dataframe to run the query on
+
+    Returns:
+        result (pd.DataFrame): The resulting dataframe after executing the
+        query.
+    """
+    if query[0] == "'" or query[0] == '"':
+        query = query[1:-1]
+    return sqldf(query, {'df_table': dataframe})
+
+
+def execute_pandas_query(
+        query: str, dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Executes a SQL query against a Pandas DataFrame. In the SQL command refer
+    to the dataframe as table named `df_table`.
+
+    Args:
+        query (str): The SQL query to be executed.
+        dataframe: pd.DataFrame: A dataframe to run the query on
+
+    Returns:
+        result (pd.DataFrame): The resulting dataframe after executing the
+        query.
+    """
+    if query.lower().startswith('alter table'):
+        if 'add column' in query.lower():
+            column_details = query.split('ADD COLUMN')[1].strip()
+            column_name, column_type = [x.strip() for x in column_details.split()]
+
+            if column_type.lower() == 'int':
+                dataframe[column_name] = 0
+            elif column_type.lower() == 'float':
+                dataframe[column_name] = 0.0
+            elif column_type.lower() == 'text' or column_type.lower() == 'string':
+                dataframe[column_name] = ''
+            else:
+                raise ValueError('Unsupported column type')
+
+            return dataframe
+        else:
+            raise ValueError('Only ADD COLUMN operation is supported in ALTER TABLE')
+    else:
+        if query[0] == "'" or query[0] == '"':
+            query = query[1:-1]
+        return sqldf(query, {'df_table': dataframe})
+
 
 def create_dictionary(dict_string):
     """ """

@@ -6,6 +6,7 @@ import time
 import datetime
 import readline
 
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple, Union
 
 import neosophia.agents.utils as autils
@@ -26,7 +27,8 @@ class Agent:
     def __init__(
             self,
             workspace_dir: str,
-            agent_base_prompt: str,
+            tool_bp: str,
+            param_bp: str,
             tools: Dict[str, Tool],
             resources: Dict[str, Resource],
             variables: Dict[str, Variable],
@@ -74,7 +76,8 @@ class Agent:
         self.variables = dict(variables)
         self.resources = resources
         self.workspace_dir = workspace_dir
-        self.agent_base_prompt = agent_base_prompt
+        self.tool_bp = tool_bp
+        self.param_bp = param_bp
 
         # Manually add the `extract_answer` function that's used at the end of
         # every interaction
@@ -140,8 +143,8 @@ class Agent:
             elif isinstance(item, Resource):
                 prompt.add_resource(item, True)
 
-        prompt_str = prompt.generate_prompt()
-        response = self.execute(prompt_str, False, False)
+        prompt_dict = prompt.generate_prompt()
+        response = self.execute(prompt_dict, False, False)
 
         items_to_show = autils.parse_response(response)
         for item_name in items_to_show.values():
@@ -202,11 +205,12 @@ class Agent:
         helper(self.variables)
         helper(self.resources)
 
-        prompt_str = prompt.generate_prompt()
+        prompt_dict = prompt.generate_prompt()
 
         # Variables and Resources fit into one prompt
-        if self.check_prompt(prompt_str):
-            response = self.execute(prompt_str, False, False)
+        if self.check_prompt(
+                prompt_dict['system_prompt'] + prompt_dict['user_prompt']):
+            response = self.execute(prompt_dict, False, False)
             items_to_show = autils.parse_response(response)
             for item_name in items_to_show.values():
                 if item_name in self.variables:
@@ -232,7 +236,11 @@ class Agent:
             return True
         return False
 
-    def build_prompt(self, user_input: str, completed_steps: List[str]) -> str:
+    def build_tool_prompt(
+            self,
+            base_prompt: str,
+            user_input: str,
+            completed_steps: List[str]) -> str:
         """
         Builds a prompt object and returns a string
 
@@ -245,7 +253,7 @@ class Agent:
         """
 
         prompt = Prompt()
-        prompt.add_base_prompt(self.agent_base_prompt)
+        prompt.add_base_prompt(base_prompt)
 
         prompt.add_command(user_input)
 
@@ -264,23 +272,20 @@ class Agent:
         for variable in self.variables.values():
             prompt.add_variable(variable)
 
-        prompt.add_constraint(sp.CONSTRAINT_1)
-        prompt.add_constraint(sp.CONSTRAINT_2)
-        prompt.add_constraint(sp.CONSTRAINT_3)
-        prompt.add_constraint(sp.CONSTRAINT_4)
-        prompt.add_constraint(sp.CONSTRAINT_5)
-        prompt.add_constraint(sp.CONSTRAINT_6)
-        prompt.add_constraint(sp.CONSTRAINT_7)
+        #prompt.add_constraint(sp.CONSTRAINT_1)
+        #prompt.add_constraint(sp.CONSTRAINT_3)
+        #prompt.add_constraint(sp.CONSTRAINT_4)
+        #prompt.add_constraint(sp.CONSTRAINT_5)
+        #prompt.add_constraint(sp.CONSTRAINT_6)
+        #prompt.add_constraint(sp.CONSTRAINT_7)
+        #prompt.add_constraint(
+        #    '- Do NOT generate parameters for the Tool you choose')
 
-        prompt.add_example(sp.EXAMPLE_1)
-        prompt.add_example(sp.EXAMPLE_2)
+        return prompt.generate_prompt()
 
-        prompt_dict = {
-            'system_prompt': prompt.generate_prompt(),
-            'user_prompt': '\n'.join([x for x in prompt.commands])
-        }
-
-        return prompt_dict
+    def print_prompt(self, prompt):
+        print(prompt['system_prompt'], '\n')
+        print(prompt['user_prompt'])
 
     def get_running_cost(self) -> Dict[str, float]:
         """
@@ -298,6 +303,65 @@ class Agent:
             'output': self.output_cost,
             'total': self.input_cost + self.output_cost
         }
+
+    def build_param_prompt(self, user_input, parsed_response, completed_steps):
+
+        tool_name = parsed_response['Tool']
+        thoughts = parsed_response['Thoughts']
+
+        prompt = Prompt()
+        prompt.add_base_prompt(self.param_bp)
+
+        # Add the user's question along with the main Agent's thoughts as
+        # commands
+        prompt.add_command(user_input)
+        prompt.add_command(thoughts)
+
+        # Add resources to prompt
+        for resource in self.resources.values():
+            prompt.add_resource(resource)
+
+        # Add tool to prompt
+        prompt.add_tool(self.tools[tool_name])
+
+        # Add variables to prompt
+        for variable in self.variables.values():
+            prompt.add_variable(variable)
+
+        for step in completed_steps:
+            prompt.add_completed_step(step)
+
+        prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
+        prompt.add_constraint('Do not provide Thoughts')
+        prompt.add_constraint('Only provide one set of Parameters at a time')
+        prompt.add_constraint('Do not say what tool you are using')
+        prompt.add_constraint('Only generate Parameters, the Returned name, and a Description as defined in the template')
+        prompt.add_constraint('Do not generate an SQL query that contains a Python expression. You must use exact values in the SQL queries that you generate')
+
+        return prompt.generate_prompt()
+
+    def choose_tool(self, user_input, completed_steps):
+        tool = None
+        tool_failure_steps = []
+        while tool is None:
+
+            # Choose a Tool
+            tool_prompt = self.build_tool_prompt(
+                self.tool_bp,
+                user_input,
+                completed_steps + tool_failure_steps)
+
+            tool_response = self.execute(tool_prompt)
+            parsed_tool_response = autils.parse_response(tool_response)
+
+            if parsed_tool_response['Tool'] in self.tools:
+                tool = self.tools[parsed_tool_response['Tool']]
+            else:
+                tool_name = parsed_tool_response['Tool']
+                tool_failure_steps.append(
+                    f'{tool_name} not in TOOLS. Choose a tool from the TOOLS section')
+
+        return tool, tool_response, parsed_tool_response
 
     def chat(self) -> None:
         """
@@ -318,9 +382,6 @@ class Agent:
             """ Helper function to get a command from the user """
             print('\nAsk a question')
             user_input = ''
-            user_input = 'Which customer had the largest withdrawal?'
-            #user_input = 'Which customer who opened a mortgage account after 1990 has the highest interest rate in their savings account?'
-            #user_input = 'How old is the oldest dog?'
             while user_input == '':
                 user_input = input('> ')
             if user_input == 'exit':
@@ -338,96 +399,62 @@ class Agent:
 
             completed_steps = []
 
-            prompt = self.build_prompt(user_input, completed_steps)
-
-            # Toggle variables and resources on/off if the user wants or if the
-            # prompt with all variables and resources is too long
-            #if self.toggle or not self.check_prompt(prompt_str):
-            #    self.toggle_variables_and_resources(user_input)
-            #    prompt_str = self.build_prompt(user_input, completed_steps)
-
             while True:
 
-                response = remove_blank_lines(self.execute(prompt))
+                if self.toggle:
+                    self.toggle_variables_and_resources(user_input)
 
-                completed_steps.append(response)
+                res = self.choose_tool(user_input, completed_steps)
+                tool, tool_response, parsed_tool_response = res
 
-                parsed_response = autils.parse_response(response)
-                tool, args = self.extract_params(parsed_response)
+                completed_step = (
+                    'Thoughts: ' + str(parsed_tool_response['Thoughts']) + '\n' +
+                    'Tool: ' + str(parsed_tool_response['Tool']) + '\n'
+                )
+                completed_steps.append(completed_step)
 
-                '''
-                var_in_val = False
-                for key, val in parsed_response.items():
-                    if key.startswith('Parameter_') and 'value' in val[3]:
-                        for var_name in self.variables.keys():
-                            if var_name in val[1]:
-                                var_in_val = True
-                                break
-                    if var_in_val:
-                        break
-
-                if var_in_val:
-                    completed_steps[-1] = completed_steps[-1] + sp.NO_VAR_PROMPT
-                    #prompt_str = self.build_prompt(user_input, completed_steps)
-                    prompt = self.build_prompt(user_input, completed_steps)
-                    continue
-                '''
-
-                # Agent chose a tool that isn't available
-                if tool is None:
-                    completed_steps[-1] = completed_steps[-1] + sp.NO_TOOL_PROMPT
-                    #prompt_str = self.build_prompt(user_input, completed_steps)
-                    prompt = self.build_prompt(user_input, completed_steps)
-                    continue
-
-                # The LLM has enough information to answer the question
-                if tool.name == 'extract_answer':
+                if parsed_tool_response['Tool'] in [
+                        'system_exit', 'extract_answer']:
                     answer = self.extract_answer(user_input)
                     break
 
-                try:
-                    res = tool.call(**args)
-                except Exception as e:
-                    # Add the error into the prompt so it can fix it
-                    completed_steps[-1] = completed_steps[-1] + f'\nERROR\n{e}'
-                    #prompt_str = self.build_prompt(user_input, completed_steps)
-                    prompt = self.build_prompt(user_input, completed_steps)
-                    continue
+                called = False
+                while not called:
 
-                # Variable name and description from function call
-                return_name = parsed_response['Returned'].replace(
-                    ' ', '').rstrip()
-                description = parsed_response['Description']
+                    # Choose parameters for the Tool
+                    param_prompt = self.build_param_prompt(
+                        user_input,
+                        parsed_tool_response,
+                        completed_steps)
+                    param_response = self.execute(param_prompt).split('\n\n')
+                    param_response = param_response[0]
 
-                # Add variable to variables
-                return_var = Variable(
-                    name=return_name,
-                    value=res,
-                    description=description)
-                self.variables[return_name] = return_var
+                    parsed_param_response = autils.parse_response(
+                        param_response)
+                    args = self.extract_params(parsed_param_response)
 
-                prompt = self.build_prompt(user_input, completed_steps)
+                    try:
+                        res = tool.call(**args)
+                        called = True
+                    except Exception as e:
+                        completed_steps.append(
+                            f'Error: Error calling function: {e}\n')
+                        break
 
-                # Toggle variables and resources
-                #if self.toggle or not self.check_prompt(prompt_str):
-                #    self.toggle_variables_and_resources(user_input)
-                #    prompt_str = self.build_prompt(user_input, completed_steps)
+                    if called:
 
-                # Get an approximate token count without needing to encode
-                '''
-                num_tokens = int(len(prompt_str) // 4)
+                        # Variable name and description from function call
+                        return_name = parsed_param_response['Returned'].replace(
+                            ' ', '').rstrip()
+                        description = parsed_param_response['Description']
 
-                n = 1
-                # Truncate prompt if it's too long - probably a better way
-                # to do this to keep relevant information
-                while num_tokens > self.model_info.max_tokens:
-                    prompt_str = prompt_str[n:]
-                    n += 1
-                    num_tokens = autils.count_tokens(
-                        prompt_str, self.model_info.name)
-                '''
+                        # Add variable to variables
+                        return_var = Variable(
+                            name=return_name,
+                            value=res,
+                            description=description)
+                        self.variables[return_name] = return_var
 
-                input('\nPress enter to continue...\n')
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)
@@ -461,15 +488,7 @@ class Agent:
             function.
         """
 
-        func_key = 'Tool'
         param_prefix = 'Parameter_'
-
-        # Get the tool from available tools. If this function returns None,
-        # then it must have chosen a tool that isn't available
-        tool = None
-        if func_key in parsed_data:
-            if parsed_data[func_key] in self.tools:
-                tool = self.tools[parsed_data[func_key]]
 
         # Create a dictionary of arguments to be passed to the function
         args = {}
@@ -499,46 +518,9 @@ class Agent:
                     if param_value[0] == "'" or param_value[0] == '"':
                         param_value = param_value[1:-1]
 
-                # Parameter is a SQL query that has other variables in it
-                #elif param_type == 'str' and param_name == 'query' and '+' in param_value:
-                #    param_value = self.replace_variables_in_query(param_value)
-
-                # Add param name and its value to the dictionary
                 args[param_name.replace(' ', '')] = param_value
 
-        return tool, args
-
-    def replace_variables_in_query(self, query):
-        """
-        Replace variables in the query string with their corresponding values
-        from the variables dictionary.
-
-        Args:
-            query (str): The query string to replace variables in.
-
-        Returns:
-            query (str): The modified query string with variables replaced.
-        """
-
-        # Regular expression pattern to identify potential variable names
-        pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b'
-
-        # Not sure yet how this works for queries with multiple variables
-        # needing replacement
-        for match in re.finditer(pattern, query):
-            word = match.group()
-            if word in self.variables:
-                prompt = Prompt()
-                prompt.add_base_prompt(sp.FIX_QUERY_PROMPT)
-                for variable in self.variables.values():
-                    prompt.add_variable(variable, True)
-
-                prompt_str = prompt.generate_prompt()
-                prompt_str += '\nOriginal Query: ' + query + '\n\n'
-                prompt_str += 'Modified Query:'
-                query = self.execute(prompt_str)
-
-        return query
+        return args
 
     def extract_answer(self, question: str) -> str:
         """
@@ -557,12 +539,7 @@ class Agent:
         for variable in self.variables.values():
             if variable.visible:
                 prompt.add_variable(variable)
-        return self.execute(
-            {
-                'system_prompt': prompt.generate_prompt(),
-                'user_prompt': '\n'.join(prompt.commands)
-            }
-        )
+        return self.execute(prompt.generate_prompt())
 
     def execute(
             self,

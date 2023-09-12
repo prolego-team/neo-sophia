@@ -67,6 +67,7 @@ class Prompt:
         self.constraints = []
         self.steps = []
         self.variables = []
+        self.errors = []
 
     def add_base_prompt(self, prompt: str) -> None:
         """
@@ -122,7 +123,7 @@ class Prompt:
                 value = variable.value
                 if not value.empty:
                     if 'schema' not in variable.name:
-                        value = value.head(10)
+                        value = value.head(3)
                         dots = '...\n'
                         truncated = True
                 value = format_df(value)
@@ -184,9 +185,18 @@ class Prompt:
         Returns:
             None
         """
-        #num_step = len(self.steps) + 1
-        #step = f'Step: {num_step}\n{step}'
         self.steps.append(step)
+
+    def add_error(self, error: str) -> None:
+        """
+        Adds an error to the list of errors
+
+        Args:
+            error (str): The error to add
+        Returns:
+            None
+        """
+        self.errors.append(error)
 
     def generate_prompt(self, tot: int=80) -> str:
         """
@@ -198,7 +208,8 @@ class Prompt:
         Returns:
             prompt (str): The generated prompt
         """
-        prompt = ''
+        user_prompt = ''
+        #system_prompt = ''
         dash = '-'
 
         def _get_dash(text):
@@ -215,25 +226,35 @@ class Prompt:
             return prompt
 
         if self.base_prompt:
-            prompt += '\n'.join(self.base_prompt)
-        #if self.commands:
-        #    prompt += _construct('COMMANDS', self.commands)
+            user_prompt += '\n'.join(self.base_prompt)
+        if self.commands:
+            user_prompt += _construct('COMMANDS', self.commands)
         if self.tools:
-            prompt += _construct('TOOLS', self.tools)
+            user_prompt += _construct('TOOLS', self.tools)
         if self.resources:
-            prompt += _construct('DATA RESOURCES', self.resources)
+            user_prompt += _construct('DATA RESOURCES', self.resources)
         if self.variables:
-            prompt += _construct('VARIABLES', self.variables)
+            user_prompt += _construct('VARIABLES', self.variables)
         if self.constraints:
-            prompt += _construct('CONSTRAINTS', self.constraints)
+            user_prompt += _construct('CONSTRAINTS', self.constraints)
         if self.examples:
-            prompt += _get_dash('EXAMPLES') + '\n'
+            user_prompt += _get_dash('EXAMPLES') + '\n'
             for idx, example in enumerate(self.examples):
-                prompt += f'EXAMPLE {idx + 1}:{example}\n\n'
+                user_prompt += f'EXAMPLE {idx + 1}:{example}\n\n'
         if self.steps:
-            prompt += _construct(
+            user_prompt += _construct(
                 'COMPLETED STEPS', [x + '\n--\n' for x in self.steps])
+        if self.errors:
+            user_prompt += _construct('ERRORS', self.errors)
 
-        prompt += tot * dash
-        return prompt
+        user_prompt += tot * dash
 
+        #return {
+        #    'user_prompt': user_prompt,
+        #    'system_prompt': system_prompt
+        #}
+
+        return {
+            'user_prompt': user_prompt,
+            'system_prompt': 'You are a helpful assistant'
+        }

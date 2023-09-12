@@ -195,12 +195,16 @@ def parse_response(text: str) -> Dict[str, str]:
 
         line_start = line.split(': ', 1)[0]
 
-        if line_start in keywords or line_start.startswith('Parameter_'):
+        current_keyword = None
+        if line_start in keywords or line_start.startswith(
+                'Parameter_') or line_start.startswith(
+                        'Variable_') or line_start.startswith('Resource_'):
             current_keyword = line_start
             line = ''.join(line.split(current_keyword + ': ')[1:])
 
-        values = parsed_dict.setdefault(current_keyword, [])
-        values.append(line)
+        if current_keyword is not None:
+            values = parsed_dict.setdefault(current_keyword, [])
+            values.append(line)
 
     result_dict = {}
     for key, val in parsed_dict.items():
