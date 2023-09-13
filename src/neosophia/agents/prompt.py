@@ -117,13 +117,14 @@ class Prompt:
             None
         """
         dots = ''
+        max_size = 3
         truncated = False
         if visible or variable.visible:
             if isinstance(variable.value, pd.DataFrame):
                 value = variable.value
                 if not value.empty:
-                    if 'schema' not in variable.name:
-                        value = value.head(3)
+                    if 'schema' not in variable.name and value.shape[0] > max_size:
+                        value = value.head(max_size)
                         dots = '...\n'
                         truncated = True
                 value = format_df(value)

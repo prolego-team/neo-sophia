@@ -6,37 +6,24 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-from pandasql import load_meat, sqldf
-
-
-def _execute_pandas_query(
-        query: str, dataframe: pd.DataFrame) -> pd.DataFrame:
-    """
-    Executes a SQL query against a Pandas DataFrame. In the SQL command refer
-    to the dataframe as table named `df_table`.
-
-    Args:
-        query (str): The SQL query to be executed.
-        dataframe: pd.DataFrame: A dataframe to run the query on
-
-    Returns:
-        result (pd.DataFrame): The resulting dataframe after executing the
-        query.
-    """
-    if query[0] == "'" or query[0] == '"':
-        query = query[1:-1]
-    return sqldf(query, {'df_table': dataframe})
+from pandasql import load_births, load_meat, sqldf
 
 
 def execute_pandas_query(
-        query: str, dataframe: pd.DataFrame) -> pd.DataFrame:
+        #query: str, dataframe: pd.DataFrame) -> pd.DataFrame:
+        query: str, **kwargs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """
-    Executes a SQL query against a Pandas DataFrame. In the SQL command refer
-    to the dataframe as table named `df_table`.
+    Executes a SQL query against a Pandas DataFrame. The SQL query
+    functionality is the same as those in SQLite. In the SQL command refer to
+    the dataframe as table named `df_table`. Only one table at a time may be
+    referenced in the SQL query.
+
+    Example call:
+        execute_pandas_query(query_str, table1=table1, table2=table2)
 
     Args:
-        query (str): The SQL query to be executed.
-        dataframe: pd.DataFrame: A dataframe to run the query on
+        query (str): The SQLite query to be executed.
+        **kwargs: Keyword arguments containing Pandas DataFrames
 
     Returns:
         result (pd.DataFrame): The resulting dataframe after executing the
@@ -54,7 +41,7 @@ def execute_pandas_query(
             elif column_type.lower() == 'text' or column_type.lower() == 'string':
                 dataframe[column_name] = ''
             else:
-                raise ValueError('Unsupported column type')
+                raise ValueError(f'Unsupported column type: {column_type}')
 
             return dataframe
         else:
@@ -62,12 +49,20 @@ def execute_pandas_query(
     else:
         if query[0] == "'" or query[0] == '"':
             query = query[1:-1]
-        return sqldf(query, {'df_table': dataframe})
+        return sqldf(query, kwargs)
 
+'''
+meat = load_meat()
+birth = load_births()
+print(meat, '\n')
+print(birth)
+query = 'SELECT * FROM birth INNER JOIN meat ON birth.date = meat.date;'
+out = execute_pandas_query(query, meat=meat, birth=birth)
+print('out')
+print(out)
+exit()
+'''
 
-def create_dictionary(dict_string):
-    """ """
-    return json.loads(dict_string)
 
 
 def execute_query(conn: sqlite3.Connection, query: str) -> pd.DataFrame:
@@ -144,6 +139,48 @@ def get_min_values(df: pd.DataFrame) -> pd.Series:
     - pd.Series: A series containing the maximum value of each column.
     """
     return df.min()
+
+"""
+    - axis (int): The axis to run on
+    - numeric_only (bool): Include only float, int, boolean columns. Not
+      implemented for Series.
+"""
+
+def get_std(df: pd.DataFrame) -> pd.Series:# axis: int=0, numeric_only: bool=True) -> pd.Series:
+    """
+    Get the standard deviation
+
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+    - pd.Series: A series containing the standard deviation
+    """
+    axis = 0
+    numeric_only = True
+    return df.std(axis=axis, numeric_only=numeric_only)
+
+
+def dataframe_concat(
+        df1: pd.DataFrame,
+        df2: pd.DataFrame,
+        concat_axis: int = 0) -> pd.DataFrame:
+    """
+    Concatenates two dataframes along the specified axis.
+
+    Args:
+        df1 (pd.DataFrame): The first dataframe to be concatenated.
+        df2 (pd.DataFrame): The second dataframe to be concatenated.
+        concat_axis (int): The axis along which the dataframes will be
+        concatenated. 0 indicates row-wise (default) and 1 indicates
+        column-wise.
+
+    Returns:
+        result_df (pd.DataFrame): A new dataframe that results from the
+        concatenation of df1 and df2 along the specified axis.
+    """
+    result_df = pd.concat([df1, df2], axis=concat_axis)
+    return result_df
 
 
 def dataframe_intersection(

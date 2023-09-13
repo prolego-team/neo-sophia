@@ -382,22 +382,23 @@ class Agent:
             """ Helper function to get a command from the user """
             print('\nAsk a question')
             user_input = ''
+            user_input1 = 'What was the largest withdrawal from an EasyAccess Checking Account?'
+            user_input = ''
+            #user_input = 'What is the average revenue for Q4?'
             while user_input == '':
                 user_input = input('> ')
+                if user_input == 'a':
+                    user_input = user_input1
             if user_input == 'exit':
                 sys.exit(1)
             return user_input
 
-        def remove_blank_lines(input_string):
-            lines = input_string.split("\n")
-            non_empty_lines = [line for line in lines if line.strip() != ""]
-            return "\n".join(non_empty_lines)
+        completed_steps = []
 
         while True:
 
             user_input = get_command()
 
-            completed_steps = []
 
             while True:
 
@@ -416,6 +417,9 @@ class Agent:
                 if parsed_tool_response['Tool'] in [
                         'system_exit', 'extract_answer']:
                     answer = self.extract_answer(user_input)
+                    answer_step = f'Previous question: {user_input}\n'
+                    answer_step += f'Previous answer: {answer}\n'
+                    completed_steps = [answer_step]
                     break
 
                 called = False
@@ -438,9 +442,11 @@ class Agent:
                         called = True
                     except Exception as e:
                         error_msg = f'Error: Error calling function: {e}\n'
-                        if 'query' in parsed_param_response:
-                            if '+' in parsed_param_response['query']:
+                        if 'query' in parsed_param_response['Parameter_0']:
+                            if '+' in parsed_param_response['Parameter_0'][1]:
                                 error_msg += 'Do not use Python expressions in SQL queries'
+                        print('\nERROR:\n')
+                        print(error_msg, '\n')
                         completed_steps.append(error_msg)
                         break
 
@@ -458,6 +464,14 @@ class Agent:
                             description=description)
                         self.variables[return_name] = return_var
 
+                        tool_name = parsed_tool_response['Tool']
+                        completed_steps.append(
+                            (
+                                f'Tool {tool_name} successfully called, ' +
+                                f'Variable {return_name} saved.'
+                            )
+                        )
+
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)
@@ -473,6 +487,35 @@ class Agent:
             print('\n')
 
             self.save_log()
+
+    def parse_kwargs(self, kwargs):
+
+        new_args = {}
+        for key, val in kwargs.items():
+
+            if key == 'kwargs':
+                val = val.replace('{', '').replace('}', '').replace("'", '').split(',')
+                for var_name in val:
+
+                    # Once in a while the kwargs dictionary will have a
+                    # different key name other than the variable
+                    var_name1, var_name2 = var_name.split(':')
+                    var_name1 = var_name1.strip()
+                    var_name2 = var_name2.strip()
+
+                    if var_name1 != var_name2:
+                        if var_name1 in self.variables:
+                            new_args[var_name1] = self.variables[var_name1].value
+                        elif var_name2 in self.variables:
+                            new_args[var_name2] = self.variables[var_name2].value
+                    elif var_name1 in self.variables:
+                            new_args[var_name1] = self.variables[var_name1].value
+                    else:
+                        new_args[var_name1] = None
+
+            else:
+                new_args[key] = val
+        return new_args
 
     def extract_params(
             self,
@@ -521,7 +564,21 @@ class Agent:
                     if param_value[0] == "'" or param_value[0] == '"':
                         param_value = param_value[1:-1]
 
+                # Cast the values if needed
+                if 'value' in param_vr:
+                    if param_type == 'int':
+                        param_value = int(param_value)
+                    elif param_type == 'float':
+                        param_value = float(param_value)
+                    elif param_type == 'bool':
+                        param_value = False
+                        if param_value.lower() == 'true':
+                            param_value = True
+
                 args[param_name.replace(' ', '')] = param_value
+
+        if 'kwargs' in args:
+            args = self.parse_kwargs(args)
 
         return args
 
@@ -539,10 +596,11 @@ class Agent:
         prompt = Prompt()
         prompt.add_base_prompt(sp.ANSWER_QUESTION_PROMPT)
         prompt.add_command(question)
+        prompt.add_command('Also provide the user with 3 relevant follow-up questions they may want to ask.')
         for variable in self.variables.values():
             if variable.visible:
                 prompt.add_variable(variable)
-        return self.execute(prompt.generate_prompt())
+        return self.execute(prompt.generate_prompt(), False, False)
 
     def execute(
             self,

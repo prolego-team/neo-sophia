@@ -6,15 +6,24 @@ Agent:
 
 Resources:
   SQLite:
-  - name: SynthBank
-    path: data/synthbank.db
-    description: # Description here will override LLM generated description
-  - name: Transactions
-    path: data/transactions.db
-    description:
+    - name: SynthBank
+      path: data/synthbank.db
+      description: # Description here will override LLM generated description
+    - name: Transactions
+      path: data/transactions.db
+      description:
+    #    - name: TechtonicTechCompetition
+    #      path: data/sim1/Techtonic_Tech_competition.db
+    #      description:
+    #    - name: TechtonicTechFinance
+    #      path: data/sim1/Techtonic_Tech_finance.db
+    #      description:
 
 Tools:
   - module: neosophia.agents.tools
     functions:
       - dataframe_intersection
       - execute_pandas_query
+      - get_std
+      - get_min_values
+      - get_max_values
