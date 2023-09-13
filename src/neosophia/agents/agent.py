@@ -437,8 +437,11 @@ class Agent:
                         res = tool.call(**args)
                         called = True
                     except Exception as e:
-                        completed_steps.append(
-                            f'Error: Error calling function: {e}\n')
+                        error_msg = f'Error: Error calling function: {e}\n'
+                        if 'query' in parsed_param_response:
+                            if '+' in parsed_param_response['query']:
+                                error_msg += 'Do not use Python expressions in SQL queries'
+                        completed_steps.append(error_msg)
                         break
 
                     if called:
