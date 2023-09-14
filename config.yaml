@@ -12,12 +12,6 @@ Resources:
     - name: Transactions
       path: data/transactions.db
       description:
-    #    - name: TechtonicTechCompetition
-    #      path: data/sim1/Techtonic_Tech_competition.db
-    #      description:
-    #    - name: TechtonicTechFinance
-    #      path: data/sim1/Techtonic_Tech_finance.db
-    #      description:
 
 Tools:
   - module: neosophia.agents.tools
@@ -27,3 +21,4 @@ Tools:
       - get_std
       - get_min_values
       - get_max_values
+      - merge_dataframes

@@ -3,24 +3,6 @@ from typing import Any, Callable, Optional
 from dataclasses import dataclass
 
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.agents.system_prompts import VARIABLE_SUMMARY_PROMPT
-
-
-@dataclass
-class Resource:
-    """ Class to hold a data Resource that the agent can access """
-    name: str
-    path: str
-    description: str
-    visible: bool = True
-
-    def __str__(self):
-        #output = f'\n{Colors.BLUE}Resource Name: {Colors.ENDC}{self.name}\n'
-        output = f'\nResource Name: {self.name}\n'
-        output += f'Path: {self.path}\n'
-        output += f'Decription: {self.description}'
-        output += f'Visible: {self.visible}'
-        return output
 
 
 @dataclass
@@ -40,12 +22,6 @@ class Variable:
         output += f'Value:\n{self.value}\n'
         output += f'Description: {self.description}\n'
         return output
-
-    def get_summary(self, model_name):
-        """ Calls a LLM to obtain a summary about the variable """
-        prompt = VARIABLE_SUMMARY_PROMPT + self.to_string()
-        self.summary = oaiapi.chat_completion(prompt=prompt, model=model_name)
-        return self.summary
 
     def __str__(self):
         output = self.to_string()

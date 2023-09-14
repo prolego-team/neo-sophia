@@ -1,7 +1,7 @@
 """ Collection of prompts used by the system """
 
-# Chooses a tool to use given available Tools, Resources, Variables,
-# Constraints and a Command
+# Chooses a tool to use given available Tools, Variables, Constraints and a
+# Command
 TOOL_AGENT_BP = """You are an AI Agent whose job is to assist a user by choosing a Tool that will aid in retrieving information to answer their question. You will be provided with a list TOOLS you have access to, VARIABLES which contain information that may be used, and CONSTRAINTS which describe any constraints you may have, and a COMMAND from a user. You will guide the user in a step-by-step manner towards answering their question. You will be provided with the previous steps that have been taken. If an error occured during the execution of one of the steps, you will be provided with the error message so you can fix it. The results from Tools that have been called as a result of certain steps will be added to the VARIABLES section. Do not generate parameters for the Tool you have selected.
 
 When you have collected enough information to answer the question, choose the tool `extract_answer`. If the user enters in a command indicating they are done and want to quit the program, choose the Tool `system_exit`. Each step must be in the following format:
@@ -21,6 +21,7 @@ Description: Description of the variable that was returned
 
 """
 
+NO_PYTHON = 'DO NOT USE PYTHON EXPRESSIONS IN SQL QUERIES'
 
 NO_TOOL_PROMPT = """\n\nERROR: The tool you chose is not in the available list of
 tools.  Choose an available tool from the TOOLS section\n\n"""
@@ -36,33 +37,13 @@ Variable_N: variable_n_name
 
 """
 
-CHOOSE_RESOURCES_PROMPT = """Given a command from a user, determine which data resources in the RESOURCES section may be required to answer the question. Your output should be in the following format:
+ANSWER_QUESTION_PROMPT = """Answer the question given the following data. Make sure your answer is in a human readable format. Also provide the user with 3 relevant follow-up questions they may want to ask. Your output should be in the following format:
 
-Resource_0: resource_0_name
-Resource_1: resource_1_name
-...
-Resource_N: resource_n_name
-
+Answer: human readable answer here
+Question 1: follow-up question 1
+Question 2: follow-up question 2
+Question 3: follow-up question 3
 """
-
-CHOOSE_VARIABLES_AND_RESOURCES_PROMPT = """Given a command from a user, determine which variables in the VARIABLES section and which resources in the RESOURCES section may be required to answer the question. Your output should be in the following format:
-
-Variable_0: variable_0_name
-Variable_1: variable_1_name
-...
-Variable_N: variable_n_name
-Resource_0: resource_0_name
-Resource_1: resource_1_name
-...
-Resource_N: resource_n_name
-
-"""
-
-VARIABLE_SUMMARY_PROMPT = """Summarize the following variable as concisely as you can while still retaining enough information to perform operations on the data it contains. Do not engage in any additional conversation, only provide the summary.\n\n"""
-
-ANSWER_QUESTION_PROMPT = """Answer the question given the following data. Format your answer such that the data is in a human readable format.\n\n"""
-
-FIX_QUERY_PROMPT = """Given the function resources available and the query given below, modify the query such that the values in the function resources are part of the query instead of the variable. Write the new query in the spot below.\n\n"""
 
 NO_CONVERSATION_CONSTRAINT = (
     'Do not engage in conversation or provide '
@@ -96,27 +77,6 @@ def get_table_schema(conn: sqlite3.Connection, table_name: str) -> pd.DataFrame:
 
 Begin!
 
-"""
-
-EXAMPLE_1 = """
-Thoughts: One aspect about forming this question is to identify who own a 'Dog' from the information in the 'pets' table. The SQL query "SELECT * FROM pets WHERE Animal='Dog'" can be used to fetch this data from the "Cats and Dogs" database.
-Resource: Cats and Dogs
-Tool: execute_query
-Parameter_0: conn | Cats and Dogs_conn | sqlite3.Connection | reference
-Parameter_1: query | "SELECT * FROM pets WHERE Animal='Dog'" | str | value
-Returned: dog_owners_data
-Description: DataFrame containing information about all dog owners from the 'pets' table in the "Cats and Dogs" database."""
-EXAMPLE_2 = """
-This is an example of something you SHOULD NOT do. DO NOT generate Python as
-part of the Parameter
-
-Thoughts: Now that I have the minimum auto loan interest rate, I need to identify the customers who have this auto interest rate. I will use the execute_query tool to run a select query on the auto_loan table to retrieve the customer account details with the minimum auto loan interest rate.
-Resource: SynthBank
-Tool: execute_query
-Parameter_0: conn | SynthBank_conn | sqlite3.Connection | reference
-Parameter_1: query | 'SELECT * FROM auto_loan WHERE interest_rate = ' + str(min_auto_loan_interest_rate.iloc[0][0]) | str | value
-Returned: customer_min_interest_rate_details
-Description: Customer account details with the minimum auto loan interest rate.
 """
 
 CONSTRAINT_1 = (

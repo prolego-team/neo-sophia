@@ -5,6 +5,7 @@ import sys
 import time
 import datetime
 import readline
+import traceback
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple, Union
@@ -14,7 +15,7 @@ import neosophia.agents.system_prompts as sp
 
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.agents.prompt import Prompt
-from neosophia.agents.data_classes import GPT_MODELS, Resource, Tool, Variable
+from neosophia.agents.data_classes import GPT_MODELS, Tool, Variable
 
 opj = os.path.join
 
@@ -30,7 +31,6 @@ class Agent:
             tool_bp: str,
             param_bp: str,
             tools: Dict[str, Tool],
-            resources: Dict[str, Resource],
             variables: Dict[str, Variable],
             model_name: str = 'gpt-4-0613',
             toggle: bool = True) -> None:
@@ -40,18 +40,18 @@ class Agent:
         Args:
             workspace_dir (str): The directory where the agent's log will be
             saved.
-            agent_base_prompt (str): The system prompt for the agent.
+            tool_bp (str): The system prompt for the Tool agent.
+            param_bp (str): The system prompt for the Param agent.
             tools (Dict[str, Tool]): A dictionary of tools available to the
             agent.
-            resources (Dict[str, Resource]): A dictionary of resources
             available to the agent.
             variables (Dict[str, Variable]): A dictionary of variables
             available to the agent.
             model_name (str, optional): The name of the GPT model to use.
             toggle (bool, optional): A toggle for the agent. If set to True,
-            the Agent will make additionall LLM calls to toggle which Resources
-            and Variables are needed for the current step in execution. If
-            False, then all Resources and Variables will be included in the
+            the Agent will make additionall LLM calls to toggle which Variables
+            are needed for the current step in execution. If False, then all
+            Variables will be included in the
             Prompt.
 
         Returns:
@@ -64,7 +64,8 @@ class Agent:
         }
 
         # Get info such as max_tokens, cost per token, etc.
-        self.model_info = GPT_MODELS[model_name]
+        self.model_name = model_name
+        self.model_info = GPT_MODELS[self.model_name]
 
         # Monetary cost of input and output from the LLM
         self.input_cost = 0.
@@ -74,7 +75,6 @@ class Agent:
         self.toggle = toggle
         self.llm_calls = 0
         self.variables = dict(variables)
-        self.resources = resources
         self.workspace_dir = workspace_dir
         self.tool_bp = tool_bp
         self.param_bp = param_bp
@@ -113,43 +113,6 @@ class Agent:
             'output': num_tokens * self.model_info.output_token_cost
         }
 
-    def _toggle_items(
-            self,
-            items_dict: Union[Dict[str, Resource], Dict[str, Variable]],
-            base_prompt: str,
-            command: str) -> None:
-        """
-        Helper function to toggle visibility of items (variables or resources).
-
-        Args:
-            items_dict (dict): A dictionary containing items to toggle
-            visibility.
-            base_prompt (str): The base prompt to tell the LLM what its job is.
-            command (str): The command to toggle visibility.
-
-        Returns:
-            None
-        """
-
-        prompt = Prompt()
-        prompt.add_base_prompt(base_prompt)
-        prompt.add_command(command)
-        prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
-
-        for item in items_dict.values():
-            item.visible = False
-            if isinstance(item, Variable):
-                prompt.add_variable(item, True)
-            elif isinstance(item, Resource):
-                prompt.add_resource(item, True)
-
-        prompt_dict = prompt.generate_prompt()
-        response = self.execute(prompt_dict, False, False)
-
-        items_to_show = autils.parse_response(response)
-        for item_name in items_to_show.values():
-            items_dict[item_name].visible = True
-
     def toggle_variables(self, command: str) -> None:
         """
         Function to choose which variables to show the values for
@@ -161,65 +124,23 @@ class Agent:
         Returns:
             None
         """
-        self._toggle_items(self.variables, sp.CHOOSE_VARIABLES_PROMPT, command)
-
-    def toggle_resources(self, command: str) -> None:
-        """
-        Function to choose which resources to show the values for
-
-        Args:
-            command (str): the command from the user that will determine which
-            resources to toggle
-
-        Returns:
-            None
-        """
-        self._toggle_items(self.resources, sp.CHOOSE_RESOURCES_PROMPT, command)
-
-    def toggle_variables_and_resources(self, command: str) -> None:
-        """
-        Tries to toggle which variables and resources are visible to the Agent
-        in a single call. If the context is too big, it splits it into two
-        calls (one for the variables, one for the resources)
-
-        Args:
-            command (str): the command from the user that will determine which
-            variables and resources to toggle
-
-        Returns:
-            None
-        """
         prompt = Prompt()
-        prompt.add_base_prompt(sp.CHOOSE_VARIABLES_AND_RESOURCES_PROMPT)
+        prompt.add_base_prompt(sp.CHOOSE_VARIABLES_PROMPT)
         prompt.add_command(command)
         prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
 
-        def helper(items_dict):
-            for item in items_dict.values():
-                item.visible = False
-                if isinstance(item, Variable):
-                    prompt.add_variable(item, True)
-                elif isinstance(item, Resource):
-                    prompt.add_resource(item, True)
+        for variable in self.variables.values():
+            variable.visible = False
+            if isinstance(variable, Variable):
+                prompt.add_variable(variable, True)
 
-        helper(self.variables)
-        helper(self.resources)
+        prompt_str = prompt.generate_prompt()
+        response = self.execute(prompt_str, False, False)
 
-        prompt_dict = prompt.generate_prompt()
+        variables_to_show = autils.parse_response(response)
+        for variable_name in variables_to_show.values():
+            self.variables[variable_name].visible = True
 
-        # Variables and Resources fit into one prompt
-        if self.check_prompt(
-                prompt_dict['system_prompt'] + prompt_dict['user_prompt']):
-            response = self.execute(prompt_dict, False, False)
-            items_to_show = autils.parse_response(response)
-            for item_name in items_to_show.values():
-                if item_name in self.variables:
-                    self.variables[item_name].visible = True
-                elif item_name in self.resources:
-                    self.resources[item_name].visible = True
-        else:
-            self.toggle_variables(command)
-            self.toggle_resources(command)
 
     def check_prompt(self, prompt: str) -> bool:
         """
@@ -260,10 +181,6 @@ class Agent:
         for step in completed_steps:
             prompt.add_completed_step(step)
 
-        # Add resources to prompt
-        for resource in self.resources.values():
-            prompt.add_resource(resource)
-
         # Add tools to prompt
         for tool in self.tools.values():
             prompt.add_tool(tool)
@@ -282,10 +199,6 @@ class Agent:
         #    '- Do NOT generate parameters for the Tool you choose')
 
         return prompt.generate_prompt()
-
-    def print_prompt(self, prompt):
-        print(prompt['system_prompt'], '\n')
-        print(prompt['user_prompt'])
 
     def get_running_cost(self) -> Dict[str, float]:
         """
@@ -316,10 +229,6 @@ class Agent:
         # commands
         prompt.add_command(user_input)
         prompt.add_command(thoughts)
-
-        # Add resources to prompt
-        for resource in self.resources.values():
-            prompt.add_resource(resource)
 
         # Add tool to prompt
         prompt.add_tool(self.tools[tool_name])
@@ -358,8 +267,13 @@ class Agent:
                 tool = self.tools[parsed_tool_response['Tool']]
             else:
                 tool_name = parsed_tool_response['Tool']
-                tool_failure_steps.append(
-                    f'{tool_name} not in TOOLS. Choose a tool from the TOOLS section')
+                error_msg = f'{tool_name} not in TOOLS. '
+                error_msg += 'Choose a tool from the TOOLS section'
+                step = {
+                    'status': 'error',
+                    'message': error_msg
+                }
+                tool_failure_steps.append(step)
 
         return tool, tool_response, parsed_tool_response
 
@@ -382,13 +296,21 @@ class Agent:
             """ Helper function to get a command from the user """
             print('\nAsk a question')
             user_input = ''
-            user_input1 = 'What was the largest withdrawal from an EasyAccess Checking Account?'
+            user_input1 = 'How many customers are there?'
+            user_input2 = 'What was the largest withdrawal from an EasyAccess Checking Account?'
+            user_input3 = 'How many customers have both a savings account and a credit card?'
+            user_input4 = 'What is the name of the person who most recently opened a savings account?'
             user_input = ''
-            #user_input = 'What is the average revenue for Q4?'
             while user_input == '':
                 user_input = input('> ')
                 if user_input == 'a':
                     user_input = user_input1
+                elif user_input == 'b':
+                    user_input = user_input2
+                elif user_input == 'c':
+                    user_input = user_input3
+                elif user_input == 'd':
+                    user_input = user_input4
             if user_input == 'exit':
                 sys.exit(1)
             return user_input
@@ -403,23 +325,41 @@ class Agent:
             while True:
 
                 if self.toggle:
-                    self.toggle_variables_and_resources(user_input)
+                    self.toggle_variables(user_input)
 
                 res = self.choose_tool(user_input, completed_steps)
-                tool, tool_response, parsed_tool_response = res
 
+                tool, tool_response, parsed_tool_response = res
+                tool_name = parsed_tool_response['Tool']
+
+                thoughts = str(parsed_tool_response['Thoughts'])
+                if tool_name == 'execute_pandas_query':
+                    thoughts += f' {sp.NO_PYTHON}'
                 completed_step = (
-                    'Thoughts: ' + str(parsed_tool_response['Thoughts']) + '\n' +
+                    'Thoughts: ' + thoughts + '\n' +
                     'Tool: ' + str(parsed_tool_response['Tool']) + '\n'
                 )
-                completed_steps.append(completed_step)
+                completed_steps.append(
+                    {
+                        'status': 'success',
+                        'message': completed_step
+                    }
+                )
 
                 if parsed_tool_response['Tool'] in [
                         'system_exit', 'extract_answer']:
-                    answer = self.extract_answer(user_input)
+                    answer = self.extract_answer(user_input, thoughts)
+                    parsed_answer = answer
+                    if 'Question 1:' in answer:
+                        parsed_answer = answer.split('Question 1:')[0].rstrip()
                     answer_step = f'Previous question: {user_input}\n'
-                    answer_step += f'Previous answer: {answer}\n'
-                    completed_steps = [answer_step]
+                    answer_step += f'Previous answer: {parsed_answer}'
+                    completed_steps = [
+                        {
+                            'status': 'success',
+                             'message': answer_step
+                        }
+                    ]
                     break
 
                 called = False
@@ -440,21 +380,28 @@ class Agent:
                     try:
                         res = tool.call(**args)
                         called = True
-                    except Exception as e:
-                        error_msg = f'Error: Error calling function: {e}\n'
+                    except Exception:
+
+                        e = traceback.format_exc()
+                        error_msg = f'Error: Error calling Tool {tool_name}: {e}\n'
                         if 'query' in parsed_param_response['Parameter_0']:
                             if '+' in parsed_param_response['Parameter_0'][1]:
                                 error_msg += 'Do not use Python expressions in SQL queries'
                         print('\nERROR:\n')
                         print(error_msg, '\n')
-                        completed_steps.append(error_msg)
+                        completed_steps.append(
+                            {
+                                'status': 'error',
+                                'message': error_msg
+                            }
+                        )
                         break
 
                     if called:
 
                         # Variable name and description from function call
-                        return_name = parsed_param_response['Returned'].replace(
-                            ' ', '').rstrip()
+                        return_name = parsed_param_response[
+                            'Returned'].replace(' ', '').rstrip()
                         description = parsed_param_response['Description']
 
                         # Add variable to variables
@@ -464,14 +411,16 @@ class Agent:
                             description=description)
                         self.variables[return_name] = return_var
 
-                        tool_name = parsed_tool_response['Tool']
-                        completed_steps.append(
-                            (
-                                f'Tool {tool_name} successfully called, ' +
-                                f'Variable {return_name} saved.'
-                            )
+                        message = (
+                            f'Tool {tool_name} successfully called, ' +
+                            f'Variable {return_name} saved.'
                         )
-
+                        completed_steps.append(
+                            {
+                                'status': 'success',
+                                'message': message
+                            }
+                        )
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)
@@ -494,7 +443,8 @@ class Agent:
         for key, val in kwargs.items():
 
             if key == 'kwargs':
-                val = val.replace('{', '').replace('}', '').replace("'", '').split(',')
+                val = val.replace('{', '').replace('}', '').replace(
+                    "'", '').split(',')
                 for var_name in val:
 
                     # Once in a while the kwargs dictionary will have a
@@ -505,11 +455,14 @@ class Agent:
 
                     if var_name1 != var_name2:
                         if var_name1 in self.variables:
-                            new_args[var_name1] = self.variables[var_name1].value
+                            new_args[
+                                var_name1] = self.variables[var_name1].value
                         elif var_name2 in self.variables:
-                            new_args[var_name2] = self.variables[var_name2].value
+                            new_args[
+                                var_name2] = self.variables[var_name2].value
                     elif var_name1 in self.variables:
-                            new_args[var_name1] = self.variables[var_name1].value
+                            new_args[
+                                var_name1] = self.variables[var_name1].value
                     else:
                         new_args[var_name1] = None
 
@@ -560,7 +513,7 @@ class Agent:
                         param_value = self.variables[param_value].value
 
                 # Parameter is a string but not a SQL query
-                elif param_type == 'str' and param_name != 'query':
+                elif 'str' in param_type and param_name != 'query':
                     if param_value[0] == "'" or param_value[0] == '"':
                         param_value = param_value[1:-1]
 
@@ -571,9 +524,12 @@ class Agent:
                     elif param_type == 'float':
                         param_value = float(param_value)
                     elif param_type == 'bool':
-                        param_value = False
                         if param_value.lower() == 'true':
                             param_value = True
+                        elif param_value.lower() == 'false':
+                            param_value = False
+                        else:
+                            param_value=None
 
                 args[param_name.replace(' ', '')] = param_value
 
@@ -582,13 +538,14 @@ class Agent:
 
         return args
 
-    def extract_answer(self, question: str) -> str:
+    def extract_answer(self, question: str, thoughts: str) -> str:
         """
         Extracts an answer to a given question.
 
         Args:
             question (str): The question for which the answer is to be
             extracted.
+            thoughts (str): The thoughts from the LLM
 
         Returns:
             extracted_answer (str): The extracted answer to the question.
@@ -596,15 +553,17 @@ class Agent:
         prompt = Prompt()
         prompt.add_base_prompt(sp.ANSWER_QUESTION_PROMPT)
         prompt.add_command(question)
-        prompt.add_command('Also provide the user with 3 relevant follow-up questions they may want to ask.')
+        prompt.add_command(thoughts)
+        if self.toggle:
+            self.toggle_variables(question + '\n' + thoughts)
         for variable in self.variables.values():
             if variable.visible:
                 prompt.add_variable(variable)
-        return self.execute(prompt.generate_prompt(), False, False)
+        return self.execute(prompt.generate_prompt(), True, True)
 
     def execute(
             self,
-            prompt_dict: Dict[str, str],
+            prompt_str: str,
             print_prompt: bool=True,
             print_response: bool=True) -> str:
         """
@@ -624,20 +583,14 @@ class Agent:
             print('Thinking...')
         #self.input_cost += self.calculate_prompt_cost(prompt)['input']
         response = oaiapi.chat_completion(
-            user_prompt=prompt_dict['user_prompt'],
-            system_prompt=prompt_dict['system_prompt'],
-            model=self.model_info.name)
+            prompt=prompt_str, model=self.model_info.name)
         #self.log['prompt'].append(prompt)
         #self.log['response'].append(response)
         #self.output_cost += self.calculate_prompt_cost(response)['output']
         if print_prompt:
-            print('#' * 60 + ' SYSTEM PROMPT BEGIN ' + '#' * 60)
-            print(prompt_dict['system_prompt'])
+            print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
+            print(prompt_str)
             print('#' * 60 + ' SYSTEM PROMPT END ' + '#' * 60)
-            print('\n')
-            print('#' * 60 + ' USER PROMPT BEGIN ' + '#' * 60)
-            print(prompt_dict['user_prompt'])
-            print('#' * 60 + ' USER PROMPT END ' + '#' * 60)
             print('\n')
         if print_response:
             print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)

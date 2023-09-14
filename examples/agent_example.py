@@ -17,11 +17,9 @@ from neosophia.agents.system_prompts import PARAM_AGENT_BP, TOOL_AGENT_BP
 
 opj = os.path.join
 
-RESOURCES_FILENAME = 'resources.yaml'
-
 
 @click.command()
-@click.option('--toggle', '-t', is_flag=True, help='Toggle variables/resources')
+@click.option('--toggle', '-t', is_flag=True, help='Toggle variables')
 def main(toggle):
     """ main """
     print('\n')
@@ -39,8 +37,6 @@ def main(toggle):
     tool_descriptions = autils.setup_and_load_yaml(tools_filepath, 'tools')
     tools = autils.setup_tools(config['Tools'], tool_descriptions)
     autils.save_tools_to_yaml(tools, tools_filepath)
-
-    resources = {}
 
     # Dictionary to store all variables the Agent has access to
     variables = {}
@@ -72,7 +68,6 @@ def main(toggle):
         TOOL_AGENT_BP,
         PARAM_AGENT_BP,
         tools,
-        resources,
         variables,
         toggle=toggle)
     agent.chat()

@@ -18,7 +18,7 @@ import neosophia.agents.system_prompts as sp
 
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.agents.data_classes import Colors, Resource, Tool
+from neosophia.agents.data_classes import Colors, Tool
 
 opj = os.path.join
 
@@ -43,72 +43,6 @@ def cprint(*args) -> None:
             print(var, end='')
         else:
             print(f"{Colors.BLUE}{var_names[idx].strip()}{Colors.ENDC}: {var}")
-
-
-def setup_sqlite_resources(
-        sqlite_resources: List[Dict[str, str]],
-        resources_filepath: str,
-        workspace_resources: Dict[str, Dict[str, str]]) -> Dict[str, Resource]:
-
-    """
-    Sets up SQLite resources by adding them to a resources dictionary.
-
-    Args:
-        sqlite_resources (list): List of dictionaries representing the SQLite
-        resources to be added.  Each dictionary must contain the keys 'name',
-        'path', and 'description'.
-        resources_filepath (str): Path to the resources yaml file.
-        workspace_resources (dict): Dictionary containing existing workspace
-        resources.
-
-    Returns:
-        resources (dict): Dictionary containing the added SQLite resources.
-    """
-
-    resources = {}
-
-    # Add SQLite resources and variables
-    for database in sqlite_resources:
-        name = database['name']
-        path = database['path']
-        description = database['description']
-
-        # If no description provided in `config.yaml`, generate one or use the
-        # existing generated description from `workspace_dir/resources.yaml`
-        if description is None:
-
-            # First check if we've already generated a description in the
-            # workspace directory
-            resource = workspace_resources.get(name)
-
-            if resource is None:
-                # No existing description, so generate one
-                print(f'Generating description for {name}...')
-                description = get_database_description(path)
-                resource_yaml = process_for_yaml(name, description)
-                resource_data = yaml.safe_load(resource_yaml)[0]
-                description = resource_data['description']
-
-                # Save resource description to yaml file
-                resources[name] = Resource(name, path, description)
-                write_dict_to_yaml(
-                    {
-                        k: asdict(v) for k, v in resources.items()
-                    },
-                    'resources',
-                    resources_filepath
-                )
-            else:
-                # Load existing description
-                print(f'Loading description for {name} from {resources_filepath}')
-                resources[name] = Resource(name, path, resource['description'])
-        else:
-            # User provided a custom description which we will use
-            print(f'Loading description for {name} from config.yaml')
-            resources[name] = Resource(name, path, description)
-
-    return resources
-
 
 def create_workspace_dir(config: Dict) -> str:
     """
@@ -168,10 +102,8 @@ def convert_function_str_to_yaml(function_str: str) -> str:
     Returns:
         str: The YAML representation of the given function string.
     """
-    return oaiapi.chat_completion(
-        system_prompt=sp.FUNCTION_GPT_PROMPT,
-        user_prompt=function_str,
-        model='gpt-4')
+    prompt = sp.FUNCTION_GPT_PROMPT + '\n\n' + function_str
+    return oaiapi.chat_completion(prompt=prompt, model='gpt-4')
 
 
 def parse_response(text: str) -> Dict[str, str]:
@@ -185,7 +117,7 @@ def parse_response(text: str) -> Dict[str, str]:
         dict: A dictionary representation of the parsed text.
     """
 
-    keywords = ['Thoughts', 'Tool', 'Resource', 'Returned', 'Description']
+    keywords = ['Thoughts', 'Tool', 'Returned', 'Description']
 
     # Split the text into lines
     lines = text.split('\n')
@@ -197,8 +129,7 @@ def parse_response(text: str) -> Dict[str, str]:
 
         current_keyword = None
         if line_start in keywords or line_start.startswith(
-                'Parameter_') or line_start.startswith(
-                        'Variable_') or line_start.startswith('Resource_'):
+                'Parameter_') or line_start.startswith('Variable_'):
             current_keyword = line_start
             line = ''.join(line.split(current_keyword + ': ')[1:])
 
@@ -247,8 +178,7 @@ def get_database_description(db_file: str, model: str = 'gpt-4') -> str:
         sample = sql_utils.execute_query(conn, query)
         user_prompt += f'Data Sample:\n{sample}\n\n'
 
-    return oaiapi.chat_completion(
-        system_prompt=sp.DB_INFO_PROMPT, user_prompt=user_prompt, model=model)
+    return oaiapi.chat_completion(prompt=sp.DB_INFO_PROMPT, model=model)
 
 
 def count_tokens(prompt: str, model: str) -> int:
@@ -356,7 +286,6 @@ def process_for_yaml(name: str, description: str, width=80) -> str:
         yaml_output (str): The YAML formatted string containing the name and
         description
     """
-
     # Replace double quotes with single quotes
     description = description.replace('"', '\'')
 

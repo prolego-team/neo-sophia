@@ -47,16 +47,13 @@ def embeddings(texts: List[str]) -> Any:
     )
 
 
-def chat_completion(
-        user_prompt: str,
-        model: str,
-        system_prompt: str='You are a helpful assistant') -> str:
+def chat_completion(prompt: str, model: str) -> str:
     """simple chat completion"""
     res = oai.ChatCompletion.create(
         model=model,
         messages=[
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': user_prompt}
+            {'role': 'system', 'content': 'You are a helpful assistant'},
+            {'role': 'user', 'content': prompt}
         ]
     )
     return res['choices'][0]['message']['content']

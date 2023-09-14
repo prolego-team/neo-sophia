@@ -5,7 +5,7 @@ from functools import partial
 
 import pandas as pd
 
-from neosophia.agents.data_classes import Resource, Tool, Variable
+from neosophia.agents.data_classes import Tool, Variable
 
 
 def format_df(df: pd.DataFrame) -> str:
@@ -140,21 +140,6 @@ class Prompt:
             prompt += '\n'
             self.variables.append(prompt)
 
-    def add_resource(self, resource: Resource, visible: bool=False) -> None:
-        """
-        Adds a Resource to the list of Resources
-
-        Args:
-            resource (Resource): The Resource to add
-            visible (bool): Whether or not the Resource should be shown
-        Returns:
-            None
-        """
-        if visible or resource.visible:
-            prompt = f'Name: {resource.name}\n'
-            prompt += f'Description: {resource.description}\n'
-            self.resources.append(prompt)
-
     def add_tool(self, tool: Tool) -> None:
         """
         Adds a Tool to the list of Tools
@@ -182,7 +167,10 @@ class Prompt:
         Adds a step to the list of completed_steps
 
         Args:
-            step (str): The step to add
+            step (Dict[str, str]): The step to add with its type.
+            e.g.,
+            `step = {'status': 'success', message: <step details>}`
+            `step = {'status': 'error', message: <error message>}`
         Returns:
             None
         """
@@ -201,7 +189,7 @@ class Prompt:
 
     def generate_prompt(self, tot: int=80) -> str:
         """
-        Organizes the base prompt, Variables, Resources, Tools, constraints,
+        Organizes the base prompt, Variables, Tools, constraints,
         completed steps, and commands to generate a string prompt for the LLM.
 
         args:
@@ -243,19 +231,17 @@ class Prompt:
             for idx, example in enumerate(self.examples):
                 user_prompt += f'EXAMPLE {idx + 1}:{example}\n\n'
         if self.steps:
+            steps = []
+            for step in self.steps:
+                status = step['status']
+                message = step['message']
+                steps.append(
+                    f'Step Status: {status}\nMessage: {message}\n')
             user_prompt += _construct(
-                'COMPLETED STEPS', [x + '\n--\n' for x in self.steps])
+                'COMPLETED STEPS', [x + '\n--\n' for x in steps])
         if self.errors:
             user_prompt += _construct('ERRORS', self.errors)
 
         user_prompt += tot * dash
 
-        #return {
-        #    'user_prompt': user_prompt,
-        #    'system_prompt': system_prompt
-        #}
-
-        return {
-            'user_prompt': user_prompt,
-            'system_prompt': 'You are a helpful assistant'
-        }
+        return user_prompt
