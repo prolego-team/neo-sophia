@@ -44,6 +44,7 @@ def cprint(*args) -> None:
         else:
             print(f"{Colors.BLUE}{var_names[idx].strip()}{Colors.ENDC}: {var}")
 
+
 def create_workspace_dir(config: Dict) -> str:
     """
     Create a workspace directory for the Agent.
@@ -227,33 +228,6 @@ def setup_and_load_yaml(filepath: str, key: str) -> Dict[str, Dict[str, Any]]:
     return {item['name']: item for item in data[key]}
 
 
-def write_dict_to_yaml(
-        data_dict: Dict, keyword: str, filename: str) -> None:
-    """
-    Write the given dictionary to a YAML file using a specified keyword.
-
-    Args:
-        data_dict (Dict): A dictionary containing the details to be
-        written to the YAML file.
-        keyword (str): The keyword to use when wrapping the dictionary in the
-        YAML file.
-        filename (str): The name of the YAML file to write the data to.
-
-    Returns:
-        None
-    """
-    # Transform the dictionary into the desired format
-    data_list = [details for name, details in data_dict.items()]
-
-    # Wrap the list in a dictionary with the keyword
-    data = {keyword: data_list}
-
-    # Write the data to the YAML file
-    with open(filename, 'w') as file:
-        yaml.dump(data, file, default_flow_style=False, sort_keys=False)
-    print(f'Wrote to {filename}')
-
-
 def remove_yaml_special_chars(yaml_string: str) -> str:
     """
     Remove special characters commonly used in YAML from the given string.
@@ -362,6 +336,7 @@ def setup_tools(
             else:
                 print(f'Generating description for {func_name}')
                 tool_yaml = convert_function_str_to_yaml(func_str)
+                tool_yaml = tool_yaml.replace('**kwargs', 'kwargs')
                 tool_dict = yaml.safe_load(tool_yaml)[0]
                 description_yaml = yaml.dump(tool_dict, sort_keys=False)
 

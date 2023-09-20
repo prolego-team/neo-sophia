@@ -4,7 +4,7 @@
 # Command
 TOOL_AGENT_BP = """You are an AI Agent whose job is to assist a user by choosing a Tool that will aid in retrieving information to answer their question. You will be provided with a list TOOLS you have access to, VARIABLES which contain information that may be used, and CONSTRAINTS which describe any constraints you may have, and a COMMAND from a user. You will guide the user in a step-by-step manner towards answering their question. You will be provided with the previous steps that have been taken. If an error occured during the execution of one of the steps, you will be provided with the error message so you can fix it. The results from Tools that have been called as a result of certain steps will be added to the VARIABLES section. Do not generate parameters for the Tool you have selected.
 
-When you have collected enough information to answer the question, choose the tool `extract_answer`. If the user enters in a command indicating they are done and want to quit the program, choose the Tool `system_exit`. Each step must be in the following format:
+You must collect information in such a way that the answer is contained in a single Variable. When you have collected enough information to answer the question, choose the tool `extract_answer`. Each step must be in the following format:
 
 Thoughts: Explanation of why the action is to be taken
 Tool: The tool to use in order to get the information needed
@@ -21,7 +21,7 @@ Description: Description of the variable that was returned
 
 """
 
-NO_PYTHON = 'DO NOT USE PYTHON EXPRESSIONS IN SQL QUERIES'
+NO_PYTHON = 'DO NOT USE PYTHON EXPRESSIONS IN SQL QUERIES OR PARAMETERS'
 
 NO_TOOL_PROMPT = """\n\nERROR: The tool you chose is not in the available list of
 tools.  Choose an available tool from the TOOLS section\n\n"""
@@ -37,7 +37,7 @@ Variable_N: variable_n_name
 
 """
 
-ANSWER_QUESTION_PROMPT = """Answer the question given the following data. Make sure your answer is in a human readable format. Also provide the user with 3 relevant follow-up questions they may want to ask. Your output should be in the following format:
+ANSWER_QUESTION_PROMPT = """Answer the COMMAND given the following data. The user does not have access to the VARIABLES like you do, so you must extract the information and present it in a human readable format. Also provide the user with 3 relevant follow-up questions they may want to ask. Your output should be in the following format:
 
 Answer: human readable answer here
 Question 1: follow-up question 1

@@ -103,7 +103,11 @@ class Prompt:
         """
         self.examples.append(example)
 
-    def add_variable(self, variable: Variable, visible: bool=False) -> None:
+    def add_variable(
+            self,
+            variable: Variable,
+            visible: bool=False,
+            truncate: bool=True) -> None:
         """
         Adds a Variable to the list of Variables. If the Variable is a pandas
         dataframe and has more than 10 rows of data, only the first 10 are
@@ -117,16 +121,19 @@ class Prompt:
             None
         """
         dots = ''
-        max_size = 3
+        max_rows = 5
         truncated = False
         if visible or variable.visible:
             if isinstance(variable.value, pd.DataFrame):
                 value = variable.value
                 if not value.empty:
-                    if 'schema' not in variable.name and value.shape[0] > max_size:
-                        value = value.head(max_size)
-                        dots = '...\n'
-                        truncated = True
+                    num_rows = value.shape[0]
+                    if 'schema' not in variable.name and num_rows > max_rows:
+                        if truncate:
+                            value = value.head(max_rows)
+                            num_tr = num_rows - max_rows
+                            dots = f'... ({num_tr} rows truncated)\n'
+                            truncated = True
                 value = format_df(value)
             else:
                 value = variable.value
@@ -149,7 +156,7 @@ class Prompt:
         Returns:
             None
         """
-        self.tools.append(str(tool))
+        self.tools.append(tool.to_string())
 
     def add_constraint(self, constraint: str) -> None:
         """
@@ -198,7 +205,6 @@ class Prompt:
             prompt (str): The generated prompt
         """
         user_prompt = ''
-        #system_prompt = ''
         dash = '-'
 
         def _get_dash(text):

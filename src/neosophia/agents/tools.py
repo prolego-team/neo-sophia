@@ -9,6 +9,21 @@ import pandas as pd
 from pandasql import load_births, load_meat, sqldf
 
 
+def iloc(df: pd.DataFrame, start: int, end: int) -> Any:
+    """
+    This function returns a subset of a DataFrame using integer-based indexing.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to be sliced.
+        start (int): The starting index of the subset.
+        end (int): The ending index of the subset.
+
+    Returns:
+        return_arg_1 (Any): The subset of the DataFrame from start to end.
+    """
+    return df.iloc[start:end]
+
+
 def merge_dataframes(
         left: Union[pd.DataFrame, pd.Series],
         right: Union[pd.DataFrame, pd.Series],
@@ -69,6 +84,7 @@ def merge_dataframes(
         right_index=right_index,
         sort=sort)
 
+
 def execute_pandas_query(
         query: str, **kwargs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """
@@ -90,7 +106,9 @@ def execute_pandas_query(
     if query.lower().startswith('alter table'):
         if 'add column' in query.lower():
             column_details = query.split('ADD COLUMN')[1].strip()
-            column_name, column_type = [x.strip() for x in column_details.split()]
+            column_name, column_type = [
+                x.strip() for x in column_details.split()
+            ]
 
             if column_type.lower() == 'int':
                 dataframe[column_name] = 0
@@ -103,7 +121,8 @@ def execute_pandas_query(
 
             return dataframe
         else:
-            raise ValueError('Only ADD COLUMN operation is supported in ALTER TABLE')
+            raise ValueError(
+                'Only ADD COLUMN operation is supported in ALTER TABLE')
     else:
         if query[0] == "'" or query[0] == '"':
             query = query[1:-1]
@@ -169,9 +188,6 @@ def get_max_values(df: pd.DataFrame) -> pd.Series:
 
     Returns:
     - pd.Series: A series containing the maximum value of each column.
-
-    100906 - 8073
-    101099 - 7794 -> correct
     """
     return df.max()
 

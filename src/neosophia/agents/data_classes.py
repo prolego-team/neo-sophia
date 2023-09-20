@@ -11,23 +11,13 @@ class Variable:
     name: str
     value: Any
     description: str
-    summary: Optional[str] = None
     visible: bool = True
+    dynamic: bool = False
 
     def to_string(self):
-        #output = f'\n{Colors.BLUE}Name: {Colors.ENDC}{self.name}\n'
-        #output += f'{Colors.BLUE}Value:\n{Colors.ENDC}{self.value}\n'
-        #output += f'{Colors.BLUE}Description: {Colors.ENDC}{self.description}\n'
         output = f'\nName: {self.name}\n'
         output += f'Value:\n{self.value}\n'
         output += f'Description: {self.description}\n'
-        return output
-
-    def __str__(self):
-        output = self.to_string()
-        if self.summary is not None:
-            #output += f'{Colors.BLUE}Summary: {Colors.ENDC}{self.summary}\n'
-            output += f'Summary: {self.summary}\n'
         return output
 
 
@@ -39,8 +29,7 @@ class Tool:
     description: str
     call: Callable
 
-    def __str__(self):
-        #output = f'\n{Colors.BLUE}Tool Name: {Colors.ENDC}{self.name}\n'
+    def to_string(self):
         output = f'\nTool Name: {self.name}\n'
         output += f'Description: {self.description}\n'
         return output

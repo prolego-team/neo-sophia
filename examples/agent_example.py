@@ -41,6 +41,7 @@ def main(toggle):
     # Dictionary to store all variables the Agent has access to
     variables = {}
 
+    # Put all data from databases into Pandas DataFrame Variables
     for db_info in config['Resources']['SQLite']:
         conn = sql_utils.get_conn(db_info['path'])
         name = db_info['name']

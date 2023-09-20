@@ -19,6 +19,47 @@ from neosophia.agents.data_classes import GPT_MODELS, Tool, Variable
 
 opj = os.path.join
 
+EXTRACT_ANSWER_DESCRIPTION = (
+    'Tool Name: extract_answer\n'
+    'Description: This function extracts an answer given a question and\n'
+    '  a dataframe containing the answer.\n'
+    'params:\n'
+    '  data:\n'
+    '    description: A DataFrame or Series that contains the answer\n'
+    '    required: true'
+)
+
+class Log:
+
+    def __init__(self):
+        self.log = []
+
+    def add(self, agent_name: str, message: str) -> None:
+        self.log.append(f'[{agent_name}]')
+        self.log.append(message)
+        self.log.append(f'[END {agent_name}]\n')
+
+    def save(self, workspace_dir) -> None:
+        """
+        Save the log to a text file in a readable format.
+
+        Args:
+            workspace_dir (str): The Agent's workspace directory
+
+        Returns:
+            None
+        """
+        save_dir = opj(workspace_dir, 'logs')
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'log_{timestamp}.txt'
+        filepath = opj(save_dir, filename)
+        os.makedirs(save_dir, exist_ok=True)
+        with open(filepath, 'w') as file:
+            for log in self.log:
+                file.write(log)
+                file.write('\n')
+        print('Log saved to', filepath)
+
 
 class Agent:
     """
@@ -40,28 +81,30 @@ class Agent:
         Args:
             workspace_dir (str): The directory where the agent's log will be
             saved.
-            tool_bp (str): The system prompt for the Tool agent.
-            param_bp (str): The system prompt for the Param agent.
+            tool_bp (str): The base prompt for the Tool agent.
+            param_bp (str): The base prompt for the Param agent.
             tools (Dict[str, Tool]): A dictionary of tools available to the
             agent.
-            available to the agent.
             variables (Dict[str, Variable]): A dictionary of variables
             available to the agent.
             model_name (str, optional): The name of the GPT model to use.
             toggle (bool, optional): A toggle for the agent. If set to True,
             the Agent will make additionall LLM calls to toggle which Variables
             are needed for the current step in execution. If False, then all
-            Variables will be included in the
-            Prompt.
+            Variables will be included in the Prompt.
 
         Returns:
             None
         """
+
         # Keep a log and save it to the workspace_dir
-        self.log = {
-            'prompt': [],
-            'response': []
-        }
+        self.log = Log()
+
+        if model_name not in GPT_MODELS:
+            models = ', '.join(list(GPT_MODELS.keys()))
+            print(
+                f'\nModel name "{model_name}" must be one of: {models}\n')
+            exit()
 
         # Get info such as max_tokens, cost per token, etc.
         self.model_name = model_name
@@ -84,7 +127,7 @@ class Agent:
         self.tools['extract_answer'] = Tool(
             name='extract_answer',
             function_str=None,
-            description='Tool to extract an answer given a question and data',
+            description=EXTRACT_ANSWER_DESCRIPTION,
             call=self.extract_answer
         )
 
@@ -113,7 +156,7 @@ class Agent:
             'output': num_tokens * self.model_info.output_token_cost
         }
 
-    def toggle_variables(self, command: str) -> None:
+    def toggle_variables(self, command: str, thoughts: str) -> None:
         """
         Function to choose which variables to show the values for
 
@@ -127,20 +170,27 @@ class Agent:
         prompt = Prompt()
         prompt.add_base_prompt(sp.CHOOSE_VARIABLES_PROMPT)
         prompt.add_command(command)
+        prompt.add_command(thoughts)
         prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
 
         for variable in self.variables.values():
-            variable.visible = False
-            if isinstance(variable, Variable):
-                prompt.add_variable(variable, True)
+            if not variable.dynamic:
+                variable.visible = False
+                if isinstance(variable, Variable):
+                    prompt.add_variable(variable, True)
+            else:
+                self.log.add(
+                    'TOGGLE AGENT',
+                    f'Setting dynamic variable {variable.name} VISIBLE')
 
         prompt_str = prompt.generate_prompt()
         response = self.execute(prompt_str, False, False)
 
         variables_to_show = autils.parse_response(response)
         for variable_name in variables_to_show.values():
+            self.log.add(
+                'TOGGLE AGENT', f'Setting variable {variable_name} VISIBLE')
             self.variables[variable_name].visible = True
-
 
     def check_prompt(self, prompt: str) -> bool:
         """
@@ -156,49 +206,6 @@ class Agent:
         if num_tokens < self.model_info.max_tokens:
             return True
         return False
-
-    def build_tool_prompt(
-            self,
-            base_prompt: str,
-            user_input: str,
-            completed_steps: List[str]) -> str:
-        """
-        Builds a prompt object and returns a string
-
-        Args:
-            user_input (str): The question/command given by the user
-            completed_steps (list): The completed_steps taken by the Agent
-
-        Returns:
-            prompt (str): The generated prompt string.
-        """
-
-        prompt = Prompt()
-        prompt.add_base_prompt(base_prompt)
-
-        prompt.add_command(user_input)
-
-        for step in completed_steps:
-            prompt.add_completed_step(step)
-
-        # Add tools to prompt
-        for tool in self.tools.values():
-            prompt.add_tool(tool)
-
-        # Add variables to prompt
-        for variable in self.variables.values():
-            prompt.add_variable(variable)
-
-        #prompt.add_constraint(sp.CONSTRAINT_1)
-        #prompt.add_constraint(sp.CONSTRAINT_3)
-        #prompt.add_constraint(sp.CONSTRAINT_4)
-        #prompt.add_constraint(sp.CONSTRAINT_5)
-        #prompt.add_constraint(sp.CONSTRAINT_6)
-        #prompt.add_constraint(sp.CONSTRAINT_7)
-        #prompt.add_constraint(
-        #    '- Do NOT generate parameters for the Tool you choose')
-
-        return prompt.generate_prompt()
 
     def get_running_cost(self) -> Dict[str, float]:
         """
@@ -217,7 +224,41 @@ class Agent:
             'total': self.input_cost + self.output_cost
         }
 
-    def build_param_prompt(self, user_input, parsed_response, completed_steps):
+    def build_tool_prompt(
+            self,
+            base_prompt: str,
+            command: str,
+            completed_steps: List[str]) -> str:
+        """
+        Builds a prompt object and returns a string
+
+        Args:
+            command (str): The question/command given by the user
+            completed_steps (list): The completed_steps taken by the Agent
+
+        Returns:
+            prompt (str): The generated prompt string.
+        """
+
+        prompt = Prompt()
+        prompt.add_base_prompt(base_prompt)
+
+        prompt.add_command(command)
+
+        for step in completed_steps:
+            prompt.add_completed_step(step)
+
+        # Add tools to prompt
+        for tool in self.tools.values():
+            prompt.add_tool(tool)
+
+        # Add variables to prompt
+        for variable in self.variables.values():
+            prompt.add_variable(variable)
+
+        return prompt.generate_prompt()
+
+    def build_param_prompt(self, command, parsed_response, completed_steps):
 
         tool_name = parsed_response['Tool']
         thoughts = parsed_response['Thoughts']
@@ -227,7 +268,7 @@ class Agent:
 
         # Add the user's question along with the main Agent's thoughts as
         # commands
-        prompt.add_command(user_input)
+        prompt.add_command(command)
         prompt.add_command(thoughts)
 
         # Add tool to prompt
@@ -249,7 +290,13 @@ class Agent:
 
         return prompt.generate_prompt()
 
-    def choose_tool(self, user_input, completed_steps):
+    def log_response(self, parsed_response, agent_name):
+        for key, val in parsed_response.items():
+            if isinstance(val, list):
+                val = ' | '.join(val)
+            self.log.add(f'{agent_name}', f'{key}: {val}')
+
+    def choose_tool(self, command, completed_steps):
         tool = None
         tool_failure_steps = []
         while tool is None:
@@ -257,11 +304,12 @@ class Agent:
             # Choose a Tool
             tool_prompt = self.build_tool_prompt(
                 self.tool_bp,
-                user_input,
+                command,
                 completed_steps + tool_failure_steps)
 
             tool_response = self.execute(tool_prompt)
             parsed_tool_response = autils.parse_response(tool_response)
+            self.log_response(parsed_tool_response, 'TOOL')
 
             if parsed_tool_response['Tool'] in self.tools:
                 tool = self.tools[parsed_tool_response['Tool']]
@@ -274,6 +322,9 @@ class Agent:
                     'message': error_msg
                 }
                 tool_failure_steps.append(step)
+                self.log.add(
+                    'TOOL AGENT', f'ERROR - Wrong Tool chosen: {tool_name}')
+                self.log.add('TOOL AGENT', error_msg)
 
         return tool, tool_response, parsed_tool_response
 
@@ -295,39 +346,26 @@ class Agent:
         def get_command():
             """ Helper function to get a command from the user """
             print('\nAsk a question')
-            user_input = ''
-            user_input1 = 'How many customers are there?'
-            user_input2 = 'What was the largest withdrawal from an EasyAccess Checking Account?'
-            user_input3 = 'How many customers have both a savings account and a credit card?'
-            user_input4 = 'What is the name of the person who most recently opened a savings account?'
-            user_input = ''
-            while user_input == '':
-                user_input = input('> ')
-                if user_input == 'a':
-                    user_input = user_input1
-                elif user_input == 'b':
-                    user_input = user_input2
-                elif user_input == 'c':
-                    user_input = user_input3
-                elif user_input == 'd':
-                    user_input = user_input4
-            if user_input == 'exit':
+            command = ''
+            while command == '':
+                command = input('> ')
+            if command == 'exit':
                 sys.exit(1)
-            return user_input
+            return command
 
         completed_steps = []
+        thoughts = ''
 
         while True:
-
-            user_input = get_command()
-
+            command = get_command()
+            self.log.add('SYSTEM', f'User Command: {command}')
 
             while True:
 
                 if self.toggle:
-                    self.toggle_variables(user_input)
+                    self.toggle_variables(command, thoughts)
 
-                res = self.choose_tool(user_input, completed_steps)
+                res = self.choose_tool(command, completed_steps)
 
                 tool, tool_response, parsed_tool_response = res
                 tool_name = parsed_tool_response['Tool']
@@ -348,18 +386,60 @@ class Agent:
 
                 if parsed_tool_response['Tool'] in [
                         'system_exit', 'extract_answer']:
-                    answer = self.extract_answer(user_input, thoughts)
+
+                    # Choose parameters for the Tool
+                    param_prompt = self.build_param_prompt(
+                        command,
+                        parsed_tool_response,
+                        completed_steps)
+                    param_response = self.execute(param_prompt).split('\n\n')
+                    param_response = param_response[0]
+                    parsed_param_response = autils.parse_response(
+                        param_response)
+                    self.log_response(parsed_param_response, 'PARAM')
+
+                    args = self.extract_params(parsed_param_response)
+
+                    # This is the variable that contains the answer
+                    variable_name = parsed_param_response['Parameter_0'][1]
+
+                    # Could happen if the Parameter Agent used a Python
+                    # expression as the data to pass to extract_answer
+                    if variable_name not in self.variables:
+
+                        error_msg = (
+                            'The Variable you have chosen '
+                            f'`{variable_name}` is not an available Variable'
+                        )
+                        print(error_msg)
+                        completed_steps.append(
+                            {
+                                'status': 'error',
+                                'message': error_msg
+                            }
+                        )
+                        self.log.add('SYSTEM', error_msg)
+                        continue
+
+                    answer = self.extract_answer(
+                        command, thoughts, data=self.variables[variable_name])
+
                     parsed_answer = answer
                     if 'Question 1:' in answer:
                         parsed_answer = answer.split('Question 1:')[0].rstrip()
-                    answer_step = f'Previous question: {user_input}\n'
+                    answer_step = f'Previous question: {command}\n'
                     answer_step += f'Previous answer: {parsed_answer}'
+
                     completed_steps = [
                         {
                             'status': 'success',
                              'message': answer_step
                         }
                     ]
+
+                    answer_step += str(answer) + '\n'
+                    self.log.add('SYSTEM', answer_step)
+
                     break
 
                 called = False
@@ -367,7 +447,7 @@ class Agent:
 
                     # Choose parameters for the Tool
                     param_prompt = self.build_param_prompt(
-                        user_input,
+                        command,
                         parsed_tool_response,
                         completed_steps)
                     param_response = self.execute(param_prompt).split('\n\n')
@@ -375,26 +455,34 @@ class Agent:
 
                     parsed_param_response = autils.parse_response(
                         param_response)
+                    self.log_response(parsed_param_response, 'PARAM')
                     args = self.extract_params(parsed_param_response)
 
                     try:
                         res = tool.call(**args)
                         called = True
-                    except Exception:
+                    except Exception as e:
+                        (
+                            exception_type,
+                            exception_value,
+                            exception_traceback
+                        ) = sys.exc_info()
 
-                        e = traceback.format_exc()
-                        error_msg = f'Error: Error calling Tool {tool_name}: {e}\n'
+                        error_msg = f'Exception Type: {exception_type}'
+                        error_msg += f'Exception Value: {exception_value}'
+
                         if 'query' in parsed_param_response['Parameter_0']:
                             if '+' in parsed_param_response['Parameter_0'][1]:
-                                error_msg += 'Do not use Python expressions in SQL queries'
-                        print('\nERROR:\n')
-                        print(error_msg, '\n')
+                                error_msg += sp.NO_PYTHON
+
                         completed_steps.append(
                             {
                                 'status': 'error',
                                 'message': error_msg
                             }
                         )
+                        self.log.add(
+                            'PARAM AGENT', f'Error Message: {error_msg}')
                         break
 
                     if called:
@@ -408,12 +496,13 @@ class Agent:
                         return_var = Variable(
                             name=return_name,
                             value=res,
-                            description=description)
+                            description=description,
+                            dynamic=True)
                         self.variables[return_name] = return_var
 
                         message = (
                             f'Tool {tool_name} successfully called, ' +
-                            f'Variable {return_name} saved.'
+                            f'Variable {return_name} saved.\n'
                         )
                         completed_steps.append(
                             {
@@ -421,6 +510,11 @@ class Agent:
                                 'message': message
                             }
                         )
+
+                        message += str(res) + '\n'
+                        self.log.add('SYSTEM', message)
+
+                self.log.add('', '\n' + '*' * 60 +  '\n')
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)
@@ -435,7 +529,7 @@ class Agent:
             print(nct)
             print('\n')
 
-            self.save_log()
+            self.log.save(self.workspace_dir)
 
     def parse_kwargs(self, kwargs):
 
@@ -538,7 +632,7 @@ class Agent:
 
         return args
 
-    def extract_answer(self, question: str, thoughts: str) -> str:
+    def extract_answer(self, question: str, thoughts: str, data) -> str:
         """
         Extracts an answer to a given question.
 
@@ -554,11 +648,7 @@ class Agent:
         prompt.add_base_prompt(sp.ANSWER_QUESTION_PROMPT)
         prompt.add_command(question)
         prompt.add_command(thoughts)
-        if self.toggle:
-            self.toggle_variables(question + '\n' + thoughts)
-        for variable in self.variables.values():
-            if variable.visible:
-                prompt.add_variable(variable)
+        prompt.add_variable(data, truncate=False)
         return self.execute(prompt.generate_prompt(), True, True)
 
     def execute(
@@ -582,43 +672,18 @@ class Agent:
         if print_prompt or print_response:
             print('Thinking...')
         #self.input_cost += self.calculate_prompt_cost(prompt)['input']
-        response = oaiapi.chat_completion(
-            prompt=prompt_str, model=self.model_info.name)
-        #self.log['prompt'].append(prompt)
-        #self.log['response'].append(response)
-        #self.output_cost += self.calculate_prompt_cost(response)['output']
         if print_prompt:
             print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
             print(prompt_str)
             print('#' * 60 + ' SYSTEM PROMPT END ' + '#' * 60)
             print('\n')
+        response = oaiapi.chat_completion(
+            prompt=prompt_str, model=self.model_info.name)
+        #self.output_cost += self.calculate_prompt_cost(response)['output']
         if print_response:
             print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)
             print(response)
             print('#' * 60 + ' RESPONSE END ' + '#' * 60)
             print('\n')
         return response
-
-    def save_log(self) -> None:
-        """
-        Save the log dictionary to a text file in a readable format.
-
-        Args:
-            log (dict): Dictionary containing prompts and responses.
-            filename (str): Name of the file to save the log.
-
-        Returns:
-            None
-        """
-        save_dir = opj(self.workspace_dir, 'logs')
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'log_{timestamp}.txt'
-        filepath = opj(save_dir, filename)
-        os.makedirs(save_dir, exist_ok=True)
-        with open(filepath, 'w') as file:
-            for prompt, response in zip(self.log['prompt'], self.log['response']):
-                file.write("Prompt: " + prompt + "\n")
-                file.write("Response: " + response + "\n")
-                file.write("-" * 80 + "\n")
-        print('Log saved to', filepath)
 
