@@ -62,6 +62,26 @@ def test_build_function_dict_from_module():
 
 def test_parse_response():
 
+    response = """Parameter_0: query | 'SELECT COUNT(*) AS total_customers FROM customers_data' | str | 'value'
+Parameter_1: kwargs | {'customers_data': customers_data} | Dict[(str, pd.DataFrame)] | 'reference'
+Returned: total_customers
+Description: The total number of customers in database SynthBank"""
+
+    expected_parsed_response = {
+        'Parameter_0': [
+            'query',
+            "'SELECT COUNT(*) AS total_customers FROM customers_data'",
+            'str',
+            "'value'"],
+        'Parameter_1': [
+            'kwargs',
+            "{'customers_data': customers_data}", 'Dict[(str, pd.DataFrame)]',
+            "'reference'"
+        ],
+        'Returned': 'total_customers',
+        'Description': 'The total number of customers in database SynthBank'
+    }
+
     # TODO - add more complex parameters here
     response = (
         "Thoughts: Random thoughts from the LLM\n"
