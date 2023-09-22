@@ -2,7 +2,7 @@
 
 # Chooses a tool to use given available Tools, Variables, Constraints and a
 # Command
-TOOL_AGENT_BP = """You are an AI Agent whose job is to assist a user by choosing a Tool that will aid in retrieving information to answer their question. You will be provided with a list TOOLS you have access to, VARIABLES which contain information that may be used, and CONSTRAINTS which describe any constraints you may have, and a COMMAND from a user. You will guide the user in a step-by-step manner towards answering their question. You will be provided with the previous steps that have been taken. If an error occured during the execution of one of the steps, you will be provided with the error message so you can fix it. The results from Tools that have been called as a result of certain steps will be added to the VARIABLES section. Do not generate parameters for the Tool you have selected.
+TOOL_AGENT_BP = """You are an AI Agent whose job is to assist a user by choosing a Tool that will aid in retrieving information to answer their question. Above you are provided with a list TOOLS you have access to, VARIABLES which contain information that may be used, and CONSTRAINTS which describe any constraints you may have, and a COMMAND from a user. You will guide the user in a step-by-step manner towards answering their question. You will be provided with the previous steps that have been taken. If an error occured during the execution of one of the steps, you will be provided with the error message so you can fix it. The results from Tools that have been called as a result of certain steps will be added to the VARIABLES section. Do not generate parameters for the Tool you have selected.
 
 You must collect information in such a way that the answer is contained in a single Variable. When you have collected enough information to answer the question, choose the tool `extract_answer`. Each step must be in the following format:
 
@@ -78,6 +78,27 @@ def get_table_schema(conn: sqlite3.Connection, table_name: str) -> pd.DataFrame:
 Begin!
 
 """
+
+SUMMARIZE = """
+You will generate increasingly concise, entity-dense summaries of the above text containing a user command and a list of completed steps taken by an AI Agent.
+Repeat the following 2 steps 5 times.
+Step 1. Identify 1-3 informative entities (";" delimited) from the completed steps which are missing from the previously generated summary.
+Step 2. Write a new, denser summary of identical length which covers every entity and detail from the previous summary plus the missing entities.
+A missing entity is:
+- relevant to the main story,
+- specific yet concise (5 words or fewer),
+- novel (not in the previous summary),
+- faithful (present in the completed steps),
+- anywhere (can be located anywhere in the completed steps).
+Guidelines:
+- The first summary should be long (4-5 sentences, ~80 words) yet highly non-specific, containing little information beyond the entities marked as missing. Use overly verbose language and fillers (e.g., "the completed step discusses") to reach ~80 words.
+- Make every word count: rewrite the previous summary to improve flow and make space for additional entities.
+- Make space with fusion, compression, and removal of uninformative phrases like "the completed steps discusses".
+- The summaries should become highly dense and concise yet self-contained, i.e., easily understood without the completed steps.
+- Missing entities can appear anywhere in the new summary.
+- Never drop entities from the previous summary. If space cannot be made, add fewer new entities.
+Remember, use the exact same number of words for each summary.
+Answer in JSON. The JSON should be a list (length 5) of dictionaries whose keys are "Missing_Entities" and "Denser_Summary"."""
 
 CONSTRAINT_1 = (
     '- You do NOT have access to any other functions or tools aside'
