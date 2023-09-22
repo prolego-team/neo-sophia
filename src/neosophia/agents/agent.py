@@ -524,6 +524,8 @@ class Agent:
                         # Variable name and description from function call
                         return_name = parsed_param_response[
                             'Returned'].replace(' ', '').rstrip()
+                        if return_name[0] == '"' or return_name[0] == "'":
+                            return_name = return_name[1:-1]
                         description = parsed_param_response['Description']
 
                         # Add variable to variables
