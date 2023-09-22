@@ -229,11 +229,8 @@ def main():
         return response
 
     with gr.Blocks() as demo:
-        gr.Markdown('# Chat About Techtonic Tech, Inc\'s P&L')
-        gr.Markdown(
-            "Techtonic Tech is a product company selling direct to consumers.  "
-            "You are in a small but stable market with only one direct competitor."
-        )
+        gr.Markdown('# Insight into Techtonic Tech\'s P&L Dashboard')
+        gr.Markdown("You are in a small but stable market with only one direct competitor.")
         gr.Markdown('```\n' + PRIMARY_ASSET + '```')
 
         question = gr.Textbox(
