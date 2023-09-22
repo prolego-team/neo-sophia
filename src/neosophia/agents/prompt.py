@@ -220,10 +220,6 @@ class Prompt:
             prompt += items
             return prompt
 
-        if self.base_prompt:
-            user_prompt += '\n'.join(self.base_prompt)
-        if self.commands:
-            user_prompt += _construct('COMMANDS', self.commands)
         if self.tools:
             user_prompt += _construct('TOOLS', self.tools)
         if self.resources:
@@ -245,8 +241,12 @@ class Prompt:
                     f'Step Status: {status}\nMessage: {message}\n')
             user_prompt += _construct(
                 'COMPLETED STEPS', [x + '\n--\n' for x in steps])
+        if self.commands:
+            user_prompt += _construct('COMMANDS', self.commands)
         if self.errors:
             user_prompt += _construct('ERRORS', self.errors)
+        if self.base_prompt:
+            user_prompt += _construct('SYSTEM PROMPT', self.base_prompt)
 
         user_prompt += tot * dash
 
