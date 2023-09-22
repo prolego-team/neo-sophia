@@ -19,6 +19,7 @@ from neosophia.agents.data_classes import GPT_MODELS, Tool, Variable
 
 opj = os.path.join
 
+# Description for extract_answer
 EXTRACT_ANSWER_DESCRIPTION = (
     'Tool Name: extract_answer\n'
     'Description: This function extracts an answer given a question and\n'
@@ -29,17 +30,30 @@ EXTRACT_ANSWER_DESCRIPTION = (
     '    required: true'
 )
 
-class Log:
 
-    def __init__(self):
+class Log:
+    """ Simple class for logging """
+
+    def __init__(self, workspace_dir):
+        """ Create the log list and save directory """
         self.log = []
+        self.save_dir = opj(workspace_dir, 'logs')
+        os.makedirs(self.save_dir, exist_ok=True)
 
     def add(self, agent_name: str, message: str) -> None:
-        self.log.append(f'[{agent_name}]')
-        self.log.append(message)
-        self.log.append(f'[END {agent_name}]\n')
+        """
+        Adds a message to the log.
 
-    def save(self, workspace_dir) -> None:
+        Args:
+            agent_name (str): The source of the message
+            message (str): The message to log
+        Returns:
+            None
+        """
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.log.append(f'{timestamp} - [{agent_name}] {message}')
+
+    def save(self) -> None:
         """
         Save the log to a text file in a readable format.
 
@@ -49,16 +63,17 @@ class Log:
         Returns:
             None
         """
-        save_dir = opj(workspace_dir, 'logs')
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'log_{timestamp}.txt'
-        filepath = opj(save_dir, filename)
-        os.makedirs(save_dir, exist_ok=True)
+        filepath = opj(self.save_dir, filename)
         with open(filepath, 'w') as file:
             for log in self.log:
                 file.write(log)
                 file.write('\n')
         print('Log saved to', filepath)
+
+    def __str__(self):
+        return '\n'.join(self.log)
 
 
 class Agent:
@@ -98,7 +113,10 @@ class Agent:
         """
 
         # Keep a log and save it to the workspace_dir
-        self.log = Log()
+        self.log = Log(workspace_dir)
+        self.save_dir = opj(workspace_dir, 'logs')
+
+        self.all_steps = []
 
         if model_name not in GPT_MODELS:
             models = ', '.join(list(GPT_MODELS.keys()))
@@ -203,6 +221,7 @@ class Agent:
             True if the prompt fits within the context window, False otherwise.
         """
         num_tokens = autils.count_tokens(prompt, self.model_info.name)
+        print(num_tokens)
         if num_tokens < self.model_info.max_tokens:
             return True
         return False
@@ -309,7 +328,7 @@ class Agent:
 
             tool_response = self.execute(tool_prompt)
             parsed_tool_response = autils.parse_response(tool_response)
-            self.log_response(parsed_tool_response, 'TOOL')
+            self.log_response(parsed_tool_response, 'TOOL AGENT')
 
             if parsed_tool_response['Tool'] in self.tools:
                 tool = self.tools[parsed_tool_response['Tool']]
@@ -322,6 +341,7 @@ class Agent:
                     'message': error_msg
                 }
                 tool_failure_steps.append(step)
+                self.all_steps.append(step)
                 self.log.add(
                     'TOOL AGENT', f'ERROR - Wrong Tool chosen: {tool_name}')
                 self.log.add('TOOL AGENT', error_msg)
@@ -377,12 +397,13 @@ class Agent:
                     'Thoughts: ' + thoughts + '\n' +
                     'Tool: ' + str(parsed_tool_response['Tool']) + '\n'
                 )
-                completed_steps.append(
-                    {
-                        'status': 'success',
-                        'message': completed_step
-                    }
-                )
+
+                step = {
+                    'status': 'success',
+                    'message': completed_step
+                }
+                completed_steps.append(step)
+                self.all_steps.append(step)
 
                 if parsed_tool_response['Tool'] in [
                         'system_exit', 'extract_answer']:
@@ -396,9 +417,21 @@ class Agent:
                     param_response = param_response[0]
                     parsed_param_response = autils.parse_response(
                         param_response)
-                    self.log_response(parsed_param_response, 'PARAM')
+                    self.log_response(parsed_param_response, 'PARAM AGENT')
 
                     args = self.extract_params(parsed_param_response)
+
+                    if 'Parameter_0' not in parsed_param_response:
+
+                        error_msg = 'You must generate a Parameter'
+                        step = {
+                            'status': 'error',
+                            'message': error_msg
+                        }
+                        completed_steps.append(step)
+                        self.all_steps.append(step)
+                        self.log.add('SYSTEM', error_msg)
+                        continue
 
                     # This is the variable that contains the answer
                     variable_name = parsed_param_response['Parameter_0'][1]
@@ -412,12 +445,13 @@ class Agent:
                             f'`{variable_name}` is not an available Variable'
                         )
                         print(error_msg)
-                        completed_steps.append(
-                            {
-                                'status': 'error',
-                                'message': error_msg
-                            }
-                        )
+                        step = {
+                            'status': 'error',
+                            'message': error_msg
+                        }
+                        completed_steps.append(step)
+                        self.all_steps.append(step)
+
                         self.log.add('SYSTEM', error_msg)
                         continue
 
@@ -455,7 +489,7 @@ class Agent:
 
                     parsed_param_response = autils.parse_response(
                         param_response)
-                    self.log_response(parsed_param_response, 'PARAM')
+                    self.log_response(parsed_param_response, 'PARAM AGENT')
                     args = self.extract_params(parsed_param_response)
 
                     try:
@@ -475,12 +509,12 @@ class Agent:
                             if '+' in parsed_param_response['Parameter_0'][1]:
                                 error_msg += sp.NO_PYTHON
 
-                        completed_steps.append(
-                            {
-                                'status': 'error',
-                                'message': error_msg
-                            }
-                        )
+                        step = {
+                            'status': 'error',
+                            'message': error_msg
+                        }
+                        completed_steps.append(step)
+                        self.all_steps.append(step)
                         self.log.add(
                             'PARAM AGENT', f'Error Message: {error_msg}')
                         break
@@ -504,12 +538,12 @@ class Agent:
                             f'Tool {tool_name} successfully called, ' +
                             f'Variable {return_name} saved.\n'
                         )
-                        completed_steps.append(
-                            {
-                                'status': 'success',
-                                'message': message
-                            }
-                        )
+                        step = {
+                            'status': 'success',
+                            'message': message
+                        }
+                        completed_steps.append(step)
+                        self.all_steps.append(step)
 
                         message += str(res) + '\n'
                         self.log.add('SYSTEM', message)
@@ -528,13 +562,25 @@ class Agent:
             print('\n')
             print(nct)
             print('\n')
+            self.log.save()
+            self.save_summary(command)
 
-            self.log.save(self.workspace_dir)
+    def parse_kwargs(self, args):
+        """
+        Parses the generated args to replace references of Variables in
+        **kwargs with the Variable's value. If no Variable exists, then a value
+        of None is used.
 
-    def parse_kwargs(self, kwargs):
+        Args:
+        - args (dict): The dictionary of arguments to be parsed.
+
+        Returns:
+        - dict: A new dictionary with processed values based on the provided
+          args.
+        """
 
         new_args = {}
-        for key, val in kwargs.items():
+        for key, val in args.items():
 
             if key == 'kwargs':
                 val = val.replace('{', '').replace('}', '').replace(
@@ -546,7 +592,6 @@ class Agent:
                     var_name1, var_name2 = var_name.split(':')
                     var_name1 = var_name1.strip()
                     var_name2 = var_name2.strip()
-
                     if var_name1 != var_name2:
                         if var_name1 in self.variables:
                             new_args[
@@ -671,7 +716,7 @@ class Agent:
         self.llm_calls += 1
         if print_prompt or print_response:
             print('Thinking...')
-        #self.input_cost += self.calculate_prompt_cost(prompt)['input']
+        self.input_cost += self.calculate_prompt_cost(prompt_str)['input']
         if print_prompt:
             print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
             print(prompt_str)
@@ -679,11 +724,40 @@ class Agent:
             print('\n')
         response = oaiapi.chat_completion(
             prompt=prompt_str, model=self.model_info.name)
-        #self.output_cost += self.calculate_prompt_cost(response)['output']
+        self.output_cost += self.calculate_prompt_cost(response)['output']
         if print_response:
             print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)
             print(response)
             print('#' * 60 + ' RESPONSE END ' + '#' * 60)
             print('\n')
         return response
+
+    def save_summary(self, command) -> None:
+        """
+        Generates a short summary based on the steps taken.
+
+        Args:
+            command (str): The initial command from the user
+
+        Returns:
+            None
+        """
+        print('\nGenerating a summary of the interaction...')
+        completed_steps_str = []
+        for step_dict in self.all_steps:
+            status = step_dict['status']
+            message = step_dict['message']
+            step_str = f'Status: {status}\n'
+            step_str += f'Message: {message}\n'
+            completed_steps_str.append(step_str)
+
+        steps_summary = autils.summarize_completed_steps(
+            command, completed_steps_str)
+
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'log_{timestamp}-summary.txt'
+        filepath = opj(self.save_dir, filename)
+        with open(filepath, 'w') as file:
+            file.write(steps_summary)
+        print('Summary saved to', filepath)
 
