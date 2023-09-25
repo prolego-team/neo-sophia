@@ -54,10 +54,37 @@ Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
+## Episode 10 - Turn your dashboards into interactive data conversations
+Dashboards and reports written with applications like Tableau are underutilized. Fortunately you can turn the into rich conversations with LLMs.
+
+Video: [](url)
+
+1. Checkout Episode 10, [Release v0.10.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.10.0)
+````
+    git checkout tags/v0.10.0
+````
+2. Start the demo by running
+
+````
+    python -m examples.sleuth
+````
+
+## Episode 9 - Build your AI Strategy in One Hour
+Most companies spend months talking about AI before converging on the same plan as everyone else. Save yourself the time and start with the right plan.
+
+Video:[](url)
+Powerpoint deck:[](url)
+
+## Episode 8 - The critical skills needed for LLM development
+Programming against LLM APIs requires a combination of an experimental mindset and systems engineering experience.
+
+Video: [The skills needed for LLM Developent](https://www.youtube.com/watch?v=Wp6LP8yk4I8)
+Job description: [AI Systems Engineer](https://www.prolego.com/email/aiengineerjobdescription)
+
 ## Episode 7 - How to pick the Best LLM for Your Project
 GPT-3? GPT-4? Claude 2? Open source? You have so many options and don't know where to start. Fortunately, there is an easy answer for the majority of teams. Start with the most intelligent model, currently GPT-4.
 
-Video: How to pick the Best LLM for Your Project
+Video: [How to pick the Best LLM for Your Project](https://www.youtube.com/watch?v=VTWn-2SVWo8))
 
 ## Episode 6 - Improving LLM Reliablity with Evaluation frameworks
 LLM hallucinations and inconsistencies are real challenges, but you can begin overcoming them with a good evaluation framework.
