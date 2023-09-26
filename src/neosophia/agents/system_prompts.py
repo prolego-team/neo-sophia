@@ -100,12 +100,10 @@ Guidelines:
 Remember, use the exact same number of words for each summary.
 Answer in JSON. The JSON should be a list (length 5) of dictionaries whose keys are "Missing_Entities" and "Denser_Summary"."""
 
-CONSTRAINT_1 = (
-    '- You do NOT have access to any other functions or tools aside'
-    'from those listed in the TOOLS section.'
-)
-CONSTRAINT_3 = '- You cannot generate Parameters that contain both references and values. '
-CONSTRAINT_4 = '- You cannot engage in any conversation outside of the "Thoughts" section'
-CONSTRAINT_5 = '- Do not include any blank or new lines in your "Thoughts"'
-CONSTRAINT_6 = '- Do not generate any Python expressions in the Parameters'
-CONSTRAINT_7 = '- ONLY GENERATE ONE STEP AT A TIME'
+PARAM_PROMPT_CONSTRAINTS = [
+    'Do not provide Thoughts',
+    'Only provide one set of Parameters at a time',
+    'Do not say what tool you are using',
+    'Only generate Parameters, the Returned name, and a Description as defined in the template',
+    'Do not generate an SQL query that contains a Python expression. You must use exact values in the SQL queries that you generate'
+]

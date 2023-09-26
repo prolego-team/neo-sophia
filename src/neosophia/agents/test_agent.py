@@ -60,7 +60,7 @@ def test_calculate_prompt_cost():
 
     agent = _get_agent()
     cost = agent.calculate_prompt_cost(prompt)
-    assert(cost == expected_cost)
+    assert cost == expected_cost
 
 
 def test_check_prompt():
@@ -73,8 +73,8 @@ def test_check_prompt():
     prompt2 = lorem.text() * 100
     out2 = agent.check_prompt(prompt2)
 
-    assert(out1 == True)
-    assert(out2 == False)
+    assert out1
+    assert not out2
 
 
 def test_build_tool_prompt():
@@ -145,7 +145,7 @@ Build tool base prompt
 
 
 --------------------------------------------------------------------------------"""
-    assert(tool_prompt == expected_tool_prompt)
+    assert tool_prompt == expected_tool_prompt
 
 
 def test_build_param_prompt():
@@ -214,7 +214,7 @@ Param base prompt
 
 
 --------------------------------------------------------------------------------"""
-    assert(prompt == expected_param_prompt)
+    assert prompt == expected_param_prompt
 
 
 def test_extract_params():
@@ -245,7 +245,7 @@ def test_extract_params():
     assert args == expected_args
 
 
-def test_parse_kwargs():
+def test_substitute_variable_values_kwargs():
 
     agent = _get_agent()
 
@@ -254,7 +254,7 @@ def test_parse_kwargs():
         'query': "'SELECT * FROM dummy_variable'",
         'kwargs': "{'dummy_variable': dummy_variable}"
     }
-    parsed_args = agent.parse_kwargs(args)
+    parsed_args = agent.substitute_variable_values_kwargs(args)
     expected_args = {
         'query': "'SELECT * FROM dummy_variable'",
         'dummy_variable': 100
@@ -266,7 +266,7 @@ def test_parse_kwargs():
         'query': "'SELECT * FROM dummy_variable'",
         'kwargs': "{'dummy': dummy_variable}"
     }
-    parsed_args = agent.parse_kwargs(args)
+    parsed_args = agent.substitute_variable_values_kwargs(args)
     expected_args = {
         'query': "'SELECT * FROM dummy_variable'",
         'dummy_variable': 100
@@ -278,7 +278,7 @@ def test_parse_kwargs():
         'query': "'SELECT * FROM dummy_variable'",
         'kwargs': "{'dummy_variable': dummy}"
     }
-    parsed_args = agent.parse_kwargs(args)
+    parsed_args = agent.substitute_variable_values_kwargs(args)
     expected_args = {
         'query': "'SELECT * FROM dummy_variable'",
         'dummy_variable': 100

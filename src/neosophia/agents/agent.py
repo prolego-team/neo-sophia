@@ -122,7 +122,7 @@ class Agent:
             models = ', '.join(list(GPT_MODELS.keys()))
             print(
                 f'\nModel name "{model_name}" must be one of: {models}\n')
-            exit()
+            sys.exit(1)
 
         # Get info such as max_tokens, cost per token, etc.
         self.model_name = model_name
@@ -249,7 +249,7 @@ class Agent:
             command: str,
             completed_steps: List[str]) -> str:
         """
-        Builds a prompt object and returns a string
+        Builds a prompt for choosing a Tool
 
         Args:
             command (str): The question/command given by the user
@@ -277,7 +277,22 @@ class Agent:
 
         return prompt.generate_prompt()
 
-    def build_param_prompt(self, command, parsed_response, completed_steps):
+    def build_param_prompt(
+            self,
+            command: str,
+            parsed_response: Dict[str, Any],
+            completed_steps: List[str]) -> str:
+        """
+        Builds a prompt for choosing parameters
+
+        Args:
+            command (str): The question/command given by the user
+            parsed_response (Dict): The parsed response from the Tool agent
+            completed_steps (list): The completed_steps taken by the Agent
+
+        Returns:
+            prompt (str): The generated prompt string.
+        """
 
         tool_name = parsed_response['Tool']
         thoughts = parsed_response['Thoughts']
@@ -301,11 +316,9 @@ class Agent:
             prompt.add_completed_step(step)
 
         prompt.add_constraint(sp.NO_CONVERSATION_CONSTRAINT)
-        prompt.add_constraint('Do not provide Thoughts')
-        prompt.add_constraint('Only provide one set of Parameters at a time')
-        prompt.add_constraint('Do not say what tool you are using')
-        prompt.add_constraint('Only generate Parameters, the Returned name, and a Description as defined in the template')
-        prompt.add_constraint('Do not generate an SQL query that contains a Python expression. You must use exact values in the SQL queries that you generate')
+
+        for constraint in sp.PARAM_PROMPT_CONSTRAINTS:
+            prompt.add_constraint(constraint)
 
         return prompt.generate_prompt()
 
@@ -567,7 +580,7 @@ class Agent:
             self.log.save()
             self.save_summary(command)
 
-    def parse_kwargs(self, args):
+    def substitute_variable_values_kwargs(self, args):
         """
         Parses the generated args to replace references of Variables in
         **kwargs with the Variable's value. If no Variable exists, then a value
@@ -647,16 +660,14 @@ class Agent:
                 # The parameter is a reference to a Variable in self.variables
                 if 'reference' in param_vr:
                     # Strip out any quotes that might be at the beginning/end
-                    if param_value[0] == "'" or param_value[0] == '"':
-                        param_value = param_value[1:-1]
+                    param_value = autils.strip_quotes(param_value)
 
                     if param_value in self.variables:
                         param_value = self.variables[param_value].value
 
                 # Parameter is a string but not a SQL query
                 elif 'str' in param_type and param_name != 'query':
-                    if param_value[0] == "'" or param_value[0] == '"':
-                        param_value = param_value[1:-1]
+                    param_value = autils.strip_quotes(param_value)
 
                 # Cast the values if needed
                 if 'value' in param_vr:
@@ -675,7 +686,7 @@ class Agent:
                 args[param_name.replace(' ', '')] = param_value
 
         if 'kwargs' in args:
-            args = self.parse_kwargs(args)
+            args = self.substitute_variable_values_kwargs(args)
 
         return args
 

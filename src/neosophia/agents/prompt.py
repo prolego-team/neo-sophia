@@ -1,6 +1,7 @@
 """ Class for generating a structured prompt """
 import re
 
+from typing import Dict
 from functools import partial
 
 import pandas as pd
@@ -169,7 +170,7 @@ class Prompt:
         """
         self.constraints.append(constraint)
 
-    def add_completed_step(self, step: str) -> None:
+    def add_completed_step(self, step: Dict[str, str]) -> None:
         """
         Adds a step to the list of completed_steps
 

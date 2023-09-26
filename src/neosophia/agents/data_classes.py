@@ -12,6 +12,8 @@ class Variable:
     value: Any
     description: str
     visible: bool = True
+
+    # Dynamic is True if the Variable was created by the Agent
     dynamic: bool = False
 
     def to_string(self):

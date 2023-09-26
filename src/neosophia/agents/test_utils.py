@@ -35,7 +35,7 @@ def test_create_workspace_dir():
         os.rmdir(workspace_dir)
     create_workspace_dir(TEST_CONFIG)
     x = os.path.exists(workspace_dir)
-    assert(x == True)
+    assert x
     os.rmdir(workspace_dir)
 
 
@@ -57,7 +57,7 @@ def test_build_function_dict_from_module():
     expected_function_dict = {
         'get_max_values': (module.get_max_values, expected_function_text)
     }
-    assert(function_dict == expected_function_dict)
+    assert function_dict == expected_function_dict
 
 
 def test_parse_response():
@@ -104,7 +104,7 @@ Description: The total number of customers in database SynthBank"""
 
     #parsed_response = parse_response(response)
 
-    #assert(expected_parsed_response, parsed_response)
+    #assert expected_parsed_response, parsed_response)
 
     response = (
         "Thoughts: Use the 'execute_query' tool to get information.\n\n"
@@ -121,7 +121,7 @@ Description: The total number of customers in database SynthBank"""
 
 def test_count_tokens():
     num_tokens = count_tokens('sample string to count tokens', MODEL)
-    assert(num_tokens == 5)
+    assert num_tokens == 5
 
 
 def test_remove_yaml_special_chars():
@@ -142,7 +142,7 @@ def test_remove_yaml_special_chars():
 
     out = remove_yaml_special_chars(text)
 
-    assert(out == expected_out)
+    assert out == expected_out
 
 
 def test_process_for_yaml():
@@ -157,5 +157,5 @@ def test_process_for_yaml():
 
     out = process_for_yaml(name, description)
 
-    assert(out == expected_out)
+    assert out == expected_out
 

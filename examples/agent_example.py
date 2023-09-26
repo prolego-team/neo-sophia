@@ -25,6 +25,7 @@ def main(toggle):
     print('\n')
 
     oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    openai.set_api_key(api_key)
 
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)

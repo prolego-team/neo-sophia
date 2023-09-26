@@ -46,6 +46,23 @@ def cprint(*args) -> None:
             print(f"{Colors.BLUE}{var_names[idx].strip()}{Colors.ENDC}: {var}")
 
 
+def strip_quotes(string: str) -> str:
+    """
+    Checks if a string starts and ends with ' or " and removes them.
+
+    Args:
+        string (str): The input string
+
+    Returns:
+        string (str): The string without start/end quotes
+    """
+    a = string[0] == "'" and string[-1] == "'"
+    b = string[0] == '"' and string[-1] == '"'
+    if a or b:
+        string = string[1:-1]
+    return string
+
+
 def create_workspace_dir(config: Dict) -> str:
     """
     Create a workspace directory for the Agent.

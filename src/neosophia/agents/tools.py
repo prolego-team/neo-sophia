@@ -8,8 +8,13 @@ import pandas as pd
 
 from pandasql import load_births, load_meat, sqldf
 
+from neosophia.agents.utils import strip_quotes
 
-def iloc(df: pd.DataFrame, start: int, end: int) -> Any:
+
+def iloc(
+        df: pd.DataFrame,
+        start: int,
+        end: int) -> Union[pd.DataFrame, pd.Series]:
     """
     This function returns a subset of a DataFrame using integer-based indexing.
 
@@ -124,59 +129,8 @@ def execute_pandas_query(
             raise ValueError(
                 'Only ADD COLUMN operation is supported in ALTER TABLE')
     else:
-        if query[0] == "'" or query[0] == '"':
-            query = query[1:-1]
+        query = strip_quotes(query)
         return sqldf(query, kwargs)
-
-
-def execute_query(conn: sqlite3.Connection, query: str) -> pd.DataFrame:
-    """
-    This function executes a given SQL query on a specified sqlite3 database
-    connection and returns the results as a pandas DataFrame.
-
-    Args:
-        conn (sqlite3.Connection): The connection to the sqlite3 database where
-        the query will be executed.
-        query (str): The SQL query to be executed. If the query is enclosed in
-        quotes, they will be stripped before execution.
-
-    Returns:
-        result (pandas.DataFrame): The result of the executed SQL query
-        returned as a pandas DataFrame.
-    """
-
-    if query[0] == "'" or query[0] == '"':
-        query = query[1:-1]
-    return pd.read_sql_query(query, conn)
-
-
-def execute_query_with_variables(
-        conn: sqlite3.Connection,
-        query: str,
-        variables: str) -> pd.DataFrame:
-    """
-    This function executes a SQL query with variables and returns the result as
-    a pandas DataFrame.
-
-    query = "SELECT guid FROM products WHERE account_number = :account_number"
-    variables = {'account_number': 1251}
-    result = execute_query_with_variables(conn, query, variables)
-
-    Args:
-        conn (sqlite3.Connection): A connection object representing the
-        database connection.
-        query (str): The SQL query to execute.
-        variables (Dict[str, Any]): A dictionary containing the variables to be
-        used in the query.
-
-    Returns:
-        result (pd.DataFrame): A pandas DataFrame representing the result of
-        the executed query
-    """
-    variables = json.loads(variables)
-    if query[0] == "'" or query[0] == '"':
-        query = query[1:-1]
-    return pd.read_sql_query(query, conn, params=variables)
 
 
 def get_max_values(df: pd.DataFrame) -> pd.Series:
@@ -204,11 +158,6 @@ def get_min_values(df: pd.DataFrame) -> pd.Series:
     """
     return df.min()
 
-"""
-    - axis (int): The axis to run on
-    - numeric_only (bool): Include only float, int, boolean columns. Not
-      implemented for Series.
-"""
 
 def get_std(df: pd.DataFrame) -> pd.Series:
     """
