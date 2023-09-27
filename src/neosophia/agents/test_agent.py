@@ -38,31 +38,6 @@ def _get_agent():
         toggle=False)
 
 
-def test_calculate_prompt_cost():
-
-    prompt = """Amet etincidunt consectetur quisquam ut eius. Dolore quiquia ut
-    amet dolor sed magnam. Consectetur amet aliquam dolor quaerat labore est
-    sit. Quaerat dolorem quiquia etincidunt. Sed sed etincidunt voluptatem
-    numquam etincidunt neque.  Consectetur numquam neque quiquia voluptatem.
-    Magnam aliquam neque magnam sed eius quisquam. Dolore quisquam labore
-    sed velit tempora amet quaerat. Porro quaerat ut quisquam neque adipisci
-    modi. Sed ut magnam ut quiquia neque.  Dolorem aliquam eius consectetur
-    neque. Tempora adipisci labore voluptatem quisquam voluptatem dolor.
-    Adipisci ut non dolor. Quisquam sit velit labore numquam consectetur
-    quisquam quisquam. Aliquam adipisci eius non aliquam sed.  Neque eius
-    consectetur quaerat eius. Quaerat eius porro sed velit dolore eius.  Sit
-    est ipsum dolore. Neque consectetur adipisci adipisci."""
-
-    expected_cost = {
-        'input': 0.007259999999999999,
-        'output': 0.014519999999999998
-    }
-
-    agent = _get_agent()
-    cost = agent.calculate_prompt_cost(prompt)
-    assert cost == expected_cost
-
-
 def test_check_prompt():
     """ """
 

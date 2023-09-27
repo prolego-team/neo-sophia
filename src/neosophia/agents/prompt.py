@@ -9,48 +9,49 @@ import pandas as pd
 from neosophia.agents.data_classes import Tool, Variable
 
 
-def format_df(df: pd.DataFrame) -> str:
+def format_df(df: pd.DataFrame, delimeter: str='|') -> str:
     """
-    Function that strips out all whitespace between dataframe columns while
-    preserving white space in individual cells
+    Function that strips out all whitespace between dataframe columns and
+    replaces it with the specified delimeter.
+
+    Example usage:
+
+        [Input]
+
+             guid              name         dob
+        0       1   Patricia Karins  1991-04-19
+        1       2       Lillian Lee  1992-05-20
+        2       3  Richard Crandall  1980-11-24
+        3       4  Billy Harrington  1970-06-17
+        4       5          Al Elzey  1940-01-01
+        --
+
+        [Output]
+
+        |guid|name|dob|
+        |1|Patricia Karins|1991-04-19|
+        |2|Lillian Lee|1992-05-20|
+        |3|Richard Crandall|1980-11-24|
+        |4|Billy Harrington|1970-06-17|
+        |5|Al Elzey|1940-01-01|
 
     Args:
         df (pandas.DataFrame): The input dataframe to be formatted.
 
     Returns:
-        final_str (str): The formatted DataFrame string with stripped
+        output (str): The formatted DataFrame string with stripped
         whitespace between columns and preserved whitespace in individual
         cells.
     """
-    def get_fmt_str(x, fill):
-        return '| {message: >{fill}} '.format(message=x, fill=fill-2)
 
-    # Max character length per column
-    s = df.astype(str).agg(lambda x: x.str.len()).max()
-    pad = 0  # How many spaces between
-    fmts = {}
-    header_strs = []
-    for idx, c_len in s.items():
-        if isinstance(idx, tuple):
-            lab_len = max([len(str(x)) for x in idx])
-        else:
-            lab_len = len(str(idx))
+    # Convert DataFrame to string
+    output = df.to_csv(
+        sep=delimeter, index=False, header=True, lineterminator='\n')
 
-        fill = max(lab_len, c_len) + pad
-        fmts[idx] = partial(get_fmt_str, fill=fill)
-
-        # Formatting the header
-        header_strs.append(get_fmt_str(idx, fill))
-
-    # Generate the formatted DataFrame string without the header
-    df_str = df.to_string(formatters=fmts, index=False, header=False)
-
-    # Generate the header string with the | separator
-    header = ''.join(header_strs) + '|'
-
-    # Combine the header and the DataFrame string
-    final_str = header + '\n' + df_str
-    return re.sub(r'[ \t]*\|[ \t]*', '|', final_str)
+    # Add the delimeter to the beginning and end of each line
+    output = '\n'.join(
+        [delimeter + line + delimeter for line in output.strip().split('\n')])
+    return output
 
 
 class Prompt:

@@ -19,7 +19,7 @@ import neosophia.agents.system_prompts as sp
 
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
-from neosophia.agents.data_classes import Colors, Tool
+from neosophia.agents.data_classes import Colors, GPTModelInfo, Tool
 
 opj = os.path.join
 
@@ -44,6 +44,26 @@ def cprint(*args) -> None:
             print(var, end='')
         else:
             print(f"{Colors.BLUE}{var_names[idx].strip()}{Colors.ENDC}: {var}")
+
+
+def calculate_prompt_cost(
+        model_info: GPTModelInfo, prompt: str) -> Dict[str, float]:
+    """
+    Function to calculate the input or output cost
+
+    Args:
+        model_info (Dict):
+        prompt (str): The prompt string for which the cost needs to be
+        calculated.
+
+    Returns:
+        dict: A dictionary containing the cost for input and output tokens.
+    """
+    num_tokens = count_tokens(prompt, model_info.name)
+    return {
+        'input': num_tokens * model_info.input_token_cost,
+        'output': num_tokens * model_info.output_token_cost
+    }
 
 
 def strip_quotes(string: str) -> str:

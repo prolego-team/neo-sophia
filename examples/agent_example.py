@@ -11,7 +11,6 @@ from examples import project
 from neosophia.db import sqlite_utils as sql_utils
 from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.agents.agent import Agent
-from neosophia.agents.tools import execute_query
 from neosophia.agents.data_classes import Variable
 from neosophia.agents.system_prompts import PARAM_AGENT_BP, TOOL_AGENT_BP
 
@@ -24,8 +23,7 @@ def main(toggle):
     """ main """
     print('\n')
 
-    oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
-    openai.set_api_key(api_key)
+    oaiapi.set_api_key(oaiapi.load_api_key(project.OPENAI_API_KEY_FILE_PATH))
 
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
@@ -54,7 +52,7 @@ def main(toggle):
             if table in ['sqlite_master', 'sqlite_sequence']:
                 continue
 
-            data = execute_query(conn, f'SELECT * FROM {table};')
+            data = sql_utils.execute_query_pd(conn, f'SELECT * FROM {table};')
 
             description = f'All data from the {table} {table} in database {name}\n'
             variable = Variable(

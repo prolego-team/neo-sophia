@@ -5,6 +5,7 @@ import os
 import unittest
 
 from neosophia.agents.utils import *
+from neosophia.agents.data_classes import GPTModelInfo, GPT_MODELS
 
 MODEL = 'gpt-4-0613'
 
@@ -26,6 +27,30 @@ TEST_CONFIG = {
         }
     ]
 }
+
+
+def test_calculate_prompt_cost():
+
+    prompt = """Amet etincidunt consectetur quisquam ut eius. Dolore quiquia ut
+    amet dolor sed magnam. Consectetur amet aliquam dolor quaerat labore est
+    sit. Quaerat dolorem quiquia etincidunt. Sed sed etincidunt voluptatem
+    numquam etincidunt neque.  Consectetur numquam neque quiquia voluptatem.
+    Magnam aliquam neque magnam sed eius quisquam. Dolore quisquam labore
+    sed velit tempora amet quaerat. Porro quaerat ut quisquam neque adipisci
+    modi. Sed ut magnam ut quiquia neque.  Dolorem aliquam eius consectetur
+    neque. Tempora adipisci labore voluptatem quisquam voluptatem dolor.
+    Adipisci ut non dolor. Quisquam sit velit labore numquam consectetur
+    quisquam quisquam. Aliquam adipisci eius non aliquam sed.  Neque eius
+    consectetur quaerat eius. Quaerat eius porro sed velit dolore eius.  Sit
+    est ipsum dolore. Neque consectetur adipisci adipisci."""
+
+    expected_cost = {
+        'input': 0.007259999999999999,
+        'output': 0.014519999999999998
+    }
+    model_info = GPT_MODELS[MODEL]
+    cost = calculate_prompt_cost(model_info, prompt)
+    assert cost == expected_cost
 
 
 def test_create_workspace_dir():

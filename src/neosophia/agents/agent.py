@@ -22,8 +22,8 @@ opj = os.path.join
 # Description for extract_answer
 EXTRACT_ANSWER_DESCRIPTION = (
     'Tool Name: extract_answer\n'
-    'Description: This function extracts an answer given a question and\n'
-    '  a dataframe containing the answer.\n'
+    'Description: This function extracts an answer given a question and '
+    'a dataframe containing the answer.\n'
     'params:\n'
     '  data:\n'
     '    description: A DataFrame or Series that contains the answer\n'
@@ -66,7 +66,7 @@ class Log:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'log_{timestamp}.txt'
         filepath = opj(self.save_dir, filename)
-        with open(filepath, 'w') as file:
+        with open(filepath, 'w', encoding='utf-8') as file:
             for log in self.log:
                 file.write(log)
                 file.write('\n')
@@ -155,24 +155,6 @@ class Agent:
             description='Tool to exit the program',
             call=sys.exit
         )
-
-    def calculate_prompt_cost(self, prompt: str) -> Dict[str, float]:
-        """
-        Function to calculate the input or output cost
-
-        Args:
-            self (object): The class instance of the function.
-            prompt (str): The prompt string for which the cost needs to be
-            calculated.
-
-        Returns:
-            dict: A dictionary containing the cost for input and output tokens.
-        """
-        num_tokens = autils.count_tokens(prompt, self.model_info.name)
-        return {
-            'input': num_tokens * self.model_info.input_token_cost,
-            'output': num_tokens * self.model_info.output_token_cost
-        }
 
     def toggle_variables(self, command: str, thoughts: str) -> None:
         """
@@ -322,13 +304,48 @@ class Agent:
 
         return prompt.generate_prompt()
 
-    def log_response(self, parsed_response, agent_name):
+    def log_response(
+            self,
+            parsed_response: Dict[str, Union[str, list]],
+            agent_name: str) -> None:
+        """
+        Adds the parsed response from the Agent to the log
+
+        Args:
+            parsed_response (Dict): The response from the agent parsed into a
+            dictionary
+            agent_name (str): The name of the Agent
+
+        Returns:
+            None
+        """
+        print('parsed_response:', parsed_response, '\n')
         for key, val in parsed_response.items():
             if isinstance(val, list):
                 val = ' | '.join(val)
             self.log.add(f'{agent_name}', f'{key}: {val}')
 
-    def choose_tool(self, command, completed_steps):
+    def choose_tool(self, command: str, completed_steps: List[str]):
+        """
+        Chooses an appropriate tool based on the given command and prior steps.
+        This function repeatedly prompts for tool selection until a valid tool
+        from the available tools (`self.tools`) is chosen. If an invalid tool
+        is selected, it logs an error message and prompts the Agent again.
+
+        Args:
+            command (str): The command based on which a tool is to be chosen.
+            completed_steps (List[str]): A list of steps that have been
+            completed prior to the invocation of this function.
+
+        Returns:
+            tuple: A tuple containing:
+                - tool (Tool): The chosen tool object from `self.tools`.
+                - tool_response (str): The raw response from the tool
+                  selection prompt.
+                - parsed_tool_response (dict): The parsed response from the
+                  tool selection prompt.
+        """
+
         tool = None
         tool_failure_steps = []
         while tool is None:
@@ -615,8 +632,8 @@ class Agent:
                             new_args[
                                 var_name2] = self.variables[var_name2].value
                     elif var_name1 in self.variables:
-                            new_args[
-                                var_name1] = self.variables[var_name1].value
+                        new_args[
+                            var_name1] = self.variables[var_name1].value
                     else:
                         new_args[var_name1] = None
 
@@ -729,7 +746,8 @@ class Agent:
         self.llm_calls += 1
         if print_prompt or print_response:
             print('Thinking...')
-        self.input_cost += self.calculate_prompt_cost(prompt_str)['input']
+        self.input_cost += autils.calculate_prompt_cost(
+            self.model_info, prompt_str)['input']
         if print_prompt:
             print('#' * 60 + ' PROMPT BEGIN ' + '#' * 60)
             print(prompt_str)
@@ -737,7 +755,8 @@ class Agent:
             print('\n')
         response = oaiapi.chat_completion(
             prompt=prompt_str, model=self.model_info.name)
-        self.output_cost += self.calculate_prompt_cost(response)['output']
+        self.output_cost += autils.calculate_prompt_cost(
+            self.model_info, response)['output']
         if print_response:
             print('#' * 60 + ' RESPONSE BEGIN ' + '#' * 60)
             print(response)
