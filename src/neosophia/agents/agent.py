@@ -365,6 +365,7 @@ class Agent:
                 tool_name = parsed_tool_response['Tool']
                 error_msg = f'{tool_name} not in TOOLS. '
                 error_msg += 'Choose a tool from the TOOLS section'
+                #self.gradio_output = error_msg
                 step = {
                     'status': 'error',
                     'message': error_msg
@@ -376,6 +377,205 @@ class Agent:
                 self.log.add('TOOL AGENT', error_msg)
 
         return tool, tool_response, parsed_tool_response
+
+    def interact(self, command) -> None:
+
+        self.log.add('SYSTEM', f'User Command: {command}')
+
+        completed_steps = []
+        self.thoughts = ''
+        self.answer = None
+        while True:
+
+            if self.toggle:
+                self.toggle_variables(command, self.thoughts)
+
+            res = self.choose_tool(command, completed_steps)
+
+            tool, tool_response, parsed_tool_response = res
+            tool_name = parsed_tool_response['Tool']
+
+            self.thoughts = str(parsed_tool_response['Thoughts'])
+            if tool_name == 'execute_pandas_query':
+                self.thoughts += f' {sp.NO_PYTHON}'
+            completed_step = (
+                'Thoughts: ' + self.thoughts + '\n' +
+                'Tool: ' + str(parsed_tool_response['Tool']) + '\n'
+            )
+
+            step = {
+                'status': 'success',
+                'message': completed_step
+            }
+            completed_steps.append(step)
+            self.all_steps.append(step)
+
+            self.gradio_output = completed_step
+
+            yield
+
+            if parsed_tool_response['Tool'] in [
+                    'system_exit', 'extract_answer']:
+
+                # Choose parameters for the Tool
+                param_prompt = self.build_param_prompt(
+                    command,
+                    parsed_tool_response,
+                    completed_steps)
+                param_response = self.execute(param_prompt).split('\n\n')
+                param_response = param_response[0]
+                parsed_param_response = autils.parse_response(
+                    param_response)
+                self.log_response(parsed_param_response, 'PARAM AGENT')
+
+                #args = self.extract_params(parsed_param_response)
+
+                if 'Parameter_0' not in parsed_param_response:
+
+                    error_msg = 'You must generate a Parameter'
+                    step = {
+                        'status': 'error',
+                        'message': error_msg
+                    }
+                    completed_steps.append(step)
+                    self.all_steps.append(step)
+                    self.log.add('SYSTEM', error_msg)
+                    continue
+
+                # This is the variable that contains the answer
+                variable_name = autils.strip_quotes(
+                    parsed_param_response['Parameter_0'][1])
+
+                # Could happen if the Parameter Agent used a Python
+                # expression as the data to pass to extract_answer
+                if variable_name not in self.variables:
+
+                    error_msg = (
+                        'The Variable you have chosen '
+                        f'`{variable_name}` is not an available Variable'
+                    )
+                    print(error_msg)
+                    step = {
+                        'status': 'error',
+                        'message': error_msg
+                    }
+                    completed_steps.append(step)
+                    self.all_steps.append(step)
+
+                    self.log.add('SYSTEM', error_msg)
+                    continue
+
+                self.answer = self.extract_answer(
+                    command, self.thoughts, data=self.variables[variable_name])
+
+                parsed_answer = self.answer
+                if 'Question 1:' in self.answer:
+                    parsed_answer = self.answer.split('Question 1:')[0].rstrip()
+                answer_step = f'Previous question: {command}\n'
+                answer_step += f'Previous answer: {parsed_answer}'
+
+                completed_steps = [
+                    {
+                        'status': 'success',
+                         'message': answer_step
+                    }
+                ]
+
+                answer_step += str(self.answer) + '\n'
+                self.log.add('SYSTEM', answer_step)
+
+                yield
+
+                break
+
+            called = False
+            while not called:
+
+                # Choose parameters for the Tool
+                param_prompt = self.build_param_prompt(
+                    command,
+                    parsed_tool_response,
+                    completed_steps)
+                param_response = self.execute(param_prompt).split('\n\n')
+                param_response = param_response[0]
+
+                parsed_param_response = autils.parse_response(
+                    param_response)
+                self.log_response(parsed_param_response, 'PARAM AGENT')
+                args = self.extract_params(parsed_param_response)
+
+                self.gradio_output = param_response
+                yield
+
+                try:
+                    res = tool.call(**args)
+                    called = True
+                except Exception as e:
+                    (
+                        exception_type,
+                        exception_value,
+                        exception_traceback
+                    ) = sys.exc_info()
+
+                    error_msg = f'Exception Type: {exception_type}'
+                    error_msg += f'Exception Value: {exception_value}'
+
+                    if 'query' in parsed_param_response['Parameter_0']:
+                        if '+' in parsed_param_response['Parameter_0'][1]:
+                            error_msg += sp.NO_PYTHON
+
+                    step = {
+                        'status': 'error',
+                        'message': error_msg
+                    }
+                    completed_steps.append(step)
+                    self.all_steps.append(step)
+                    self.log.add(
+                        'PARAM AGENT', f'Error Message: {error_msg}')
+                    self.gradio_output = error_msg
+                    yield
+
+                    break
+
+                if called:
+
+                    # Variable name and description from function call
+                    return_name = parsed_param_response[
+                        'Returned'].replace(' ', '').rstrip()
+                    if return_name[0] == '"' or return_name[0] == "'":
+                        return_name = return_name[1:-1]
+                    description = parsed_param_response['Description']
+
+                    # Add variable to variables
+                    return_var = Variable(
+                        name=return_name,
+                        value=res,
+                        description=description,
+                        dynamic=True)
+                    self.variables[return_name] = return_var
+
+                    message = (
+                        f'Tool {tool_name} successfully called, ' +
+                        f'Variable {return_name} saved.\n'
+                    )
+
+                    self.gradio_output = message
+                    yield
+
+                    step = {
+                        'status': 'success',
+                        'message': message
+                    }
+                    completed_steps.append(step)
+                    self.all_steps.append(step)
+
+                    message += str(res) + '\n'
+                    self.log.add('SYSTEM', message)
+
+
+            self.log.add('', '\n' + '*' * 60 +  '\n')
+
+        #return self.answer
 
     def chat(self) -> None:
         """
@@ -402,184 +602,15 @@ class Agent:
                 sys.exit(1)
             return command
 
-        completed_steps = []
-        thoughts = ''
-
         while True:
+
             command = get_command()
-            self.log.add('SYSTEM', f'User Command: {command}')
+            generator = self.interact(command)
 
-            while True:
+            for _ in generator:
+                pass
 
-                if self.toggle:
-                    self.toggle_variables(command, thoughts)
-
-                res = self.choose_tool(command, completed_steps)
-
-                tool, tool_response, parsed_tool_response = res
-                tool_name = parsed_tool_response['Tool']
-
-                thoughts = str(parsed_tool_response['Thoughts'])
-                if tool_name == 'execute_pandas_query':
-                    thoughts += f' {sp.NO_PYTHON}'
-                completed_step = (
-                    'Thoughts: ' + thoughts + '\n' +
-                    'Tool: ' + str(parsed_tool_response['Tool']) + '\n'
-                )
-
-                step = {
-                    'status': 'success',
-                    'message': completed_step
-                }
-                completed_steps.append(step)
-                self.all_steps.append(step)
-
-                if parsed_tool_response['Tool'] in [
-                        'system_exit', 'extract_answer']:
-
-                    # Choose parameters for the Tool
-                    param_prompt = self.build_param_prompt(
-                        command,
-                        parsed_tool_response,
-                        completed_steps)
-                    param_response = self.execute(param_prompt).split('\n\n')
-                    param_response = param_response[0]
-                    parsed_param_response = autils.parse_response(
-                        param_response)
-                    self.log_response(parsed_param_response, 'PARAM AGENT')
-
-                    args = self.extract_params(parsed_param_response)
-
-                    if 'Parameter_0' not in parsed_param_response:
-
-                        error_msg = 'You must generate a Parameter'
-                        step = {
-                            'status': 'error',
-                            'message': error_msg
-                        }
-                        completed_steps.append(step)
-                        self.all_steps.append(step)
-                        self.log.add('SYSTEM', error_msg)
-                        continue
-
-                    # This is the variable that contains the answer
-                    variable_name = parsed_param_response['Parameter_0'][1]
-
-                    # Could happen if the Parameter Agent used a Python
-                    # expression as the data to pass to extract_answer
-                    if variable_name not in self.variables:
-
-                        error_msg = (
-                            'The Variable you have chosen '
-                            f'`{variable_name}` is not an available Variable'
-                        )
-                        print(error_msg)
-                        step = {
-                            'status': 'error',
-                            'message': error_msg
-                        }
-                        completed_steps.append(step)
-                        self.all_steps.append(step)
-
-                        self.log.add('SYSTEM', error_msg)
-                        continue
-
-                    answer = self.extract_answer(
-                        command, thoughts, data=self.variables[variable_name])
-
-                    parsed_answer = answer
-                    if 'Question 1:' in answer:
-                        parsed_answer = answer.split('Question 1:')[0].rstrip()
-                    answer_step = f'Previous question: {command}\n'
-                    answer_step += f'Previous answer: {parsed_answer}'
-
-                    completed_steps = [
-                        {
-                            'status': 'success',
-                             'message': answer_step
-                        }
-                    ]
-
-                    answer_step += str(answer) + '\n'
-                    self.log.add('SYSTEM', answer_step)
-
-                    break
-
-                called = False
-                while not called:
-
-                    # Choose parameters for the Tool
-                    param_prompt = self.build_param_prompt(
-                        command,
-                        parsed_tool_response,
-                        completed_steps)
-                    param_response = self.execute(param_prompt).split('\n\n')
-                    param_response = param_response[0]
-
-                    parsed_param_response = autils.parse_response(
-                        param_response)
-                    self.log_response(parsed_param_response, 'PARAM AGENT')
-                    args = self.extract_params(parsed_param_response)
-
-                    try:
-                        res = tool.call(**args)
-                        called = True
-                    except Exception as e:
-                        (
-                            exception_type,
-                            exception_value,
-                            exception_traceback
-                        ) = sys.exc_info()
-
-                        error_msg = f'Exception Type: {exception_type}'
-                        error_msg += f'Exception Value: {exception_value}'
-
-                        if 'query' in parsed_param_response['Parameter_0']:
-                            if '+' in parsed_param_response['Parameter_0'][1]:
-                                error_msg += sp.NO_PYTHON
-
-                        step = {
-                            'status': 'error',
-                            'message': error_msg
-                        }
-                        completed_steps.append(step)
-                        self.all_steps.append(step)
-                        self.log.add(
-                            'PARAM AGENT', f'Error Message: {error_msg}')
-                        break
-
-                    if called:
-
-                        # Variable name and description from function call
-                        return_name = parsed_param_response[
-                            'Returned'].replace(' ', '').rstrip()
-                        if return_name[0] == '"' or return_name[0] == "'":
-                            return_name = return_name[1:-1]
-                        description = parsed_param_response['Description']
-
-                        # Add variable to variables
-                        return_var = Variable(
-                            name=return_name,
-                            value=res,
-                            description=description,
-                            dynamic=True)
-                        self.variables[return_name] = return_var
-
-                        message = (
-                            f'Tool {tool_name} successfully called, ' +
-                            f'Variable {return_name} saved.\n'
-                        )
-                        step = {
-                            'status': 'success',
-                            'message': message
-                        }
-                        completed_steps.append(step)
-                        self.all_steps.append(step)
-
-                        message += str(res) + '\n'
-                        self.log.add('SYSTEM', message)
-
-                self.log.add('', '\n' + '*' * 60 +  '\n')
+            #answer = generator.gi_frame.f_locals.get('answer', None)
 
             end_time = round(time.time() - time_start, 2)
             total_cost = round(self.input_cost + self.output_cost, 2)

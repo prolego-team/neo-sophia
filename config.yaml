@@ -21,4 +21,5 @@ Tools:
       - get_std
       - get_min_values
       - get_max_values
+      - get_dataframe_length
       - merge_dataframes

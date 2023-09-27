@@ -29,6 +29,19 @@ def iloc(
     return df.iloc[start:end]
 
 
+def get_dataframe_length(df: pd.DataFrame) -> int:
+    """
+    Gets the length of a DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame for which to get the length.
+
+    Returns:
+        length (int): The number of rows in the DataFrame.
+    """
+    return df.shape[0]
+
+
 def merge_dataframes(
         left: Union[pd.DataFrame, pd.Series],
         right: Union[pd.DataFrame, pd.Series],
