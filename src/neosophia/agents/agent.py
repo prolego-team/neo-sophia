@@ -319,7 +319,6 @@ class Agent:
         Returns:
             None
         """
-        print('parsed_response:', parsed_response, '\n')
         for key, val in parsed_response.items():
             if isinstance(val, list):
                 val = ' | '.join(val)
