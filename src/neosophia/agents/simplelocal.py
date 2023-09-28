@@ -7,8 +7,7 @@ import json
 
 import llama_cpp
 
-from mlex.llmtools import dispatch as dp
-
+from neosophia.llmtools import dispatch as dp
 from neosophia.llmtools import openaiapi as openai
 from neosophia.agents import react_chat
 

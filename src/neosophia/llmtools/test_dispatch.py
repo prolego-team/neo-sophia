@@ -2,7 +2,7 @@
 Tests for dispatch functionality.
 """
 
-from mlex.llmtools import dispatch as dp
+from neosophia.llmtools import dispatch as dp
 
 
 EXAMPLE_FUNCTIONS = {

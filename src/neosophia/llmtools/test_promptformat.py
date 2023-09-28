@@ -5,7 +5,7 @@ Tests for prompt formatting
 
 from neosophia.llmtools import openaiapi as oai
 
-from mlex.llmtools import promptformat as pf
+from neosophia.llmtools import promptformat as pf
 
 
 EXAMPLE_MESSAGES = [

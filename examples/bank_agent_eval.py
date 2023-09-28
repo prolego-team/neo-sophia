@@ -21,11 +21,11 @@ from neosophia.llmtools import openaiapi as oaiapi
 from neosophia.llmtools import dispatch as dp
 from neosophia.db import sqlite_utils
 
-from mlex.agents import simplelocal
-from mlex import promptformat as pf
-from mlex import project
+from neosophia.agents import simplelocal
+from neosophia.llmtools import promptformat as pf
+from examples import project
 
-from scripts import bank_agent as ba
+from examples import bank_agent as ba
 
 
 GPU_ENABLE = False
