@@ -118,7 +118,7 @@ def main():
         'get_table_schema': get_table_schema
     }
 
-    # Systems to evaluate. These take a question as input and return
+    # Systems to evaluate. These take a question and seed as input and return
     # an answer or None (for an uncaught error or if the system can't
     # answer the question) as well as a count of API / LLM interactions
 
@@ -311,8 +311,6 @@ def main():
         )
 
     ]
-
-    qs_and_evals = qs_and_evals[0:2]
 
     results = eval_systems(systems, qs_and_evals, n_runs)
 

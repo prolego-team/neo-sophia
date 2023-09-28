@@ -15,14 +15,14 @@ import pandas as pd
 
 from neosophia.llmtools import openaiapi as openai, tools
 from neosophia.agents.react_chat import make_react_agent
-from neosophia.agents.helpers import check_question
+# from neosophia.agents.helpers import check_question
 from neosophia.db.sqlite_utils import get_db_creation_sql
 from neosophia.db import sqlite_utils
 
-from mlex.llmtools import dispatch as dp
-from mlex import project
-from mlex.agents import simplelocal
-from mlex import promptformat as pf
+from neosophia.llmtools import dispatch as dp
+from examples import project
+from neosophia.agents import simplelocal
+from neosophia.llmtools import promptformat as pf
 
 
 GPU_ENABLE = True

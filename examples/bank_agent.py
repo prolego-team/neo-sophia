@@ -48,13 +48,13 @@ FUNCTION_DESCRIPTIONS = [
 ]
 
 
-def get_system_message() -> str:
+def get_system_message(today) -> str:
     """Get the system message."""
     return (
         "You are an assistant for a retail bank.  You have the ability to run sqlite queries "
         "against the bank's databse to collect information for the user.  Answer the user's "
         "questions as best as you can.  Only use the functions you have been provided with.\n\n"
-        f"Today's date is {datetime.today()}."
+        f"Today's date is {today}."
     )
 
 
@@ -100,7 +100,7 @@ def main():
     db_connection.close()
 
     # Setup the agent
-    system_message = get_system_message()
+    system_message = get_system_message(datetime.today())
     system_message += schema_description
 
     def new_question_wrapper():
