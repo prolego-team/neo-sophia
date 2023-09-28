@@ -102,11 +102,6 @@ def parse_dispatch_response(
         if line.lower().startswith('explanation:'):
             continue
 
-        # aldskjfahldsfjha
-        # if line.lower().startswith(FUNC_PREFIX_LOWER):
-        #     print('\tfunc name')
-        #     name = line[len(FUNC_PREFIX_LOWER):].strip()
-
         if line.lower().startswith('function'):
             # print('\tfunc name')
             name = ':'.join(line.split(':')[1:]).strip()
@@ -114,12 +109,6 @@ def parse_dispatch_response(
         elif line.lower().startswith(PARAM_PREFIX_LOWER):
             print('\tparam start')
             line = line[len(PARAM_PREFIX_LOWER):].strip()
-            # word at start of line is parameter name
-
-            # words = line.split()
-            # pname = words[0]
-            # value = line.removeprefix(pname).strip()
-
             words = line.split(PARAM_SEP)
             pname = words[0].strip()
             value = PARAM_SEP.join(words[1:]).strip()
