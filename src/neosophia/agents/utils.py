@@ -105,8 +105,10 @@ def strip_quotes(string: str) -> str:
     """
     a = string[0] == "'" and string[-1] == "'"
     b = string[0] == '"' and string[-1] == '"'
-    if a or b:
+    while a or b:
         string = string[1:-1]
+        a = string[0] == "'" and string[-1] == "'"
+        b = string[0] == '"' and string[-1] == '"'
     return string
 
 
