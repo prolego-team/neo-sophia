@@ -65,7 +65,8 @@ def summarize_text(
     """
     prompt = f'Text:\n{text}\n'
     prompt += sp.SUMMARIZE.replace(
-        '[NUM_SENTENCES]', num_sentences).replace('[NUM_WORDS]', str(num_words))
+        '[NUM_SENTENCES]', str(num_sentences)).replace(
+            '[NUM_WORDS]', str(num_words))
     response = oaiapi.chat_completion(prompt=prompt, model=model)
     try:
         return json.loads(response)[-1]['Denser_Summary']
