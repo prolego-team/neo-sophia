@@ -92,7 +92,9 @@ class Prompt:
         Returns:
             None
         """
-        self.commands.append(command)
+        pre = 'USE THE LEAST AMOUNT OF TOOLS POSSIBLE\n'
+        pre += 'ONLY USE A SINGLE SQL QUERY WITH THE TOOL execute_pandas_query IF POSSIBLE\n'
+        self.commands.append(pre + command)
 
     def add_example(self, example: str) -> None:
         """
