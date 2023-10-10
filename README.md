@@ -54,10 +54,15 @@ Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
+## Episode 11 - Don't use LangChain (yet)
+Generalized LLM frameworks like LangChain are not mature enough for most teams. The foundational models and best practices are changing too fast to generalize. 
+
+Video: [](url)
+
 ## Episode 10 - Turn your dashboards into interactive data conversations
 Dashboards and reports written with applications like Tableau are underutilized. Fortunately you can turn the into rich conversations with LLMs.
 
-Video: [](url)
+Video: [Hate Tableau? Replace it with LLMs](https://www.youtube.com/watch?v=tRTlbDc0i2E)
 
 1. Checkout Episode 10, [Release v0.10.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.10.0)
 ````
@@ -72,8 +77,7 @@ Video: [](url)
 ## Episode 9 - Build your AI Strategy in One Hour
 Most companies spend months talking about AI before converging on the same plan as everyone else. Save yourself the time and start with the right plan.
 
-Video:[](url)
-Powerpoint deck:[](url)
+Video:[Write Your Company's Generative AI Strategy in ONE hour](https://www.youtube.com/watch?v=0vvOQWoSc_o&list=PL-pTHQz4RcBb6kiMuMg5W2c2Yu_-ij27s)
 
 ## Episode 8 - The critical skills needed for LLM development
 Programming against LLM APIs requires a combination of an experimental mindset and systems engineering experience.
