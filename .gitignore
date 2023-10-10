@@ -4,6 +4,10 @@ __pycache__/
 *$py.class
 *.DS_*
 
+# Our own stuff
+.agents/
+data/
+
 # C extensions
 *.so
 

@@ -14,9 +14,23 @@ def get_conn(db_file: str) -> sqlite3.Connection:
 def execute_query(conn: sqlite3.Connection, query: str) -> List[Any]:
     """ Executes an SQL query """
     cursor = conn.cursor()
-    if query[0] == "'" or query[0] == '"':
-        query = query[1:-1]
     return cursor.execute(query).fetchall()
+
+
+def execute_query_pd(conn: sqlite3.Connection, query: str) -> pd.DataFrame:
+    """
+    This function executes a given SQL query on a specified sqlite3 database
+    connection and returns the results as a pandas DataFrame.
+    Args:
+        conn (sqlite3.Connection): The connection to the sqlite3 database where
+        the query will be executed.
+        query (str): The SQL query to be executed. If the query is enclosed in
+        quotes, they will be stripped before execution.
+    Returns:
+        result (pandas.DataFrame): The result of the executed SQL query
+        returned as a pandas DataFrame.
+    """
+    return pd.read_sql_query(query, conn)
 
 
 def get_table_schema(
