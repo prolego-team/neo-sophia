@@ -188,11 +188,7 @@ Videos
 ````
     git checkout tags/v0.1.1
 ````
-2. Extract text from the MSRB Rulebook:
-````
-    python -m scripts.download_and_extract_msrb
-````
-3. Start the demo by running
+2. Start the demo by running
 ````
     python -m examples.interface
 ````

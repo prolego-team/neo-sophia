@@ -30,8 +30,8 @@ STATE_IF = 5
 
 EXCLUDE_RULES = ['Rule G-29', 'Rule G-35', 'Rule G-36', 'Rule A-6', 'Rule A-11']
 
-RULEBOOK_URL = 'https://www.msrb.org/sites/default/files/MSRB-Rule-Book-Current-Version.pdf'
-RULEBOOK_FILENAME = 'MSRB-Rule-Book-Current-Version.pdf'
+RULEBOOK_URL = 'https://www.msrb.org/sites/default/files/2023-10/MSRB-Rule-Book-October-2022_0.pdf'
+RULEBOOK_FILENAME = 'MSRB-Rule-Book-October-2022_0.pdf'
 
 
 def is_within_bounds(bbox: Tuple, data_bounds: Tuple) -> bool:
