@@ -54,10 +54,33 @@ Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
+## Episode 14 - The three most common entperise LLM projects
+
+Video:
+
+## Episode 13 - Software design pattern for LLM Scratchpads
+In the second episode on Scratchpads we walk through the technical detaials and workflow.
+
+Video:
+
+## Episode 12 - Data too big for LLMs? Try Scratchpads
+LLMs cannot handle data bigger than their context windows. To overcome these limitations, use temporary memory called LLM Scratchpads
+
+1. Checkout Episode 12, [Release v0.12.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.12.0)
+````
+    git checkout tags/v0.12.0
+````
+2. Start the demo by running
+
+````
+    python -m examples.agent_example
+
+````
+
 ## Episode 11 - Don't use LangChain (yet)
 Generalized LLM frameworks like LangChain are not mature enough for most teams. The foundational models and best practices are changing too fast to generalize. 
 
-Video: [](url)
+Video: [LangChain and other frameworks are not ready](https://www.youtube.com/watch?v=_BHaYRujkDI)
 
 ## Episode 10 - Turn your dashboards into interactive data conversations
 Dashboards and reports written with applications like Tableau are underutilized. Fortunately you can turn the into rich conversations with LLMs.
