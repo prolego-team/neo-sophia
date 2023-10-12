@@ -64,7 +64,7 @@ In the second episode on Scratchpads we walk through the technical detaials and 
 Video:
 
 ## Episode 12 - Data too big for LLMs? Try Scratchpads
-LLMs cannot handle data bigger than their context windows. To overcome these limitations, use temporary memory called LLM Scratchpads
+LLMs cannot handle data bigger than their context windows. To overcome these limitations, use temporary memory called LLM Scratchpads.
 
 1. Checkout Episode 12, [Release v0.12.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.12.0)
 ````
