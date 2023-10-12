@@ -1,4 +1,4 @@
-""" Example script to interact with the Agent class """
+""" Gradio application to interact with the Agent """
 import os
 
 import yaml
