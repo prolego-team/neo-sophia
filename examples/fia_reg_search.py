@@ -9,14 +9,19 @@ import torch
 from sentence_transformers import CrossEncoder
 import gradio as gr
 
+from neosophia.llmtools import openaiapi as openai
+
 import neosophia.search.embeddings as emb
 import neosophia.search.utils.doctree as doctree
 from neosophia.search.utils import tree
 from neosophia.search.semantic_search import cosine_search, rerank
 from neosophia.search.utils.doctree import flatten_doctree
-
-
 from neosophia.search.utils.data_utils import get_dict_hash
+
+from examples import project
+
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # === Basic setup ===================================================
 logging.basicConfig(
@@ -31,7 +36,7 @@ log = logging.getLogger('search')
 DOC_DIR = Path('data/fia/docs')
 DATA_DIR = Path('data/fia/data')
 
-RERANK = False
+RERANK = True
 PRE_EXPAND = False
 POST_EXPAND = True
 
@@ -140,7 +145,7 @@ def result_to_string(result: dict, doc_trees: list[doctree.DocTree]) -> str:
         section_headings.append('None')
 
     # get additional context
-    # super_text = tree.get_from_tree(doc_trees[file], tree.move_up(section_ind))
+    text = f'**{text}**'
     super_text = doctree.get_supersection(doc_trees[file], section_ind)
     if super_text is not None:
         text = super_text + '\n\n' + text
@@ -172,6 +177,22 @@ def results_to_string(results: list, doc_trees: list[doctree.DocTree]) -> str:
 
 def run_demo():
     """Run demo."""
+
+    api_key = openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    openai.set_api_key(api_key)
+
+    # Get a model
+    llm_model = openai.start_chat('gpt-4')
+    system_message = (
+        'You are an assitant to a Formula 1 team.  Your job is to answer team questions '
+        'to the best of your ability.  You will be given several excerpts from regulations '
+        'to help you in answering.  Some of the provided regulations may be irrelevant, so '
+        'ignore these and only use those that appear to be relevant. Do not mention or cite '
+        'regulations that are not given to you.  Answer succinctly and make reference to the '
+        'relevant regulation sections.\n\n'
+        'Think carefully about the question and the provided regulations. Check that your '
+        'response makes sense before answering.'
+    )
 
     log.info('Loading memos')
     memo_set = load_memos()
@@ -215,17 +236,27 @@ def run_demo():
         if RERANK:
             results = rerank(results, doc_trees, query, rerank_model, post_expand=POST_EXPAND)
 
-        return results_to_string(results[:5], doc_trees)
+        string_results = results_to_string(results[:5], doc_trees)
+        return string_results
+
+    def generate_response(question:str, context: str) -> str:
+        prompt = f'{question}\n\nHere is potentially useful context:\n\n{context}'
+        messages = [
+            openai.Message('system', system_message),
+            openai.Message('user', prompt)
+        ]
+        return llm_model(messages).content
 
     with gr.Blocks() as demo:
         gr.Markdown('# FIA Regulation Matching')
         policy_selector = gr.Dropdown(memo_texts, label='Select a memorandum item:')
-        policy_text = gr.Markdown('## Selected policy:\n\n> None', label='Selected memorandum item:', interactive=False)
+        policy_text = gr.Textbox('Memo item or question:', label='Search box', interactive=True)
         search_button = gr.Button('Search')
+        llm_response = gr.Textbox('LLM Response', interactive=False)
         output_text = gr.Markdown('Output will appear here')
 
         policy_selector.change(
-            fn=lambda inp: f'## Selected policy:\n\n> {inp}',
+            fn=lambda inp: f'Where is this policy discussed in the regulations: {inp}',
             inputs=policy_selector,
             outputs=policy_text
         )
@@ -234,6 +265,10 @@ def run_demo():
             fn=search,
             inputs=policy_text,
             outputs=output_text
+        ).then(
+            fn=generate_response,
+            inputs=[policy_text, output_text],
+            outputs=llm_response
         )
 
     demo.queue()
