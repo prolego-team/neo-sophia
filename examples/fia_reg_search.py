@@ -5,6 +5,7 @@ import json
 import logging
 import sys
 
+import yaml
 import torch
 from sentence_transformers import CrossEncoder
 import gradio as gr
@@ -40,10 +41,16 @@ RERANK = True
 PRE_EXPAND = False
 POST_EXPAND = True
 
-REG_KEYS = ['sporting', 'financial']
 REGS = {
-    'sporting': 'fia_2023_formula_1_sporting_regulations_-_issue_6_-_2023-08-31.yaml',
-    'financial': 'fia_formula_1_financial_regulations_-_issue_16_-_2023-08-31.yaml'
+    '2023 FIA Formula One Sporting Regulations': 'fia_2023_formula_1_sporting_regulations_-_issue_6_-_2023-08-31.yaml',
+    '2023 FIA International Sporting Code': '2023_international_sporting_code_fr-en_clean_9.01.2023.yaml',
+    '2023 FIA International Sporting Code, Appendix L, Chapter II': 'appendix_l_iii_2023_publie_le_20_juin_2023.yaml',
+    '2023 FIA International Sporting Code, Appendix L, Chapter IV': 'appendix_l_iv_2023_publie_le_20_juin_2023.yaml',
+    '2023 FIA Formula One Financial Regulations': 'fia_formula_1_financial_regulations_-_issue_16_-_2023-08-31.yaml'
+}
+MEMO_DIRS = {
+    '2023 FIA Formula One Sporting Regulations': 'sporting',
+    '2023 FIA Formula One Financial Regulations': 'financial'
 }
 
 
@@ -52,15 +59,17 @@ def load_memos() -> dict[str, list]:
     bullet_p = r'^(\d\.)'
     article_p = r'\[(\d+\.\d.*?)\]'
 
-    memos = {key:[] for key in REG_KEYS}
+    memos = {key:[] for key in REGS}
     memo_inds = {
-        'sporting': [22,24,26,28,31,43,53,54],
-        'financial': [i for i in range(1,12) if i!=10]
+        '2023 FIA Formula One Sporting Regulations': [22,24,26,28,31,43,53,54],
+        '2023 FIA Formula One Financial Regulations': [i for i in range(1,12) if i!=10]
     }
-    for key in REG_KEYS:
+    for key in REGS:
+        if key not in memo_inds:
+            continue
         for i in memo_inds[key]:
             doc_name = f'Memo_section_{i}.txt'
-            with open(DOC_DIR / 'memos' / key / doc_name, 'r') as f:
+            with open(DOC_DIR / 'memos' / MEMO_DIRS[key] / doc_name, 'r') as f:
                 file_lines = f.readlines()
 
             for line in file_lines:
@@ -91,6 +100,36 @@ def load_regs() -> dict[str, doctree.DocTree]:
     return doc_trees
 
 
+def load_defs() -> dict[str, list]:
+    defs = {}
+    for reg,filename in REGS.items():
+        filename = DOC_DIR / filename.replace('yaml', 'defs')
+        if filename.exists():
+            with open(filename, 'r') as f:
+                defs[reg] = yaml.safe_load(f)
+
+    with open(DOC_DIR / 'formula_one_glossary.defs', 'r') as f:
+        defs['F1 Glossary'] = yaml.safe_load(f)
+
+    return defs
+
+
+def encode(run_dir, filename, flat_texts, model):
+    # Generate/retrieve embeddings
+    filename = run_dir / filename
+    if os.path.isfile(filename):
+        log.info('Loading embeddings')
+        embeddings = emb.load_embeddings(filename)
+        log.info('Done.')
+    else:
+        log.info('Generating embeddings (this will take a few minutes)')
+        embeddings = emb.encode(flat_texts, model)
+        emb.save_embeddings(embeddings, filename)
+        log.info('Done.')
+
+    return embeddings
+
+
 def get_embeddings(doc_trees, run_dir, model) -> tuple[torch.Tensor, list[str], list[tuple]]:
     """Flatten the texts for embedding, expanding per config"""
     flat_texts = []
@@ -112,17 +151,7 @@ def get_embeddings(doc_trees, run_dir, model) -> tuple[torch.Tensor, list[str], 
             flat_texts += chunks
             flat_ids += [(reg,)+id for id in ids]
 
-    # Generate/retrieve embeddings
-    filename = run_dir / ('embeddings.pkl')
-    if os.path.isfile(filename):
-        log.info('Loading embeddings')
-        embeddings = emb.load_embeddings(filename)
-        log.info('Done.')
-    else:
-        log.info('Generating embeddings (this will take a few minutes)')
-        embeddings = emb.encode(flat_texts, model)
-        emb.save_embeddings(embeddings, filename)
-        log.info('Done.')
+    embeddings = encode(run_dir, 'embeddings.pkl', flat_texts, model)
 
     return embeddings, flat_texts, flat_ids
 
@@ -159,7 +188,7 @@ def result_to_string(result: dict, doc_trees: list[doctree.DocTree]) -> str:
 
 
     summary_str = (
-        f'{file.capitalize()} Regulation: {", ".join(section_headings)}\n\n'
+        f'{file.title()} Regulation: {", ".join(section_headings)}\n\n'
         f'{text}\n'
         f'- Similarity Score = {result["similarity_score"]}\n\n'
         f'- Re-ranked score = {result["reranked_score"]}\n\n'
@@ -197,12 +226,12 @@ def run_demo():
     log.info('Loading memos')
     memo_set = load_memos()
     memo_texts = [
-        f'{memo_type.upper()}: {memo["text"]}'
+        f'{memo_type.upper()}:: {memo["text"]}'
         for memo_type,memo_list in memo_set.items()
         for memo in memo_list
     ]
 
-    model_name = 'multi-qa-mpnet-base-cos-v1'
+    model_name = 'all-mpnet-base-v2'
     cross_encoder_name = 'cross-encoder/ms-marco-MiniLM-L-12-v2'
     config = {
         'pre_expand': PRE_EXPAND,
@@ -228,24 +257,48 @@ def run_demo():
 
     log.info(f'Embeddings -- {type(embeddings)} -- {embeddings.shape}')
 
+    # Get definitions
+    definitions = load_defs()
+    definitions_flat = []
+    definition_ids = []
+    for filename,defs in definitions.items():
+        definitions_flat += defs
+        definition_ids += [(filename,0)]*len(defs)
+
+    definition_embeddings = encode(run_dir, 'embeddings_definitions.pkl', definitions_flat, model)
+    del definitions
+
+    def search_definitions(query_emb) -> str:
+        results = cosine_search(query_emb, definition_embeddings, definition_ids, definitions_flat, model, 2)
+        return '\n\n'.join([f'{result["text"]} (score={result["similarity_score"]}, from {result["file"]})' for result in results])
 
     def search(query: str) -> str:
         query_emb = emb.encode(query, model)
+        definitions = search_definitions(query_emb)
 
         results = cosine_search(query_emb, embeddings, flat_ids, flat_texts, model, top_k)
         if RERANK:
             results = rerank(results, doc_trees, query, rerank_model, post_expand=POST_EXPAND)
 
         string_results = results_to_string(results[:5], doc_trees)
-        return string_results
+
+        context = (
+            'Here are some potentially useful definitions:\n\n'
+            f'{definitions}\n\n'
+            '---\n\n'
+            'Here is potentially useful context from the regulations:\n\n'
+            f'{string_results}'
+        )
+        return context
 
     def generate_response(question:str, context: str) -> str:
-        prompt = f'{question}\n\nHere is potentially useful context:\n\n{context}'
+        prompt = context + f'\n\nHere is the question: {question}'
         messages = [
             openai.Message('system', system_message),
             openai.Message('user', prompt)
         ]
-        return llm_model(messages).content
+        # return llm_model(messages).content
+        return 'Skipping the LLM part'
 
     with gr.Blocks() as demo:
         gr.Markdown('# FIA Regulation Matching')
@@ -256,7 +309,7 @@ def run_demo():
         output_text = gr.Markdown('Output will appear here')
 
         policy_selector.change(
-            fn=lambda inp: f'Where is this policy discussed in the regulations: {inp}',
+            fn=lambda inp: inp.split('::')[-1],
             inputs=policy_selector,
             outputs=policy_text
         )

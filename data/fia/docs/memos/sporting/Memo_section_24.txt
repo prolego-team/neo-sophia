@@ -1,0 +1,21 @@
+Subject: FIA Regulation Compliance: Competitor Factory Shutdown Periods
+
+Dear Team,
+
+In accordance with the recent FIA regulations, it's paramount that we maintain full compliance within the stated directives. Enclosed herein is a summarised breakdown of the regulations for better comprehension and adherence:
+
+1. [24.1] All competitors must observe two shutdown periods annually - the first one of fourteen consecutive days during July or August [a], and the second one of nine consecutive days starting on December 24 [b]. Notice of the intended shutdown period must be sent to the FIA 30 days before the start of the Championship [a]. If two competitions in this period are separated by only seventeen days, a shutdown period of thirteen consecutive days should be observed [a].
+
+2. [24.2] During these shutdown periods, neither competitor nor any affiliated party can perform or direct a third party to perform certain activities such as the operation of wind tunnels or any computer tasks for CFD simulations [a-b], production or development of car parts [c], or engage any employee or subcontractor in design, development or production.
+
+3. [24.3] All competitors must notify their suppliers about their shutdown periods and should strictly refrain from any agreements that might bypass these prohibitions on activities.
+
+4. [24.4] Exceptionally, during the shutdown periods, the following activities will not be considered as a breach: repairs carried out with the approval of the FIA to a car damaged badly during the competition preceding the shutdown period [a], assembly and servicing of running or static show cars without producing, assembling or servicing any current car parts [b]. The operation and use of wind tunnels or any computer for CFD simulations for projects not directly related to Formula one or on behalf of a competitor that is not in the middle of its own shutdown period [c]. Also any activity supporting projects not connected to Formula one, with prior FIA approval [e].
+
+Let's stay compliant. Your attention and diligence with regards to these matters is much appreciated.
+
+Regards,
+
+[Your Name]
+Compliance Assistant
+[Team Name]
