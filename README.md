@@ -61,7 +61,9 @@ Video:
 ## Episode 13 - Software design pattern for LLM Scratchpads
 In the second episode on Scratchpads we walk through the technical detaials and workflow.
 
-Video:
+Video: [Cook a Scrumptious AI Solutions with LLM Scratchpads](https://www.youtube.com/watch?v=YLTronn1riw)
+
+Same demo as Episode 12.
 
 ## Episode 12 - Data too big for LLMs? Try Scratchpads
 LLMs cannot handle data bigger than their context windows. To overcome these limitations, use temporary memory called LLM Scratchpads.
