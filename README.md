@@ -61,7 +61,7 @@ Video:
 ## Episode 13 - Software design pattern for LLM Scratchpads
 In the second episode on Scratchpads we walk through the technical detaials and workflow.
 
-Video: [Cook a Scrumptious AI Solutions with LLM Scratchpads](https://www.youtube.com/watch?v=YLTronn1riw)
+Video: [Cook a Scrumptious AI Solution with LLM Scratchpads](https://www.youtube.com/watch?v=YLTronn1riw)
 
 Same demo as Episode 12.
 
