@@ -21,14 +21,14 @@
 - - !section
     contents:
     - A car alone on the track may use the full
-    - width of the said track, however, as soon as it is  caught by a car which is
+      width of the said track, however, as soon as it is  caught by a car which is
       about to lap it the driver  must allow the faster driver past at the first possible  opportunity.     If
       the driver who has been caught does not seem to  make full use of the rear-view
       mirrors, flag  marshals will display the waved blue flag to indicate  that the
       faster driver wants to overtake.  Any driver who appears to ignore the blue
-      flags will  be reported to the Stewards.    b)  Overtaking, according to the
-      circumstances,
-    - may be carried out on either the right or the left.    A driver may not leave
+      flags will  be reported to the Stewards.
+    - b)  Overtaking, according to the circumstances,
+      may be carried out on either the right or the left.    A driver may not leave
       the track without justifiable  reason.  More than one change of direction to
       defend a  position is not permitted.   Any driver moving back towards the racing
       line,  having earlier defended his position off-line, should  leave at least
@@ -36,26 +36,26 @@
       to the  corner.  However, manoeuvres liable to hinder other  drivers, such as
       deliberate crowding of a car  beyond the edge of the track or any other abnormal  change
       of direction, are strictly prohibited. Any  driver who appears guilty of any
-      of the above  offences will be reported to the Stewards.        c)  Drivers
-      must use the track at all times and
-    - may not leave the track without a justifiable reason.  For the avoidance of
+      of the above  offences will be reported to the Stewards.
+    - c)  Drivers must use the track at all times and
+      may not leave the track without a justifiable reason.  For the avoidance of
       doubt, the white lines defining  the track edges are considered to be part of
       the  track but the kerbs are not.    Should a car leave the track for any reason,
       the  driver may rejoin.   However, this may only be done when it is safe to  do
       so and without gaining any lasting advantage. A  driver will be judged to have
       left the track if no part  of the car remains in contact with the track.
-    - A driver may be reported to the Stewards should  they perform any act which
-      results in debris being  brought onto the track.    d)  Causing a collision,
-      repetition of serious
-    - mistakes or the appearance of a lack of control over  the car (such as leaving
+      A driver may be reported to the Stewards should  they perform any act which
+      results in debris being  brought onto the track.
+    - d)  Causing a collision, repetition of serious
+      mistakes or the appearance of a lack of control over  the car (such as leaving
       the track) will be reported  to the Stewards and may entail the imposition of  penalties
-      up to and including the disqualification of  any driver concerned.    e)  It
-      is not permitted to drive any car unnecessarily slowly, erratically or in a
+      up to and including the disqualification of  any driver concerned.
+    - e)  It is not permitted to drive any car unnecessarily slowly, erratically or in a
       manner  deemed potentially dangerous to other drivers at  any time.
     metadata:
       file: appendix_l_iv_2023_publie_le_20_juin_2023.pdf
       page: 0
-    title: 'a) '
+    title: 'a)-e)'
 - !section
   contents: []
   metadata:
@@ -64,24 +64,23 @@
   title: 3.  Cars stopping during a race
 - - !section
     contents:
-    - The driver of any car leaving the track
-    - because of being unable to maintain racing speed  should signal the intention
+    - The driver of any car leaving the track because of being unable to maintain
+      racing speed  should signal the intention
       to do so in good time  and is responsible for ensuring that the manoeuvre  is
-      carried out safely and as near as possible to a  point of exit.      b) Should
-      a car stop outside the pit lane, it must be  moved as soon as possible so that
+      carried out safely and as near as possible to a  point of exit.
+    - Should a car stop outside the pit lane, it must be  moved as soon as possible so that
       its presence  does not constitute a danger or hinder other  drivers.    If the
       driver is unable to move the car, it shall be the  duty of the marshals to assist.
       If such assistance  results in the driver rejoining the race, this must be  done
-      without committing any breach of the  regulations and without gaining any advantage.      c)  Repairs
-      carried out on the track may only be
-    - made by the driver using tools and spare parts  carried aboard the car.    d)  Replenishment
-      of any kind is prohibited save when the car concerned is stopped at its pit.      e)  Apart
-      from the driver and duly appointed officials, nobody is allowed to touch a car
-      except in  the pit lane.    f)  Pushing a car on the track is prohibited.
+      without committing any breach of the  regulations and without gaining any advantage.
+    - Repairs carried out on the track may only be made by the driver using tools and spare parts  carried aboard the car.
+    - Replenishment of any kind is prohibited save when the car concerned is stopped at its pit.
+    - Apart from the driver and duly appointed officials, nobody is allowed to
+      touch a car except in  the pit lane. Pushing a car on the track is prohibited.
     metadata:
       file: appendix_l_iv_2023_publie_le_20_juin_2023.pdf
       page: 1
-    title: 'a) '
+    title: 'a)-f)'
   - !section
     contents:
     - Except during a race suspension, any car abandoned on the circuit by its driver,
@@ -113,7 +112,7 @@
     metadata:
       file: appendix_l_iv_2023_publie_le_20_juin_2023.pdf
       page: 2
-    title: 'a) -a) '
+    title: 'a)-d) '
 - !section
   contents: []
   metadata:
@@ -139,7 +138,7 @@
     metadata:
       file: appendix_l_iv_2023_publie_le_20_juin_2023.pdf
       page: 2
-    title: 'a) '
+    title: 'a)-d)'
   - !section
     contents:
     - Cars must not be released from a garage or pit  stop position in a way that
@@ -174,4 +173,4 @@
     metadata:
       file: appendix_l_iv_2023_publie_le_20_juin_2023.pdf
       page: 3
-    title: 'a) -a) '
+    title: 'a)-c) '

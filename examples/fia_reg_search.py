@@ -4,6 +4,7 @@ import re
 import json
 import logging
 import sys
+from collections import Counter, defaultdict
 
 import yaml
 import torch
@@ -16,8 +17,11 @@ import neosophia.search.embeddings as emb
 import neosophia.search.utils.doctree as doctree
 from neosophia.search.utils import tree
 from neosophia.search.semantic_search import cosine_search, rerank
+from neosophia.search.keyword_search import keyword_search, build_index
 from neosophia.search.utils.doctree import flatten_doctree
 from neosophia.search.utils.data_utils import get_dict_hash
+
+from neosophia.agents.react_chat import make_react_agent
 
 from examples import project
 
@@ -53,6 +57,25 @@ MEMO_DIRS = {
     '2023 FIA Formula One Financial Regulations': 'financial'
 }
 
+MAX_LLM_CALLS_PER_INTERACTION = 10
+
+FUNCTION_DESCRIPTIONS = [
+    {
+        'name': 'lookup',
+        'description': 'Lookup a word or phrase in the glossary to get its definition.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'query': {
+                    'type': 'string',
+                    'description': 'A word or phrase for which you want the definition.'
+                },
+            },
+            'required': ['query']
+        }
+    }
+]
+
 
 def load_memos() -> dict[str, list]:
     """Load certain sections of "memos" that represent a fictional team's policies."""
@@ -87,8 +110,12 @@ def load_memos() -> dict[str, list]:
                             'articles': articles,
                             'document': doc_name
                         })
-
-    return memos
+    memo_texts = [
+        f'{memo_type.upper()}:: {memo["text"]}'
+        for memo_type,memo_list in memos.items()
+        for memo in memo_list
+    ]
+    return memo_texts
 
 
 def load_regs() -> dict[str, doctree.DocTree]:
@@ -111,7 +138,13 @@ def load_defs() -> dict[str, list]:
     with open(DOC_DIR / 'formula_one_glossary.defs', 'r') as f:
         defs['F1 Glossary'] = yaml.safe_load(f)
 
-    return defs
+    definitions_flat = []
+    definition_ids = []
+    for filename,defs in defs.items():
+        definitions_flat += defs
+        definition_ids += [(filename,0)]*len(defs)
+
+    return definitions_flat, definition_ids
 
 
 def encode(run_dir, filename, flat_texts, model):
@@ -190,9 +223,9 @@ def result_to_string(result: dict, doc_trees: list[doctree.DocTree]) -> str:
     summary_str = (
         f'{file.title()} Regulation: {", ".join(section_headings)}\n\n'
         f'{text}\n'
-        f'- Similarity Score = {result["similarity_score"]}\n\n'
-        f'- Re-ranked score = {result["reranked_score"]}\n\n'
-        f'- `URI: {uri}`'
+        # f'- Similarity Score = {result["similarity_score"]}\n\n'
+        # f'- Re-ranked score = {result["reranked_score"]}\n\n'
+        # f'- `URI: {uri}`'
     )
 
     return summary_str
@@ -207,32 +240,9 @@ def results_to_string(results: list, doc_trees: list[doctree.DocTree]) -> str:
 def run_demo():
     """Run demo."""
 
-    api_key = openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
-    openai.set_api_key(api_key)
-
-    # Get a model
-    llm_model = openai.start_chat('gpt-4')
-    system_message = (
-        'You are an assitant to a Formula 1 team.  Your job is to answer team questions '
-        'to the best of your ability.  You will be given several excerpts from regulations '
-        'to help you in answering.  Some of the provided regulations may be irrelevant, so '
-        'ignore these and only use those that appear to be relevant. Do not mention or cite '
-        'regulations that are not given to you.  Answer succinctly and make reference to the '
-        'relevant regulation sections.\n\n'
-        'Think carefully about the question and the provided regulations. Check that your '
-        'response makes sense before answering.'
-    )
-
-    log.info('Loading memos')
-    memo_set = load_memos()
-    memo_texts = [
-        f'{memo_type.upper()}:: {memo["text"]}'
-        for memo_type,memo_list in memo_set.items()
-        for memo in memo_list
-    ]
-
     model_name = 'all-mpnet-base-v2'
     cross_encoder_name = 'cross-encoder/ms-marco-MiniLM-L-12-v2'
+    llm_model_name = 'gpt-4'
     config = {
         'pre_expand': PRE_EXPAND,
         'post_expand': POST_EXPAND,
@@ -248,39 +258,92 @@ def run_demo():
         with open(run_dir / 'config.json', 'w') as f:
             json.dump(config, f)
 
-    doc_trees = load_regs()
+    api_key = openai.load_api_key(project.OPENAI_API_KEY_FILE_PATH)
+    openai.set_api_key(api_key)
 
+
+    # Get models
     model = emb.get_model(model_name)
-    embeddings, flat_texts, flat_ids = get_embeddings(doc_trees, run_dir, model)
     if RERANK:
         rerank_model = CrossEncoder(cross_encoder_name)
 
+    llm_model = openai.start_chat(llm_model_name)
+    system_message = (
+        'You are an assitant to a Formula 1 team.  Your job is to answer team questions '
+        'to the best of your ability.  You will be given several excerpts from regulations '
+        'to help you in answering.  Some of the provided regulations may be irrelevant, so '
+        'ignore these and only use those that appear to be relevant. Do not mention or cite '
+        'regulations that are not given to you.  Answer succinctly and make reference to the '
+        'relevant regulation sections.\n\n'
+        'You can look up any word or phrase that you are not sure about using the lookup function.\n\n'
+        'Think carefully about the question and the provided regulations. Check that your '
+        'response makes sense before answering.'
+    )
+
+    # Load data
+    log.info('Loading memos')
+    memo_texts = load_memos()
+
+    log.info('Loading regulations')
+    doc_trees = load_regs()
+
+    log.info('Loading definitions')
+    definitions_flat, definition_ids = load_defs()
+
+    # Get encodings
+    log.info('Getting encodings for regs and definitions')
+    embeddings, flat_texts, flat_ids = get_embeddings(doc_trees, run_dir, model)
     log.info(f'Embeddings -- {type(embeddings)} -- {embeddings.shape}')
 
-    # Get definitions
-    definitions = load_defs()
-    definitions_flat = []
-    definition_ids = []
-    for filename,defs in definitions.items():
-        definitions_flat += defs
-        definition_ids += [(filename,0)]*len(defs)
+    # definition_embeddings = encode(run_dir, 'embeddings_definitions.pkl', definitions_flat, model)
+    definition_bm25 = build_index(definitions_flat)
 
-    definition_embeddings = encode(run_dir, 'embeddings_definitions.pkl', definitions_flat, model)
-    del definitions
-
-    def search_definitions(query_emb) -> str:
-        results = cosine_search(query_emb, definition_embeddings, definition_ids, definitions_flat, model, 2)
-        return '\n\n'.join([f'{result["text"]} (score={result["similarity_score"]}, from {result["file"]})' for result in results])
+    # Wrapper functions for search and generation
+    def search_definitions(query) -> list[str]:
+        """Do a keyword search over definitions."""
+        results = keyword_search(definition_bm25, query, definition_ids, definitions_flat, 3)
+        return [
+            (result["similarity_score"], f'{result["text"]} (from {result["file"]})')
+            for result in results
+        ]
 
     def search(query: str) -> str:
+        """Do a semantic search over embeddings.  Also return potentially relevant definitiosn."""
         query_emb = emb.encode(query, model)
-        definitions = search_definitions(query_emb)
+        definitions = search_definitions(query)
 
         results = cosine_search(query_emb, embeddings, flat_ids, flat_texts, model, top_k)
         if RERANK:
             results = rerank(results, doc_trees, query, rerank_model, post_expand=POST_EXPAND)
 
-        string_results = results_to_string(results[:5], doc_trees)
+        for result in results:
+            new_definitions = search_definitions(result['text'])
+            if RERANK:
+                new_definitions = [(score*result['reranked_score']/10,defn) for score,defn in new_definitions]
+            else:
+                new_definitions = [(score*result['similarity_score'],defn) for score,defn in new_definitions]
+            definitions += new_definitions
+
+        # Consolidate definitions list
+        # def_scores, definitions = zip(*definitions)
+        aggregator = defaultdict(int)
+        for def_score, definition in definitions:
+            aggregator[definition] += def_score
+        weighted_definitions = [(defn,score) for defn,score in aggregator.items()]
+        weighted_definitions = sorted(
+            weighted_definitions,
+            key=lambda x: x[1],
+            reverse=True
+        )
+        weighted_definitions, _ = zip(*weighted_definitions)
+        definitions = "\n\n".join(weighted_definitions[:5])
+
+        # Apply a threshold to results
+        if RERANK:
+            good_results = [result for result in results if result['reranked_score']>-2]
+        else:
+            good_results = [result for result in results if result['similarity_score']>0.3]
+        string_results = results_to_string(good_results, doc_trees)
 
         context = (
             'Here are some potentially useful definitions:\n\n'
@@ -291,35 +354,131 @@ def run_demo():
         )
         return context
 
-    def generate_response(question:str, context: str) -> str:
+    def generate_response(question: str, context: str) -> str:
         prompt = context + f'\n\nHere is the question: {question}'
         messages = [
             openai.Message('system', system_message),
             openai.Message('user', prompt)
         ]
-        # return llm_model(messages).content
-        return 'Skipping the LLM part'
+        return llm_model(messages).content
+
+    def agentic_search(question: str, context: str) -> str:
+        if False:
+            return 'Done'
+        functions = {
+            'lookup': search_definitions
+        }
+        agent = make_react_agent(
+            system_message,
+            llm_model,
+            FUNCTION_DESCRIPTIONS,
+            functions,
+            MAX_LLM_CALLS_PER_INTERACTION,
+            extra_context=context
+        )
+
+        prompt = question #+ '\n\n' + context
+        for message in agent(prompt):
+            if message.role=='user':
+                status = 'User agent asked a question or provided feedback to the LLM.  Awaiting LLM response...'
+                log.info('User mesage: ' + message.content)
+            elif message.role=='function':
+                status = 'A query was run against the database.  Awaiting LLM response...'
+                log.info('Function call: ' + f'\n\n_<name={message.name}, function_call={message.function_call}>_\n')
+            elif message.role=='assistant':
+                if 'Final Answer:' in message.content:
+                    status = 'The final answer has been determined.'
+                else:
+                    status = 'The assistant responded.  Awaiting LLM next response...'
+                log.info('Assistant mesage: ' + message.content)
+            # yield chat_history
+
+        additional_prompts = generate_response(
+            question+'\n\nWhat are several other questions that could be asked to get a more precise answer?',
+            context
+        )
+        return (
+            message.content +
+            '\n\nHere are several other questions related to this question:\n\n' +
+            additional_prompts
+        )
+
+    def multi_search(question: str, context: str) -> str:
+        log.info(question)
+        log.info(context)
+        base_question = question
+        base_response = generate_response(base_question, context)
+        log.info('Generating queries')
+        additional_prompts = generate_response(
+            question+'\n\nWhat are several other questions that could be asked to get a more precise or complete answer?  Return the questions as a numbered list.',
+            context
+        )
+        log.info(additional_prompts)
+        questions = additional_prompts.split('\n')
+        responses = [base_response, ]
+        max_qs = 3
+        for question in questions[:max_qs]:
+            log.info('Generating new response')
+            context = search(question)
+            responses.append(generate_response(question, context))
+
+        new_context = '\n\n'.join([f'Response {i+1}: {response}' for i, response in enumerate(responses)])
+        log.info(new_context)
+        log.info('Synthesizing responses')
+        prompt = (
+            'Please summarize these responses into a single consolidated response to the '
+            f'original question, "{base_question}". Remember to include citations of '
+            'regulations where applicable.'
+        )
+        log.info(prompt)
+        final_response = generate_response(prompt, new_context)
+
+        return final_response
+
 
     with gr.Blocks() as demo:
         gr.Markdown('# FIA Regulation Matching')
         policy_selector = gr.Dropdown(memo_texts, label='Select a memorandum item:')
         policy_text = gr.Textbox('Memo item or question:', label='Search box', interactive=True)
-        search_button = gr.Button('Search')
+        with gr.Row():
+            quick_search_button = gr.Button('Quick Search')
+            search_summarize_button = gr.Button('Search and Summarize')
+            deep_search_button = gr.Button('Deep Search')
         llm_response = gr.Textbox('LLM Response', interactive=False)
-        output_text = gr.Markdown('Output will appear here')
+        output_text = gr.Textbox('Output will appear here', interactive=False)
 
         policy_selector.change(
-            fn=lambda inp: inp.split('::')[-1],
+            fn=lambda inp: 'Where is this discussed in the FIA regulations: ' + inp.split('::')[-1],
             inputs=policy_selector,
             outputs=policy_text
         )
 
-        search_button.click(
+        quick_search_button.click(
+            fn=search,
+            inputs=policy_text,
+            outputs=output_text
+        ).then(
+            fn=lambda : 'No LLM response requested.',
+            inputs=None,
+            outputs=llm_response
+        )
+
+        search_summarize_button.click(
             fn=search,
             inputs=policy_text,
             outputs=output_text
         ).then(
             fn=generate_response,
+            inputs=[policy_text, output_text],
+            outputs=llm_response
+        )
+
+        deep_search_button.click(
+            fn=search,
+            inputs=policy_text,
+            outputs=output_text
+        ).then(
+            fn=multi_search, #agentic_search, #generate_response,
             inputs=[policy_text, output_text],
             outputs=llm_response
         )
