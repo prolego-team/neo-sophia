@@ -80,7 +80,7 @@ QS_AND_EVALS = [
     ),
     (
         'How many products does the person who most recently opened a mortgage have?',
-        lambda x: '2' in words(x)
+        lambda x: '2' in words(x) or 'two' in words(x) or 'Two' in words(x)
     ),
     (
         'How many customers were born between 1981 and 1996?',
