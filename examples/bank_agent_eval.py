@@ -118,7 +118,7 @@ QS_AND_EVALS = [
                     'Pam Riegel'
                 ]]
             ) and
-            (('0.3' in words(x)) or '30%' in words(x))
+            (('0.3' in words(x)) or '30%' in words(x) or '(0.3)' in words(x) or '(30%)' in words(x))
         )
     ),
     (

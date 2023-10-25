@@ -57,31 +57,31 @@ def main():
             line = ','.join(line) + '\n'
             csv_file.write(line)
 
-        # read csv back in with pandas to aggregate
+    # read csv back in with pandas to aggregate
 
-        df = pd.read_csv(output_file_path)
+    df = pd.read_csv(output_file_path)
 
-        df_system_question = df.groupby(['system', 'question']).agg(
-            func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
-        df_system = df.groupby(['system']).agg(
-            func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
+    df_system_question = df.groupby(['system', 'question']).agg(
+        func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
+    df_system = df.groupby(['system']).agg(
+        func={'calls': 'mean', 'time': 'mean', 'missing': 'mean', 'correct': 'mean'})
 
-        df_system_question.to_csv(
-            os.path.join(
-                output_dir_path,
-                f'{output_file_prefix}_system_question.csv'
-            ),
-            float_format='{:.3f}'.format
-        )
-        df_system.to_csv(
-            os.path.join(
-                output_dir_path,
-                f'{output_file_prefix}_system.csv',
-            ),
-            float_format='{:.3f}'.format
-        )
+    df_system_question.to_csv(
+        os.path.join(
+            output_dir_path,
+            f'{output_file_prefix}_system_question.csv'
+        ),
+        float_format='{:.3f}'.format
+    )
+    df_system.to_csv(
+        os.path.join(
+            output_dir_path,
+            f'{output_file_prefix}_system.csv',
+        ),
+        float_format='{:.3f}'.format
+    )
 
-        print('wrote aggregate CSVs')
+    print('wrote aggregate CSVs')
 
 
 def find_eval_func(question: str) -> Callable:
