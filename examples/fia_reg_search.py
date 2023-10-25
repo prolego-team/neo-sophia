@@ -19,7 +19,7 @@ from neosophia.search.utils import tree
 from neosophia.search.semantic_search import cosine_search, rerank
 from neosophia.search.keyword_search import keyword_search, build_index
 from neosophia.search.utils.doctree import flatten_doctree
-from neosophia.search.utils.data_utils import get_dict_hash
+from neosophia.search.utils.data_utils import get_dict_hash, SearchResult, reciprocal_rank_fusion
 
 from neosophia.agents.react_chat import make_react_agent
 
@@ -190,11 +190,11 @@ def get_embeddings(doc_trees, run_dir, model) -> tuple[torch.Tensor, list[str], 
 
 
 def result_to_string(result: dict, doc_trees: list[doctree.DocTree]) -> str:
-    file = result['file']
-    section_ind = result['tree_index']
+    file = result.file
+    section_ind = result.tree_index
 
     section = tree.get_from_tree(doc_trees[file], section_ind)
-    text = result['text']
+    text = result.text
 
     top_ind = section_ind
     section_headings = [section.title,]
@@ -299,51 +299,41 @@ def run_demo():
     definition_bm25 = build_index(definitions_flat)
 
     # Wrapper functions for search and generation
-    def search_definitions(query) -> list[str]:
+    def search_definitions(query) -> list[SearchResult]:
         """Do a keyword search over definitions."""
-        results = keyword_search(definition_bm25, query, definition_ids, definitions_flat, 3)
-        return [
-            (result["similarity_score"], f'{result["text"]} (from {result["file"]})')
-            for result in results
-        ]
+        return keyword_search(definition_bm25, query, definition_ids, definitions_flat, 3)
 
     def search(query: str) -> str:
         """Do a semantic search over embeddings.  Also return potentially relevant definitiosn."""
         query_emb = emb.encode(query, model)
-        definitions = search_definitions(query)
 
         results = cosine_search(query_emb, embeddings, flat_ids, flat_texts, model, top_k)
         if RERANK:
             results = rerank(results, doc_trees, query, rerank_model, post_expand=POST_EXPAND)
 
-        for result in results:
-            new_definitions = search_definitions(result['text'])
-            if RERANK:
-                new_definitions = [(score*result['reranked_score']/10,defn) for score,defn in new_definitions]
-            else:
-                new_definitions = [(score*result['similarity_score'],defn) for score,defn in new_definitions]
-            definitions += new_definitions
-
-        # Consolidate definitions list
-        # def_scores, definitions = zip(*definitions)
-        aggregator = defaultdict(int)
-        for def_score, definition in definitions:
-            aggregator[definition] += def_score
-        weighted_definitions = [(defn,score) for defn,score in aggregator.items()]
-        weighted_definitions = sorted(
-            weighted_definitions,
-            key=lambda x: x[1],
-            reverse=True
-        )
-        weighted_definitions, _ = zip(*weighted_definitions)
-        definitions = "\n\n".join(weighted_definitions[:5])
-
         # Apply a threshold to results
         if RERANK:
-            good_results = [result for result in results if result['reranked_score']>-2]
+            good_results = [result for result in results if result.reranked_score>-2]
         else:
-            good_results = [result for result in results if result['similarity_score']>0.3]
+            good_results = [result for result in results if result.similarity_score>0.3]
         string_results = results_to_string(good_results, doc_trees)
+
+        # Get definitions that may be relevant
+        query_definitions = search_definitions(query)
+        query_definitions = [
+            f'{defn_hit.text} (from {defn_hit.file})' for defn_hit in query_definitions
+        ]
+        result_definitions_set = []
+        for result in results:
+            result_definitions_set.append(search_definitions(result.text))
+        result_definitions_set = [
+            [f'{defn_hit.text} (from {defn_hit.file})' for defn_hit in defn_results]
+            for defn_results in result_definitions_set
+        ]
+        result_definitions = reciprocal_rank_fusion(result_definitions_set)
+        result_definitions = [defn for defn in result_definitions if defn not in query_definitions]
+        definitions = "\n\n".join(query_definitions+result_definitions[:5])
+
 
         context = (
             'Here are some potentially useful definitions:\n\n'
@@ -410,7 +400,7 @@ def run_demo():
         base_response = generate_response(base_question, context)
         log.info('Generating queries')
         additional_prompts = generate_response(
-            question+'\n\nWhat are several other questions that could be asked to get a more precise or complete answer?  Return the questions as a numbered list.',
+            question+'\n\nWhat are several other questions that could be asked to get a more precise or complete answer?  Write one question per line.',
             context
         )
         log.info(additional_prompts)

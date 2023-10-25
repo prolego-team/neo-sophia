@@ -2,6 +2,7 @@ import torch
 
 import neosophia.search.utils.doctree as doctree
 import neosophia.search.embeddings as emb
+from neosophia.search.utils.data_utils import SearchResult
 
 
 def cosine_search(
@@ -29,15 +30,16 @@ def cosine_search(
         ind = ids[chunk_id][1:-1]
         paragraph = ids[chunk_id][-1]
 
-        results.append({
+        result = {
             'similarity_score': float(score),
             'file': file,
             'tree_index': ind,
-            'paragraph_ind': paragraph,
+            'paragraph_index': paragraph,
             'chunk_id': chunk_id,
             'text': chunks[chunk_id],
             'reranked_score':-1000
-        })
+        }
+        results.append(SearchResult(**result))
 
     return results
 
@@ -56,23 +58,23 @@ def rerank(
 
     # Re-rank
     for result in inputs:
-        text = result['text']
+        text = result.text
 
         if post_expand:
-            file = result['file']
-            tree_ind = result['tree_index']
+            file = result.file
+            tree_ind = result.tree_index
             expanded_items = doctree.expand(text, doc_trees[file], tree_ind)
             max_score = -10000
             for item in expanded_items:
                 score = rerank_model.predict([(query, item)])[0]
                 if score>max_score:
-                    result['reranked_score'] = float(score)
-                    result['text'] = item
+                    result.reranked_score = float(score)
+                    result.text = item
         else:
-            result['reranked_score'] = float(rerank_model.predict([(query, text)])[0])
+            result.reranked_score = float(rerank_model.predict([(query, text)])[0])
 
     # Re sort
-    results = sorted(inputs, key=lambda res: res['reranked_score'], reverse=True)
+    results = sorted(inputs, key=lambda res: res.reranked_score, reverse=True)
 
     return results
 
