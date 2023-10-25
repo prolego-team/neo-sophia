@@ -69,6 +69,82 @@ FUNCTION_DESCS_GET_SCHEMA = {
     )
 }
 
+QS_AND_EVALS = [
+    (
+        'What is the name of the customer who most recently opened a checking account?',
+        lambda x: 'John Thompson' in x
+    ),
+    (
+        'How many unique people opened a savings account between 2022-08-01 and 2023-08-01?',
+        lambda x: '32' in words(x)
+    ),
+    (
+        'How many products does the person who most recently opened a mortgage have?',
+        lambda x: '2' in words(x)
+    ),
+    (
+        'How many customers were born between 1981 and 1996?',
+        lambda x: '357' in words(x)
+    ),
+
+    # there are multiple customers with the same highest interest rate
+    # (
+    #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
+    #     lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
+    # ),
+
+    (
+        (
+            'What are the names of the customers with the highest interest rate on their credit card, ' +
+            'and what is that interest rate?'
+        ),
+        lambda x: (
+            all(
+                [name in x for name in [
+                    'Edith Nelson',
+                    'Kevin Mcgann',
+                    'Celeste Walker',
+                    'Harry Schille',
+                    'Martha Alvarez',
+                    'Mark Aguilar',
+                    'Mark May',
+                    'Maria Holmes',
+                    'Mary Bell',
+                    'Jeff Gill',
+                    'Gerald Aldridge',
+                    'Brooke Peterson',
+                    'Penny Hernandez',
+                    'Dennis Norwood',
+                    'Pam Riegel'
+                ]]
+            ) and
+            (('0.3' in words(x)) or '30%' in words(x))
+        )
+    ),
+    (
+        'What is the name of the customer who has the largest mortgage loan?',
+        lambda x: 'Roberta Freeman' in x
+    ),
+    (
+        # This may not work as well asked "how many unique proudcts"
+        # Might be a nice one to include
+        'How many unique product types are available to customers?',
+        lambda x: '7' in words(x)
+    ),
+    (
+        'How many different checking account types are there and what are they?',
+        lambda x: (
+            ('2' in words(x)) and
+            all(
+                [name in x for name in [
+                    'PremierAccess Checking Account',
+                    'EasyAccess Checking Account'
+                ]]
+            )
+        )
+    )
+]
+
 
 def main():
     """main program"""
@@ -235,84 +311,7 @@ def main():
         )
     }
 
-    qs_and_evals = [
-        (
-            'What is the name of the customer who most recently opened a checking account?',
-            lambda x: 'John Thompson' in x
-        ),
-        (
-            'How many unique people opened a savings account between 2022-08-01 and 2023-08-01?',
-            lambda x: '32' in words(x)
-        ),
-        (
-            'How many products does the person who most recently opened a mortgage have?',
-            lambda x: '2' in words(x)
-        ),
-        (
-            'How many customers were born between 1981 and 1996?',
-            lambda x: '357' in words(x)
-        ),
-
-        # there are multiple customers with the same highest interest rate
-        # (
-        #     'Which customer has the highest interest rate on their credit card, and what is that interest rate?',
-        #     lambda x: ('Edith Nelson' in x or '100389' in x) and ('0.3' in words(x) or '30%' in words(x))
-        # ),
-
-        (
-            (
-                'What are the names of the customers with the highest interest rate on their credit card, ' +
-                'and what is that interest rate?'
-            ),
-            lambda x: (
-                all(
-                    [name in words(x) for name in [
-                        'Edith Nelson',
-                        'Kevin Mcgann',
-                        'Celeste Walker',
-                        'Harry Schille',
-                        'Martha Alvarez',
-                        'Mark Aguilar',
-                        'Mark May',
-                        'Maria Holmes',
-                        'Mary Bell',
-                        'Jeff Gill',
-                        'Gerald Aldridge',
-                        'Brooke Peterson',
-                        'Penny Hernandez',
-                        'Dennis Norwood',
-                        'Pam Riegel'
-                    ]]
-                ) and
-                (('0.3' in words(x)) or '30%' in words(x))
-            )
-        ),
-        (
-            'What is the name of the customer who has the largest mortgage loan?',
-            lambda x: 'Roberta Freeman' in x
-        ),
-        (
-            # This may not work as well asked "how many unique proudcts"
-            # Might be a nice one to include
-            'How many unique product types are available to customers?',
-            lambda x: '7' in words(x)
-        ),
-        (
-            'How many different checking account types are there and what are they?',
-            lambda x: (
-                ('2' in words(x)) and
-                all(
-                    [name in words(x) for name in [
-                        'PremierAccess Checking Account'
-                        'EasyAccess Checking Account'
-                    ]]
-                )
-            )
-        )
-
-    ]
-
-    results = eval_systems(systems, qs_and_evals, n_runs)
+    results = eval_systems(systems, QS_AND_EVALS, n_runs)
 
     db_connection.close()
 
