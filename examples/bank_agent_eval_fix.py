@@ -12,7 +12,7 @@ from examples import bank_agent_eval as bav
 
 
 def main():
-    """aldkjfahldf"""
+    """Main program."""
 
     input_dir_path = 'eval_20231024_093904'
     output_dir_path = input_dir_path + '_fixed'
