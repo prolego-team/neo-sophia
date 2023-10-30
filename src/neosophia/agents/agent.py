@@ -427,8 +427,6 @@ class Agent:
                     param_response)
                 self.log_response(parsed_param_response, 'PARAM AGENT')
 
-                #args = self.extract_params(parsed_param_response)
-
                 if 'Parameter_0' not in parsed_param_response:
 
                     error_msg = 'You must generate a Parameter'
@@ -573,8 +571,6 @@ class Agent:
 
 
             self.log.add('', '\n' + '*' * 60 +  '\n')
-
-        #return self.answer
 
     def chat(self) -> None:
         """
