@@ -2,10 +2,14 @@
 Implementation of ReAct agent.
 """
 import json
+import logging
 
 from collections.abc import Callable, Generator
 
 from neosophia.llmtools import openaiapi as openai
+
+logging.getLogger('react').setLevel(logging.DEBUG)
+log = logging.getLogger('react')
 
 
 FORMAT_MESSAGE = (
@@ -27,6 +31,7 @@ def get_next_message(
         name = response.function_call['name']
         arguments = json.loads(response.function_call['arguments'])
         results = functions[name](**arguments)
+        log.info(f'Function {name}, args = {arguments}')
         next_message = openai.Message.from_function_call(
             name,
             f'Observation: {str(results)}'

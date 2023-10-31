@@ -5,7 +5,7 @@ import os
 import yaml
 
 from neosophia.search.utils import tree
-from neosophia.utils import words_in_list, combine_strings
+from neosophia.text_utils import words_in_list, combine_strings
 
 
 @dataclass
