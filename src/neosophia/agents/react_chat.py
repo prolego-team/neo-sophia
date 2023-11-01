@@ -64,7 +64,6 @@ def make_react_agent(
     There is a maximum number of times the LLM (model) may be called, max_llm_calls.
     """
 
-
     system_message += FORMAT_MESSAGE
 
     messages = [

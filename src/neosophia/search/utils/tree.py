@@ -1,8 +1,10 @@
+"""Tree data stucture"""
+
 from typing import Callable, Any
 
 
 OrderedTree = list[Any | list]
-
+Index = tuple[int]
 
 EOL_TOKEN = '<END OF LIST>'
 
@@ -48,28 +50,30 @@ def parse(lst_in: list[tuple[int,Any]]) -> OrderedTree:
 
 
 # Move index relative to a position
-def move_right(ind):
+def move_right(ind: Index) -> Index:
     right_ind = list(ind)
     right_ind[-1] += 1
     return tuple(right_ind)
 
-def move_left(ind):
+
+def move_left(ind: Index) -> Index:
     left_ind = list(ind)
     left_ind[-1] -= 1
     return tuple(left_ind)
 
-def move_up(ind):
+
+def move_up(ind: Index) -> Index:
     """Up a level and left"""
     if len(ind)>1:
         return move_left(ind[:-1])
     else:
-        return None
+        return ()
 
-def move_down(ind):
+
+def move_down(ind: Index) -> Index:
     """Right and down a level"""
     subsection_ind = move_right(ind) + (0,)
     return tuple(subsection_ind)
-
 
 
 def flatten(tree: OrderedTree, current_level: int = 1) -> tuple:
@@ -90,7 +94,7 @@ def flatten(tree: OrderedTree, current_level: int = 1) -> tuple:
 
 
 
-def search(tree_in: OrderedTree, cond: Callable):
+def search(tree_in: OrderedTree, cond: Callable) -> Any:
     """Recursively search an ordered tree and return the node that satisfy
     cond(node)."""
     for node in tree_in:
@@ -102,7 +106,7 @@ def search(tree_in: OrderedTree, cond: Callable):
                     yield node
 
 
-def search_ind(tree_in: OrderedTree, cond: Callable, ind_prefix=None):
+def search_ind(tree_in: OrderedTree, cond: Callable, ind_prefix=None) -> Index:
     """Recursively search an ordered tree and return the indices that satisfy
     cond(node)."""
     ind_prefix = [] if ind_prefix is None else ind_prefix
@@ -115,34 +119,22 @@ def search_ind(tree_in: OrderedTree, cond: Callable, ind_prefix=None):
                     yield tuple(ind_prefix + [i])
 
 
-def get_from_tree(tree: OrderedTree, indices: tuple[int, ...]):
+def get_from_tree(tree: OrderedTree, index: Index) -> Any:
     """Get a node from the tree with indices (i1, i2, ...)."""
-    ind = indices[0]
-    if (ind<0) or (ind>=len(tree)) or (len(indices)==0):
+    if len(index)==0:
         return None
 
-    if len(indices)==1:
+    ind = index[0]
+    if (ind<0) or (ind>=len(tree)) or (len(index)==0):
+        return None
+
+    if len(index)==1:
         return tree[ind]
     else:
         if not isinstance(tree[ind], list):
             return None
 
-        return get_from_tree(tree[ind], indices[1:])
-
-
-def grow(tree: OrderedTree, grow_func: Callable):
-    """grow_func : node -> list[Any]"""
-    new_tree = []
-    for node in tree:
-        match node:
-            case list():
-                new_node = grow(node, grow_func)
-            case _:
-                new_node = grow_func(node)
-
-        new_tree.append(new_node)
-
-    return new_tree
+        return get_from_tree(tree[ind], index[1:])
 
 
 def transform(tree: OrderedTree, transformation: Callable) -> OrderedTree:

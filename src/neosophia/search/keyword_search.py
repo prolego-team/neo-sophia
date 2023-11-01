@@ -9,33 +9,41 @@ from rank_bm25 import BM25Okapi
 from neosophia.search.utils.data_utils import SearchResult
 
 STOPWORDS = stopwords.words('english')
-word_tokenizer = word_tokenize
-lemmatizer = WordNetLemmatizer().lemmatize
+LEMMATIZE = WordNetLemmatizer().lemmatize
 
 def tokenize(texts: list[str]) -> list[list[str]]:
+    """Tokenize texts with lemmatization."""
     tokens = [
         [
-            lemmatizer(token)
+            LEMMATIZE(token)
             for token in word_tokenize(text.lower())
             if token not in STOPWORDS
         ]
         for text in texts
     ]
     return tokens
-    # return [text.lower().split(' ') for text in texts]
 
 
 def build_index(corpus: list[str]) -> BM25Okapi:
+    """Tokenize and index a corpus for BM25."""
     return BM25Okapi(tokenize(corpus))
 
 
 def bm25_topk(query: str, index: BM25Okapi, top_k: int):
+    """Get the top-k BM25 matches from an index."""
     scores = index.get_scores(tokenize([query,])[0])
     top_k_inds = list(np.argsort(scores, )[-top_k:])[::-1]
     return top_k_inds, list(scores[top_k_inds])
 
 
-def keyword_search(index: BM25Okapi, query: str, ids: list[tuple[int]], chunks: list[str], top_k: int):
+def keyword_search(
+        index: BM25Okapi,
+        query: str,
+        ids: list[tuple[int]],
+        chunks: list[str],
+        top_k: int
+    ) -> list[SearchResult]:
+    """Get the top-k BM25 matches as a list of SearchResults."""
     indices, scores = bm25_topk(query, index, top_k)
 
     results = []

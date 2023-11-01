@@ -23,9 +23,7 @@ class Section:
 
 
 DocTree = list[Section | list]
-
-
-transform = tree.transform
+Index = tree.Index
 
 
 def parse(sections: list[Section], levels: list[int]) -> DocTree:
@@ -33,14 +31,17 @@ def parse(sections: list[Section], levels: list[int]) -> DocTree:
     return tree.parse(list(zip(levels, sections)))
 
 
-def search(doc_tree: DocTree, search_func: Callable):
+def search(doc_tree: DocTree, search_func: Callable) -> list[Index]:
     """Search a DocTree, returning indices of hits."""
     results = [hit_ind for hit_ind in tree.search_ind(doc_tree, search_func)]
     return results
 
 
-def flatten_doctree(tree: DocTree, ind_prefix=None):
-    """DocTree -> list of chunks with tree indices"""
+def flatten_doctree(tree: DocTree, ind_prefix=None) -> tuple[Index, Any]:
+    """DocTree -> list of chunks with tree indices.
+
+    Note that an extra int is added to the indices indicating the element
+    within that sections contents list."""
     ind_prefix = [] if ind_prefix is None else ind_prefix
     for i,node in enumerate(tree):
         match node:
@@ -52,6 +53,8 @@ def flatten_doctree(tree: DocTree, ind_prefix=None):
 
 
 def get_supersection(doc_tree: DocTree, ind: tuple[int]) -> str | None:
+    """Get the supersection of an index, i.e. the last string in the
+    contents of a section directly above the given index."""
     super_ind = tree.move_up(ind)
     super_section = None
     if super_ind is not None:
@@ -66,6 +69,8 @@ def get_supersection(doc_tree: DocTree, ind: tuple[int]) -> str | None:
 
 
 def get_subsection(doc_tree: DocTree, ind: tuple[int]) -> str | None:
+    """Get the subsection of an index, i.e. the first string in the
+    contents of a section directly below the given index."""
     sub_ind = tree.move_down(ind)
     sub_section = None
     if sub_ind is not None:
@@ -79,7 +84,8 @@ def get_subsection(doc_tree: DocTree, ind: tuple[int]) -> str | None:
     return sub_section
 
 
-def expand(item: str, doc_tree: DocTree, index: tuple[int]):
+def expand(item: str, doc_tree: DocTree, index: tuple[int]) -> list[str]:
+    """Expand on an item to include the super and sub sections of an index."""
     super_section = get_supersection(doc_tree, index)
     sub_section = get_subsection(doc_tree, index)
 
@@ -97,6 +103,7 @@ def expand(item: str, doc_tree: DocTree, index: tuple[int]):
 
 
 def show_tree(tree: DocTree, indent: str = '') -> str:
+    """Return a string representation of a DocTree."""
     output = ''
     for node in tree:
         match node:
@@ -108,7 +115,13 @@ def show_tree(tree: DocTree, indent: str = '') -> str:
     return output
 
 
-def get_tree_text(tree: DocTree, start_level: int = 0, end_level: int | None = None, current_level: int = 0) -> str:
+def get_tree_text(
+        tree: DocTree,
+        start_level: int = 0,
+        end_level: int | None = None,
+        current_level: int = 0
+    ) -> str:
+    """Get all of the text from a DocTree within certain levels."""
     output = ''
     end_level = end_level if end_level is not None else 1000000
     if current_level>end_level:
