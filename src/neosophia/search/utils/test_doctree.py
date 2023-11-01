@@ -180,3 +180,61 @@ def test_get_tree_text():
         '2.1 Subsection A\nParagraph 11\nParagraph 12\n'
         '2.2 Subsection B\nParagraph 13\nParagraph 14\n'
     )
+
+
+def test_consolidate_leaves():
+    _, example_doctree = example()
+    assert consolidate_leaves(example_doctree, word_thresh=20)==[
+        Section('Introduction', ['Paragraph 1', 'Paragraph 2']),
+        Section('1. Section One', ['Paragraph 3', 'Paragraph 4']),
+        [
+            Section(
+                '1.1 Subsection A-1.2 Subsection B',
+                [
+                    'Paragraph 5',
+                    'Paragraph 6',
+                    'Paragraph 7',
+                    'Paragraph 8'
+                ]
+            ),
+        ],
+        Section('2. Section Two', ['Paragraph 9', 'Paragraph 10']),
+        [
+            Section('2.1 Subsection A', ['Paragraph 11', 'Paragraph 12']),
+            [
+                Section(
+                    '2.1.1 Fine details-2.1.2 Extra details',
+                    [
+                        'Detailed information',
+                        'Even more details',
+                        'Fine as frog hair',
+                        'Fine as espresso grounds'
+                    ]
+                )
+            ],
+            Section('2.2 Subsection B', ['Paragraph 13', 'Paragraph 14'])
+        ],
+        Section('3. Section Three', ['Paragraph 15', 'Paragraph 16'])
+    ]
+
+
+def test_consolidate_paragraphs():
+    _, example_doctree = example()
+    assert consolidate_paragraphs(example_doctree, word_limit=4)==[
+        Section('Introduction', ['Paragraph 1 Paragraph 2']),
+        Section('1. Section One', ['Paragraph 3 Paragraph 4']),
+        [
+            Section('1.1 Subsection A', ['Paragraph 5 Paragraph 6']),
+            Section('1.2 Subsection B', ['Paragraph 7 Paragraph 8'])
+        ],
+        Section('2. Section Two', ['Paragraph 9 Paragraph 10']),
+        [
+            Section('2.1 Subsection A', ['Paragraph 11 Paragraph 12']),
+            [
+                Section('2.1.1 Fine details', ['Detailed information', 'Even more details']),
+                Section('2.1.2 Extra details', ['Fine as frog hair', 'Fine as espresso grounds'])
+            ],
+            Section('2.2 Subsection B', ['Paragraph 13 Paragraph 14'])
+        ],
+        Section('3. Section Three', ['Paragraph 15 Paragraph 16'])
+    ]
