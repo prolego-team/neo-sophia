@@ -83,7 +83,7 @@ MEMO_DIRS = {
     '2023 FIA Formula One Financial Regulations': 'financial'
 }
 
-MAX_LLM_CALLS_PER_INTERACTION = 10
+MAX_LLM_CALLS_PER_INTERACTION = 5
 
 FUNCTION_DESCRIPTIONS = [
     {
@@ -148,8 +148,8 @@ def result_to_string(result: SearchResult, doc_trees: list[doctree.DocTree]) -> 
     if sub_text is not None:
         text = text + '\n\n' + sub_text
 
-    uri = DOC_DIR / f'{section.metadata["file"]}'
-    uri = uri.absolute().as_uri() + f'#page={section.metadata["page"]}'
+    # uri = DOC_DIR / f'{result.metadata["file"]}'
+    # uri = uri.absolute().as_uri() + f'#page={result.metadata["page"]}'
 
     summary_str = (
         f'{file.title()} Regulation: {", ".join(section_headings)}\n\n'
