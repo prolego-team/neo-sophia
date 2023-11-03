@@ -14,11 +14,16 @@ def test_words_in_list():
 
 def test_combine_strings():
     inp = ['This', 'is', 'a', 'test']
-    assert combine_strings(inp, 1)==['This', 'is', 'a', 'test']
-    assert combine_strings(inp, 2)==['This is', 'a test']
-    assert combine_strings(inp, 3)==['This is a', 'test']
-    assert combine_strings(inp, 4)==['This is a test']
-    assert combine_strings(inp, 5)==['This is a test']
+    sep = ' '
+    assert combine_strings(inp, 1, sep)==['This', 'is', 'a', 'test']
+    assert combine_strings(inp, 2, sep)==['This is', 'a test']
+    assert combine_strings(inp, 3, sep)==['This is a', 'test']
+    assert combine_strings(inp, 4, sep)==['This is a test']
+    assert combine_strings(inp, 5, sep)==['This is a test']
+
+    inp = [' This', 'is', 'a ', ' test']
+    assert combine_strings(inp, 1, sep)==['This', 'is', 'a', 'test']
+    assert combine_strings(inp, 3, sep)==['This is a', 'test']
 
 
 def test_get_capitalized_phrases():
