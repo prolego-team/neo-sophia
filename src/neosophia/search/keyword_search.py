@@ -2,12 +2,8 @@
 
 import numpy as np
 
-try:
-    from nltk.corpus import stopwords
-except:
-    import nltk
-    nltk.download('stopwords')
-    from nltk.corpus import stopwords
+from nltk.corpus import stopwords
+from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk import WordNetLemmatizer
 
@@ -15,8 +11,28 @@ from rank_bm25 import BM25Okapi
 
 from neosophia.search.utils.data_utils import SearchResult
 
-STOPWORDS = stopwords.words('english')
+try:
+    STOPWORDS = stopwords.words('english')
+except:
+    import nltk
+    nltk.download('stopwords')
+    STOPWORDS = stopwords.words('english')
+
+try:
+    word_tokenize('This is a test')
+except:
+    import nltk
+    nltk.download('punkt')
+
+try:
+    WordNetLemmatizer().lemmatize('testing')
+except:
+    import nltk
+    nltk.download('wordnet')
+
+
 LEMMATIZE = WordNetLemmatizer().lemmatize
+
 
 def tokenize(texts: list[str]) -> list[list[str]]:
     """Tokenize texts with lemmatization."""
