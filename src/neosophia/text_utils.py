@@ -1,3 +1,5 @@
+"""Generic text processing utilities."""
+
 import re
 
 def words_in_list(input_list: list[str]) -> int:

@@ -51,12 +51,14 @@ def parse(lst_in: list[tuple[int,Any]]) -> OrderedTree:
 
 # Move index relative to a position
 def move_right(ind: Index) -> Index:
+    """Return index to the right of `ind`."""
     right_ind = list(ind)
     right_ind[-1] += 1
     return tuple(right_ind)
 
 
 def move_left(ind: Index) -> Index:
+    """Return index to the left of `ind`."""
     left_ind = list(ind)
     left_ind[-1] -= 1
     return tuple(left_ind)
@@ -66,8 +68,8 @@ def move_up(ind: Index) -> Index:
     """Up a level and left"""
     if len(ind)>1:
         return move_left(ind[:-1])
-    else:
-        return ()
+
+    return ()
 
 
 def move_down(ind: Index) -> Index:
@@ -130,11 +132,11 @@ def get_from_tree(tree: OrderedTree, index: Index) -> Any:
 
     if len(index)==1:
         return tree[ind]
-    else:
-        if not isinstance(tree[ind], list):
-            return None
 
-        return get_from_tree(tree[ind], index[1:])
+    if not isinstance(tree[ind], list):
+        return None
+
+    return get_from_tree(tree[ind], index[1:])
 
 
 def transform(tree: OrderedTree, transformation: Callable) -> OrderedTree:

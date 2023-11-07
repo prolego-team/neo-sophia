@@ -1,6 +1,13 @@
+"""BM25-based keyword search."""
+
 import numpy as np
 
-from nltk.corpus import stopwords
+try:
+    from nltk.corpus import stopwords
+except:
+    import nltk
+    nltk.download('stopwords')
+    from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk import WordNetLemmatizer
 

@@ -1,7 +1,9 @@
+"""Functions for similarity and cross-encoder search."""
+
 import torch
 
-import neosophia.search.utils.doctree as doctree
 import neosophia.search.embeddings as emb
+from neosophia.search.utils import doctree
 from neosophia.search.utils.data_utils import SearchResult
 
 
@@ -10,7 +12,6 @@ def cosine_search(
         embeddings: torch.Tensor,
         ids: list[tuple[int]],
         chunks: list[str],
-        embedding_model: emb.Model,
         top_k: int,
     ):
     """Use cosine distance to get the `top_k` most similar text chunks to `query`.
@@ -20,7 +21,7 @@ def cosine_search(
     piece of text taken from index id from the DocTree.
     """
     # Get similarity scores and identifiers
-    hits = emb.query(embeddings, query_emb, embedding_model, top_k)[0]
+    hits = emb.query(embeddings, query_emb, top_k)[0]
 
     results = []
     for hit in hits:
@@ -77,4 +78,3 @@ def rerank(
     results = sorted(inputs, key=lambda res: res.reranked_score, reverse=True)
 
     return results
-

@@ -1,12 +1,11 @@
 from neosophia.search.utils.doctree import (
-    Section, DocTree,
+    Section,
     parse,
     search,
     flatten_doctree,
     get_supersection,
     get_subsection,
     expand,
-    show_tree,
     get_tree_text,
     consolidate_leaves,
     consolidate_paragraphs

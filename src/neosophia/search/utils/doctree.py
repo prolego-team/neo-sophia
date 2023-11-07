@@ -1,3 +1,5 @@
+"""Store a document as a tree."""
+
 from typing import Any, Callable
 from dataclasses import dataclass
 from copy import copy
@@ -10,6 +12,7 @@ from neosophia.text_utils import words_in_list, combine_strings
 
 @dataclass
 class Section:
+    """A document section."""
     title: str
     contents: list[Any]
     metadata: dict | None = None
@@ -33,17 +36,16 @@ def parse(sections: list[Section], levels: list[int]) -> DocTree:
 
 def search(doc_tree: DocTree, search_func: Callable) -> list[Index]:
     """Search a DocTree, returning indices of hits."""
-    results = [hit_ind for hit_ind in tree.search_ind(doc_tree, search_func)]
-    return results
+    return list(tree.search_ind(doc_tree, search_func))
 
 
-def flatten_doctree(tree: DocTree, ind_prefix=None) -> tuple[Index, Any]:
+def flatten_doctree(tree_inp: DocTree, ind_prefix=None) -> tuple[Index, Any]:
     """DocTree -> list of chunks with tree indices.
 
     Note that an extra int is added to the indices indicating the element
     within that sections contents list."""
     ind_prefix = [] if ind_prefix is None else ind_prefix
-    for i,node in enumerate(tree):
+    for i,node in enumerate(tree_inp):
         match node:
             case list():
                 yield from flatten_doctree(node, ind_prefix + [i])
@@ -102,10 +104,10 @@ def expand(item: str, doc_tree: DocTree, index: tuple[int]) -> list[str]:
     return expanded_items
 
 
-def show_tree(tree: DocTree, indent: str = '') -> str:
+def show_tree(tree_inp: DocTree, indent: str = '') -> str:
     """Return a string representation of a DocTree."""
     output = ''
-    for node in tree:
+    for node in tree_inp:
         match node:
             case list():
                 output += show_tree(node, indent+'  ')
@@ -116,7 +118,7 @@ def show_tree(tree: DocTree, indent: str = '') -> str:
 
 
 def get_tree_text(
-        tree: DocTree,
+        tree_inp: DocTree,
         start_level: int = 0,
         end_level: int | None = None,
         current_level: int = 0
@@ -126,15 +128,15 @@ def get_tree_text(
     end_level = end_level if end_level is not None else 1000000
     if current_level>end_level:
         return ''
-    elif current_level<start_level:
-        for node in tree:
+    if current_level<start_level:
+        for node in tree_inp:
             match node:
                 case list():
                     output += get_tree_text(node, start_level, end_level, current_level+1)
                 case Section():
                     pass
     else:
-        for node in tree:
+        for node in tree_inp:
             match node:
                 case list():
                     output += get_tree_text(node, start_level, end_level, current_level+1)
@@ -147,11 +149,11 @@ def get_tree_text(
 
 
 
-def consolidate_leaves(tree: DocTree, word_thresh: int = 200) -> DocTree:
+def consolidate_leaves(tree_inp: DocTree, word_thresh: int = 200) -> DocTree:
     """Combine multiple small leaf sections."""
 
     new_tree = []
-    for node in tree:
+    for node in tree_inp:
         match node:
             case list():
                 # If this node consists of a homogenous list of Sections then we may be
@@ -181,10 +183,10 @@ def consolidate_leaves(tree: DocTree, word_thresh: int = 200) -> DocTree:
     return new_tree
 
 
-def consolidate_paragraphs(tree: DocTree, word_limit: int = 100, sep=' ') -> DocTree:
+def consolidate_paragraphs(tree_inp: DocTree, word_limit: int = 100, sep=' ') -> DocTree:
     """Combine Section paragraphs to avoid short paragraphs."""
     new_tree = []
-    for node in tree:
+    for node in tree_inp:
         match node:
             case list():
                 new_node = consolidate_paragraphs(node, word_limit)
@@ -202,28 +204,31 @@ def consolidate_paragraphs(tree: DocTree, word_limit: int = 100, sep=' ') -> Doc
 
 
 def section_repr(dumper, data):
-    return dumper.represent_mapping(u'!section', vars(data))
+    """YAML represection of a Section."""
+    return dumper.represent_mapping('!section', vars(data))
 
 
 def section_constructor(loader, node):
+    """Construct a Section from its YAML representation."""
     values = loader.construct_mapping(node)
     return Section(**values)
 
 
 yaml.add_representer(Section, section_repr)
-yaml.SafeLoader.add_constructor(u'!section', section_constructor)
+yaml.SafeLoader.add_constructor('!section', section_constructor)
 
-def write(filename: str, tree: DocTree) -> None:
-    """Write doc tree."""
+def write(filename: str, tree_inp: DocTree) -> None:
+    """Write doc tree to file."""
     with open(filename, 'w') as f:
-        yaml.dump(tree, f)
+        yaml.dump(tree_inp, f)
 
 
 def read(filename: str) -> DocTree | None:
+    """Read a doc tree from file."""
     if not os.path.exists(filename):
         return None
 
     with open(filename, 'r') as f:
-        tree = yaml.safe_load(f)
+        tree_inp = yaml.safe_load(f)
 
-    return tree
+    return tree_inp

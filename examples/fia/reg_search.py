@@ -248,7 +248,7 @@ def setup():
         log.info(f'Searching regulations: {query[:20]}...')
         query_emb = emb.encode(query, model)
 
-        results = cosine_search(query_emb, embeddings, flat_ids, flat_texts, model, top_k)
+        results = cosine_search(query_emb, embeddings, flat_ids, flat_texts, top_k)
         if RERANK:
             results = rerank(results, doc_trees, query, rerank_model, post_expand=POST_EXPAND)
 
@@ -439,47 +439,3 @@ def run_demo():
 
 if __name__=='__main__':
     run_demo()
-
-
-
-    # def rephrase_question(question: str, context: str) -> list[str]:
-    #     log.info('Generating queries')
-    #     additional_prompts = generate_response(
-    #         question+'\n\nWhat are several other questions that could be asked to get a more precise or complete answer?  Write one question per line.',
-    #         context
-    #     )
-    #     log.debug(additional_prompts)
-    #     questions = additional_prompts.split('\n')
-
-    #     return questions
-
-    # def multi_search(question: str, context: str) -> str:
-    #     base_question = question
-    #     base_response = generate_response(base_question, context)
-    #     questions = rephrase_question(question, context)
-    #     responses = [base_response, ]
-    #     max_qs = 3
-    #     for question in questions[:max_qs]:
-    #         regulations, definitions = search(question)
-    #         log.debug(regulations)
-    #         context = build_context(regulations, definitions)
-    #         responses.append(generate_response(question, context))
-
-    #     new_context = '\n\n'.join([f'Response {i+1}: {response}' for i, response in enumerate(responses)])
-    #     log.info('Synthesizing responses')
-    #     prompt = (
-    #         'Please summarize these responses into a single consolidated response to the '
-    #         f'original question, "{base_question}". Remember to include citations of '
-    #         'regulations where applicable.'
-    #     )
-    #     final_response = generate_response(prompt, new_context)
-
-    #     # new_regs_set = []
-    #     # for question in questions[:max_qs]:
-    #     #     new_results = [result_to_string(res) for res in search_regulations(question)]
-    #     #     new_regs_set.append(new_results)
-
-    #     # new_regs = reciprocal_rank_fusion(new_regs_set)
-    #     # final_response = '\n\n'.join(new_regs)
-
-    #     return final_response
