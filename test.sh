@@ -6,6 +6,7 @@ pytest -s --tb=short \
     --cov=src/neosophia/db \
     --cov=src/neosophia/datasets \
     --cov=src/neosophia/agents \
+    --cov=src/neosophia/search \
     --cov=examples \
     src/neosophia \
     examples
