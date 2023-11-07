@@ -194,7 +194,7 @@ def setup():
     run_id = get_dict_hash(config)
     run_dir = DATA_DIR / Path(str(run_id))
     if not run_dir.exists():
-        run_dir.mkdir()
+        run_dir.mkdir(parents=True)
         with open(run_dir / 'config.json', 'w') as f:
             json.dump(config, f)
 
