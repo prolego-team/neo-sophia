@@ -35,7 +35,7 @@ def clean_text(text: str) -> str:
 
 
 def reciprocal_rank_fusion(
-      ranked_lists: list[list[Any]], k: float = 60
+      ranked_lists: list[list[Any]], k: float = 60.0
     ) -> list[Any]:
     """Apply reciprocal rank fusion to a list of lists."""
     scores = defaultdict(float)

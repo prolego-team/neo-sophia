@@ -121,7 +121,7 @@ def get_embeddings(
                 chunks += expanded_items
                 ids += [ind]*len(expanded_items)
             flat_texts += chunks
-            flat_ids += [(reg,)+id for id in ids]
+            flat_ids += [(reg,)+i for i in ids]
     else:
         for reg,doc_tree in doc_trees.items():
             ids,chunks = zip(*doctree.flatten_doctree(doc_tree))

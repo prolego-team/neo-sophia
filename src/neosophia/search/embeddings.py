@@ -22,7 +22,7 @@ def encode(texts: list[str], model: Model):
 
 
 def query(
-        target_embeddings: list[torch.Tensor],
+        target_embeddings: torch.Tensor,
         query_embedding: torch.Tensor,
         top_k: int = 5
     ):

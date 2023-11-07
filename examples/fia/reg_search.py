@@ -50,7 +50,6 @@ from examples.fia.utils import (
 )
 
 # Suppress a runtime warning re: tokenizer parallelism and multiple threads.
-import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # === Basic logger setup ===================================================
@@ -120,7 +119,7 @@ REG_DIVIDER = '\n\n---\n\n'
 DEF_DIVIDER = '\n\n'
 
 
-def result_to_string(result: SearchResult, doc_trees: list[doctree.DocTree]) -> str:
+def result_to_string(result: SearchResult, doc_trees: dict[str, doctree.DocTree]) -> str:
     """Format a search result as a string with context."""
     file = result.file
     section_ind = result.tree_index
@@ -159,7 +158,7 @@ def result_to_string(result: SearchResult, doc_trees: list[doctree.DocTree]) -> 
     return summary_str
 
 
-def results_to_string(results: list[SearchResult], doc_trees: list[doctree.DocTree]) -> str:
+def results_to_string(results: list[SearchResult], doc_trees: dict[str, doctree.DocTree]) -> str:
     """Convert a a list of search results to a string."""
     output = [result_to_string(result, doc_trees) for result in results]
     return REG_DIVIDER.join(output)
@@ -350,6 +349,7 @@ def setup():
 
         # Agent loop
         prompt = question + '\n\n' + context
+        status = ''
         for message in agent(prompt):
             if message.role=='user':
                 status = 'User asked a question to the LLM.  Awaiting LLM response...'
@@ -437,5 +437,5 @@ def run_demo():
     demo.launch()
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     run_demo()

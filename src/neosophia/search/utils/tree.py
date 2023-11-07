@@ -4,12 +4,15 @@ from typing import Callable, Any
 
 
 OrderedTree = list[Any | list]
-Index = tuple[int]
+Index = tuple[int, ...]
 
 EOL_TOKEN = '<END OF LIST>'
 
 
-def parse_recursive(input_list: list[tuple[int,Any]], depth: int) -> OrderedTree:
+def parse_recursive(
+        input_list: list[tuple[int,Any]],
+        depth: int
+    ) -> tuple[OrderedTree, list]:
     """Takes a list of strings and parses it into an ordered tree.
 
     There are assumptions:

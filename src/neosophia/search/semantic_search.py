@@ -13,7 +13,7 @@ def cosine_search(
         ids: list[tuple[int]],
         chunks: list[str],
         top_k: int,
-    ):
+    ) -> list[SearchResult]:
     """Use cosine distance to get the `top_k` most similar text chunks to `query`.
 
     Each embedding (row of the tensor) should coincide with an entry in `ids` and
@@ -46,7 +46,7 @@ def cosine_search(
 
 
 def rerank(
-        inputs: list[dict],
+        inputs: list[SearchResult],
         doc_trees: dict[str, doctree.DocTree],
         query: str,
         rerank_model: emb.Model,
