@@ -12,7 +12,6 @@ def combine_strings(input_list: list[str], word_limit: int, sep: str = '\n') -> 
     word_count = 0
     new_string = ''
     output = []
-    print(input_list)
     for string in input_list:
         string_trimmed = string.strip()
         count = len(string_trimmed.split(' '))
