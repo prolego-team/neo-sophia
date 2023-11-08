@@ -223,10 +223,10 @@ def write(filename: str, tree_inp: DocTree) -> None:
         yaml.dump(tree_inp, f)
 
 
-def read(filename: str) -> DocTree | None:
+def read(filename: str) -> DocTree:
     """Read a doc tree from file."""
     if not os.path.exists(filename):
-        return None
+        assert FileNotFoundError(f'Can\'t find file {filename}')
 
     with open(filename, 'r') as f:
         tree_inp = yaml.safe_load(f)
