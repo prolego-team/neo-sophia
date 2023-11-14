@@ -1,0 +1,40 @@
+**SUBJECT:** Summary of Formula 1 Regulatory Compliance 
+
+Dear Team,
+
+In an effort to ensure adherence to the FIA regulations, especially Article 4 concerning adjustments, the following summary provides an overview of the key regulations and the steps we need to take. 
+
+1. **Relevant Costs Adjustments**: In calculation of Relevant Cost, adjustments must pertain to Total Costs to include Transactions such as, Related Party, Exchange, Inter-Team, Power Unit and transactions pursuant to which a Customer Competitor uses a Transferable Component or a sub-assembly of a Transferable Component [4.1(a)].
+
+2. **Offsetting of Income and Costs**: Certain costs and income within the Total Costs need to be adjusted in calculation of the Relevant Costs [4.1(b)(i)-(iii)].
+
+3. **Research and Development Costs**: All costs incurred for F1 Activities pertaining to Research and Development must be included in the Relevant Costs in the Reporting Period they are incurred [4.1(c)].
+
+4. **Capitalisation of F1 Cars**: Any costs capitalised for F1 Cars during the Reporting Period must be adjusted to be recognised in the calculation of Relevant Costs within the same Reporting period [4.1(d)].
+
+5. **Capital Expenditure**: Costs exceeding the Capital Expenditure Limit must be included in the calculation of Relevant Costs  [4.1(e)].
+
+6. **Inventories**: Any discrepancy from standard accounting for Inventories within Total Costs must be adjusted in the calculation of Relevant Costs [4.1(f)].
+
+7. **Power Units and Standard Supply Components**: Costs reflecting the Fair Value of goods and services used by the F1 Team stemming from Power Units or Standard Supply Components must be included in Relevant Costs [4.1(g)].
+
+8. **Unrecorded Costs or Losses**: Unrecorded costs or losses incurred that should have been recognised within profit or loss must be accounted for in calculations of Relevant Costs for that relevant period [4.1(h)].
+
+9. **Foreign exchange Transaction Costs**: An adjustment may be made in the calculation of Relevant Costs to account for any difference between the cost of a transaction in a foreign currency and the value recorded within Total Costs of the F1 Team [4.1(i)].
+
+10. **Employee Termination Benefits**: If an employee is re-engaged within the same or subsequent Full Year Reporting Periods to undertake any F1 Activities, the amount of Employee Termination Benefits so excluded must be included in the Relevant Costs in the Reporting Period where the individual is re-engaged [4.1(j)].
+
+11. **Tyre Test Days and Sprint**: For each day that the team has participated in Testing and for each Competition that included a Sprint session, a downward adjustment must be made in the calculation of Relevant costs [4.1(k)-(l)].
+
+12. **RDEC Equivalence**: If an F1 Team outside of the UK incurs costs that qualify as research and development expenditure under the UK's RDEC scheme, a downward adjustment may be made in calculations of Relevant Costs for the relevant Reporting Period [4.1(m)].
+
+13. **Reconsideration of Non-F1 Activities**: If certain conditions change, all costs excluded for that Non-F1 Activity for the past two Full Year Reporting Periods must be included in Relevant Costs for the current Reporting Period [4.1(n)].
+
+14. **Calculations Order and Conversion Rate**: The order of exclusions and adjustments will be set by the Cost Cap Administration in the Reporting Documentation [4.2]. Amounts expressed in US Dollars shall be converted into the F1 Team's Presentation Currency at the Initial Applicable Rate [4.3].
+
+Please familiarize yourself with these key points to avoid any confusion and potential non-compliance.
+
+Thank you,
+
+[Your Name]
+Compliance Assistant

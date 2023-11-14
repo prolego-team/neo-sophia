@@ -11,6 +11,7 @@ langchain==0.0.265
 llama-index==0.8.2.post1
 lorem==0.1.1
 matplotlib==3.7.1
+nltk==3.8.1
 numpy==1.24.2
 openai==0.27.2
 pandasql==0.7.3
@@ -21,7 +22,9 @@ pytest_cov==4.1.0
 PyMuPDF==1.22.5
 pypdf==3.9.0
 PyYAML==6.0
+rank_bm25==0.2.2
 scikit-learn==1.2.2
+sentence-transformers==2.2.2
 tiktoken==0.3.3
 torch==2.0.0
 tqdm==4.65.0

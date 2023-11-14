@@ -1,0 +1,34 @@
+Subject: Internal Memo: Compliance with FIA Regulations on Driver Adjustable Bodywork
+
+Dear Team,
+
+In compliance with the FIA's regulations on Driver Adjustable Bodywork ("Article"), your attention is drawn to the following summarized regulations that govern our activities on and off the race circuit:
+
+1. Driver Adjustable Bodywork use is permitted by Article 3.10.10 of the Technical Regulations [22.1]. However, activation is limited to zones predetermined around each circuit [22.1a].
+
+2. In cases of poor visibility, driver adjustable bodywork systems may be disabled at the discretion of the Race Director [22.1a, 22.1f].
+
+3. If driver adjustable bodywork is deactivated during any qualifying or sprint shootout session, it will remain so throughout that period [22.1b].
+
+4. To encourage overtaking, adjustable bodywork may be activated one and two laps respectively after the start or following a safety car period during each sprint session and race [22.1c].
+
+5. Activation of the adjustable bodywork during a sprint session or race requires notification through control electronics and is reserved for when the driver is less than one second behind another driver [22.1d].
+
+6. The adjustable bodywork system will disable the first time the driver applies the brakes post-activation [22.1e].
+
+7. When yellow flags are displayed in the activation zone or during cases of poor visibility, the Race Director may disable all the driver adjustable bodywork systems until conditions improve [22.1f].
+
+8. The FIA holds the right to adjust the time proximity, post consultation with competitors, to ensure the adjustable bodywork meets its intended purpose [22.1g].
+
+9. If there is a driver adjustable bodywork system failure, the Competitor may request the Race Director for permission to override the system. It is imperative of the Competitor to ensure their driver only uses the adjustable bodywork if he is within one second of the car in front of him [22.1h].
+
+10. If the driver adjustable bodywork system error is rectified, the driver is no longer allowed to use the override. Notification will be provided by the Race Director about the resolution [22.1i].
+
+Your cooperation in adhering to these guidelines is crucial to ensure race fairness and maintain compliance with FIA regulations.
+
+Thank you for your undisturbed attention.
+
+Best regards,
+[Your name]
+Compliance Assistant
+[Your Team's Name]
