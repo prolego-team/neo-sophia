@@ -54,9 +54,23 @@ Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
+## Episode 17 - RAG on Formula 1
+
+Video
+
+## Episode 16 - Case study: How Vericant released its Generative AI solution in 30 days
+
+Video: 
+
+## Episode 15 - Should You Use Open Source LLMs or GPT-4?
+
+Video: [Should You Use Open Source LLMs or GPT-4?](https://www.youtube.com/watch?v=YvwPoz9hAq4&t=11s)
+
+Running this code requires additional steps by an experienced developer. See [the pull request](https://github.com/prolego-team/neo-sophia/pull/116) 
+
 ## Episode 14 - The three most common entperise LLM projects
 
-Video:
+Video: [The Top 3 Enterprise AI Use Cases](https://youtu.be/b6k8-mqpmrc?si=OnMUDl35rMPmKLG8)
 
 ## Episode 13 - Software design pattern for LLM Scratchpads
 In the second episode on Scratchpads we walk through the technical detaials and workflow.
