@@ -10,6 +10,15 @@ from dataclasses import dataclass
 from neosophia.llmtools import openaiapi as oaiapi
 
 
+PARAM_SEP = '='
+
+DISPATCH_PROMPT_PREFIX = (
+    'Answer the question by choosing a single function and generating parameters for the function ' +
+    'based on the function descriptions below. If none of the functions can be used to answer the question, ' +
+    'answer None.'
+)
+
+
 @dataclass
 class ParamDesc:
     """Parameter description."""
@@ -54,19 +63,23 @@ def dispatch_prompt(
         )
 
     return (
-        'Answer the question by choosing a single function and generating parameters for the function ' +
-        'based on the function descriptions below. If none of the functions can be used to answer the question, '
-        'answer None.\n\n' +
+        DISPATCH_PROMPT_PREFIX + '\n\n' +
         'QUESTION: ' + question + '\n\n' +
         'FUNCTION DESCRIPTIONS:' + '\n\n' +
         functions_str +
         'Your answer should be in this form:\n\n' +
+        'EXPLANATION: [brief explanation of your answer]\n' +
         'FUNCTION: [function_name]\n' +
-        'PARAMETER: [parameter name 0] [parameter value 0]\n' +
-        'PARAMETER: [parameter name 1] [parameter value 1]\n' +
+        f'PARAMETER: [name_0]{PARAM_SEP}[value_0]\n' +
+        f'PARAMETER: [name_1]{PARAM_SEP}[value_1]\n' +
         '...\n\n' +
+        'Make sure to put each parameter on a separate line prefixed by "PARAMETER:"\n' +
         'Begin!\n'
     )
+
+
+FUNC_PREFIX_LOWER = 'function:'
+PARAM_PREFIX_LOWER = 'parameter:'
 
 
 def parse_dispatch_response(
@@ -76,23 +89,38 @@ def parse_dispatch_response(
     """Parse an LLMs response to the above dispatch prompt."""
     lines = response.split('\n')
 
-    func_prefix = 'FUNCTION: '
-    param_prefix = 'PARAMETER: '
-
     name = None
     params = {}
+    pname = None
 
     for line in lines:
         line = line.strip()
-        if line.startswith(func_prefix):
-            name = line.removeprefix(func_prefix)
-        elif line.startswith(param_prefix):
-            line = line.removeprefix(param_prefix).strip()
-            # word at start of line is parameter name
-            words = line.split()
-            pname = words[0]
-            value = line.removeprefix(pname).strip()
+        print('>', f'`{line}`')
+
+        # handle upper, lower, or mixed-case versions of these prefixes
+        # some LLMs can't follow instructions
+        if line.lower().startswith('explanation:'):
+            continue
+
+        if line.lower().startswith('function'):
+            # print('\tfunc name')
+            name = ':'.join(line.split(':')[1:]).strip()
+
+        elif line.lower().startswith(PARAM_PREFIX_LOWER):
+            print('\tparam start')
+            line = line[len(PARAM_PREFIX_LOWER):].strip()
+            words = line.split(PARAM_SEP)
+            pname = words[0].strip()
+            value = PARAM_SEP.join(words[1:]).strip()
+
             params[pname] = value
+        elif line and pname is not None:
+            print('\tparam continue')
+            # append to current value
+            params[pname] += '\n' + line
+        elif not line:
+            pname = None
+            print('\tparam done')
 
     res = {}
 
@@ -103,6 +131,7 @@ def parse_dispatch_response(
 
     print(f'parsing parameters for function: `{name}`')
 
+    # clean up values
     for pname, value in params.items():
         try:
             typ = desc.params[pname].typ

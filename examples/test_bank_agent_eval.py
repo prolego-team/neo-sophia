@@ -15,7 +15,7 @@ def test_eval_systems():
 
     def build_mock_system(answer: Optional[str], calls: int) -> Callable:
         """build a mock system"""
-        def mock(_: Optional[str]) -> Tuple[Optional[str], int]:
+        def mock(question: Optional[str], seed: int) -> Tuple[Optional[str], int]:
             """Dummy system for quickly testing things."""
             # time.sleep(random.random() * 3.0)
             time.sleep(random.random() * 0.1)

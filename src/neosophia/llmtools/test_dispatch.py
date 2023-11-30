@@ -61,7 +61,8 @@ def test_parse_dispatch_response():
             params={
                 'a': dp.ParamDesc('First parameter', int, True),
                 'b': dp.ParamDesc('Second parameter', float, True),
-                'c': dp.ParamDesc('Third parameter', str, True)
+                'c': dp.ParamDesc('Third parameter', str, True),
+                'd': dp.ParamDesc('Fourth parameter', str, True)
             }
         )
     }
@@ -71,18 +72,19 @@ def test_parse_dispatch_response():
         response=(
             'blah blah baloney\n' +
             'FUNCTION: combine\n' +
-            'PARAMETER: a 5\n' +
-            'PARAMETER: b 6\n' +
-            'PARAMETER: c "Hello, world!"'
+            'PARAMETER: a=5\n' +
+            'PARAMETER: b=6\n' +
+            'PARAMETER: c="Hello, world!\nMultiple\nlines\nof text."\n' +
+            'PARAMETER: d=Done.'
         ),
         functions=functions
     )
     assert name == 'combine'
-    assert params == {'a': 5, 'b': 6.0, 'c': 'Hello, world!'}
+    assert params == {'a': 5, 'b': 6.0, 'c': 'Hello, world!\nMultiple\nlines\nof text.', 'd': 'Done.'}
 
     # name doesn't match
     res = dp.parse_dispatch_response(
-        response='FUNCTION: baloney\nPARAMETER: a 5',
+        response='FUNCTION: baloney\nPARAMETER: a=5',
         functions=functions
     )
     assert res is None
@@ -91,9 +93,9 @@ def test_parse_dispatch_response():
     name, params = dp.parse_dispatch_response(
         response=(
             'FUNCTION: combine\n' +
-            'PARAMETER: a 5\n' +
-            'PARAMETER: b 6\n' +
-            'PARAMETER: d "Hello, world!"'
+            'PARAMETER: a=5\n' +
+            'PARAMETER: b=6\n' +
+            'PARAMETER: e="Hello, world!"'
         ),
         functions=functions
     )
@@ -104,14 +106,15 @@ def test_parse_dispatch_response():
     name, params = dp.parse_dispatch_response(
         response=(
             'FUNCTION: combine\n' +
-            'PARAMETER: a "Hello, world!"\n' +
-            'PARAMETER: b 6\n' +
-            'PARAMETER: c "Hello, world!"'
+            'PARAMETER: a="Hello, world!"\n' +
+            'PARAMETER: b=6\n' +
+            'PARAMETER: c="Hello, world!"\n' +
+            'PARAMETER: d=Done.'
         ),
         functions=functions
     )
     assert name == 'combine'
-    assert params == {'b': 6.0, 'c': 'Hello, world!'}
+    assert params == {'b': 6.0, 'c': 'Hello, world!', 'd': 'Done.'}
 
 
 def test_convert_function_descs():
