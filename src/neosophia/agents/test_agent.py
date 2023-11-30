@@ -78,8 +78,7 @@ Description: Does nothing
 
 Tool Name: extract_answer
 Description: Tool Name: extract_answer
-Description: This function extracts an answer given a question and
-  a dataframe containing the answer.
+Description: This function extracts an answer given a question and a dataframe containing the answer.
 params:
   data:
     description: A DataFrame or Series that contains the answer
