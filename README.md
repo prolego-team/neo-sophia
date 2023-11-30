@@ -54,13 +54,33 @@ Questions? Just ask in our [Discord Community](https://discord.gg/eaPAhJcTpJ).
 
 # Episodes
 
-## Episode 17 - RAG on Formula 1
+## Episode 19 - Demonstrating RAG benefits for customers and constituents using GPTs
 
-Video
+Video: [Build a RAG demo in 1 hour with GPTs](https://youtu.be/3mIUFSylsgY)
 
-## Episode 16 - Case study: How Vericant released its Generative AI solution in 30 days
+## Episode 18 - Discover AI Opportunities with Generated Data
 
-Video: 
+Video: [Discover AI Opportuniteis with generated data](https://youtu.be/Ul-22gj5GzU)
+
+## Episode 17 - Intro to Retrieval Augmented Generation
+
+Video: [Intro to RAG](https://youtu.be/LmiFeXH-kq8)
+
+1. Checkout Episode 17, [Release v0.12.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.17.0)
+````
+    git checkout tags/v0.17.0
+````
+2. Start the demo by running
+
+````
+    python -m examples.fia.reg_search
+
+````
+
+## Episode 16 - Automated document processing case study
+What are companies doing with Generative AI? Here's how one CEO did it.
+
+Video: [How Vericant released its Generative AI solution in 30 days](https://youtu.be/Sz_F8p2fBBk)
 
 ## Episode 15 - Should You Use Open Source LLMs or GPT-4?
 
