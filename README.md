@@ -66,7 +66,7 @@ Video: [Discover AI Opportuniteis with generated data](https://youtu.be/Ul-22gj5
 
 Video: [Intro to RAG](https://youtu.be/LmiFeXH-kq8)
 
-1. Checkout Episode 17, [Release v0.12.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.17.0)
+1. Checkout Episode 17, [Release v0.17.0](https://github.com/prolego-team/neo-sophia/releases/tag/v0.17.0)
 ````
     git checkout tags/v0.17.0
 ````
