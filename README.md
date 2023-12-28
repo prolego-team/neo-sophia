@@ -4,7 +4,7 @@ Large-scale language models like GPT-4 from OpenAI serve as foundational technol
 
 This project is designed to assist analytics leaders, product managers, and development teams in surmounting these obstacles by demonstrating the technology's application across a variety of common business problems. The project unfolds through a series of episodes, each accompanied by the following resources:
 
-1. Walkthrough videos available on [Prolego's YouTube Channel](https://www.youtube.com/@prolego9489).
+1. Walkthrough videos available on [Prolego's YouTube Channel](https://www.youtube.com/@prolegoinc).
 2. Tagged releases on the main branch of this repository.
 3. Conversations held within [Prolego's Discord community](https://discord.gg/eaPAhJcTpJ).
 
